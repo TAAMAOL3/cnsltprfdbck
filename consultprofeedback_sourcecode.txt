@@ -15,6 +15,7 @@ consultprofeedback/
 │   ├── index.html
 │   ├── manifest.json
 ├── routes/
+│   ├── passwordResetRoutes.js
 │   ├── registerRoutes.js
 ├── src/
 │   ├── App.css
@@ -20429,23 +20430,22 @@ DB_NAME=consultprofeedbackdb
 
 ***server.js:
 require("dotenv").config();
-const db = require('./config/db');
 const express = require("express");
-const registerRoutes = require('./routes/registerRoutes');
 const path = require("path");
-const mysql = require("mysql");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { body, validationResult } = require("express-validator");
+const db = require("./config/db");
+const registerRoutes = require("./routes/registerRoutes");
+const passwordResetRoutes = require("./routes/passwordResetRoutes"); // New import
 const app = express();
 const port = process.env.PORT || 3000;
-
-
 
 // Middleware
 app.use(express.json());
 
 app.use('/register', registerRoutes);
+app.use('/password-reset', passwordResetRoutes); // New route for password reset
 
 // Store the current random number
 let currentRandomNumber = generateRandomNumber();
@@ -20454,11 +20454,6 @@ let currentRandomNumber = generateRandomNumber();
 function generateRandomNumber() {
   return Math.floor(Math.random() * 100) + 1;
 }
-
-// GET endpoint to retrieve the current random number
-// app.get("/", (req, res) => {
-//   res.json({ randomNumber: currentRandomNumber });
-// });
 
 // POST endpoint to regenerate a random number
 app.post("/regenerate", (req, res) => {
@@ -20493,28 +20488,38 @@ app.post(
 
     const { email, password, role } = req.body;
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Find role ID
-    db.query("SELECT id FROM roles WHERE name = ?", [role], (err, results) => {
-      if (err || results.length === 0) {
-        return res.status(500).json({ error: "Role not found" });
+    // Check if email already exists
+    db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
+      if (err) {
+        return res.status(500).json({ error: "Database error" });
       }
 
-      const roleId = results[0].id;
+      if (results.length > 0) {
+        return res.status(400).json({ error: "Email already registered" });
+      }
 
-      // Insert user into the database
-      db.query(
-        "INSERT INTO users (email, password, role_id) VALUES (?, ?, ?)",
-        [email, hashedPassword, roleId],
-        (error) => {
-          if (error) {
-            return res.status(500).json({ error: "Error registering user" });
-          }
-          res.status(201).json({ message: "User registered successfully" });
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Find role ID
+      db.query("SELECT id FROM roles WHERE name = ?", [role], (err, results) => {
+        if (err || results.length === 0) {
+          return res.status(500).json({ error: "Role not found" });
         }
-      );
+
+        const roleId = results[0].id;
+
+        // Insert user into the database
+        db.query(
+          "INSERT INTO users (email, password, role_id) VALUES (?, ?, ?)",
+          [email, hashedPassword, roleId],
+          (error) => {
+            if (error) {
+              return res.status(500).json({ error: "Error registering user" });
+            }
+            res.status(201).json({ message: "User registered successfully" });
+          }
+        );
+      });
     });
   }
 );
@@ -20557,7 +20562,6 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "build", "index.html"));
 });
 
-
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
@@ -20586,8 +20590,9 @@ db.connect(err => {
 module.exports = db;
 
 ***passwordResetController.js:
-// passwordResetController.js
+// controllers/passwordResetController.js
 const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 const db = require('../config/db');
 
 exports.requestPasswordReset = (req, res) => {
@@ -20607,13 +20612,12 @@ exports.requestPasswordReset = (req, res) => {
             if (result.affectedRows === 0) {
                 return res.status(400).json({ error: "Email not found" });
             }
-            // Send email with token here
+            // TODO: Send email with token here
             res.json({ message: "Password reset token sent" });
         }
     );
 };
 
-// passwordResetController.js
 exports.resetPassword = (req, res) => {
     const { email, token, newPassword } = req.body;
 
@@ -20641,9 +20645,8 @@ exports.resetPassword = (req, res) => {
     );
 };
 
-
 ***registerController.js:
-// registerController.js
+// controllers/registerController.js
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
 const db = require('../config/db');
@@ -20736,6 +20739,17 @@ exports.registerUser = async (req, res) => {
   "background_color": "#ffffff"
 }
 
+***passwordResetRoutes.js:
+// routes/passwordResetRoutes.js
+const express = require('express');
+const router = express.Router();
+const passwordResetController = require('../controllers/passwordResetController');
+
+router.post('/request-password-reset', passwordResetController.requestPasswordReset);
+router.post('/reset-password', passwordResetController.resetPassword);
+
+module.exports = router;
+
 ***registerRoutes.js:
 const express = require('express');
 const router = express.Router();
@@ -20786,7 +20800,7 @@ module.exports = router;
 }
 
 ***App.js:
-// App.js
+// src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './Login';
@@ -20870,76 +20884,48 @@ root.render(
 reportWebVitals();
 
 ***Login.js:
-import React, { useState, useContext } from 'react';
-import { Link } from 'react-router-dom';
-import { AuthContext } from './AuthContext';
-import './comstrap.min.css'; // Lokales CSS für Corporate Design
+// src/Login.js
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './comstrap.min.css';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [stayLoggedIn, setStayLoggedIn] = useState(false);
-    const { login } = useContext(AuthContext);
+    const navigate = useNavigate();
 
-    const handleSubmit = async (event) => {
+    const handleLogin = async (event) => {
         event.preventDefault();
-        const response = await fetch('/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-        });
 
-        if (response.ok) {
-            const { token } = await response.json();
-            login(token);
-            alert('Login successful!');
-        } else {
-            alert('Login failed.');
-        }
+        // Implement login logic here
+        console.log("Login attempt with:", { email, password, stayLoggedIn });
+        // Simulate navigation:
+        navigate('/dashboard');
     };
 
     return (
-        <div className="login-container" style={{ fontFamily: 'TheSans, Arial, sans-serif' }}>
-            <h2 className="h2">Log in.</h2>
-            <form onSubmit={handleSubmit} className="form-horizontal">
+        <div className="login-container">
+            <h2>Log in.</h2>
+            <form onSubmit={handleLogin}>
                 <div className="form-group">
-                    <label htmlFor="email" className="control-label">E-Mail</label>
-                    <input
-                        type="email"
-                        id="email"
-                        value={email}
-                        onChange={e => setEmail(e.target.value)}
-                        required
-                        className="form-control"
-                    />
+                    <label>E-Mail</label>
+                    <input type="email" className="form-control" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
                 <div className="form-group">
-                    <label htmlFor="password" className="control-label">Passwort</label>
-                    <input
-                        type="password"
-                        id="password"
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        required
-                        className="form-control"
-                    />
+                    <label>Passwort</label>
+                    <input type="password" className="form-control" value={password} onChange={(e) => setPassword(e.target.value)} />
                 </div>
                 <div className="checkbox">
-                    <input
-                        type="checkbox"
-                        id="stay-logged-in"
-                        checked={stayLoggedIn}
-                        onChange={e => setStayLoggedIn(e.target.checked)}
-                        className="form-check-input"
-                    />
-                    <label htmlFor="stay-logged-in" className="form-check-label">angemeldet bleiben?</label>
+                    <label>
+                        <input type="checkbox" checked={stayLoggedIn} onChange={(e) => setStayLoggedIn(e.target.checked)} />
+                        angemeldet bleiben?
+                    </label>
                 </div>
                 <button type="submit" className="btn btn-primary">Log in</button>
                 <div className="links">
-                    <a href="#forgot-password" className="text-primary">Passwort vergessen</a>
-                    <Link to="/register" className="text-primary">Neu registrieren</Link>
+                    <a onClick={() => navigate('/password-reset')}>Passwort vergessen</a>
+                    <a onClick={() => navigate('/register')}>Neu registrieren</a>
                 </div>
             </form>
         </div>
@@ -20949,77 +20935,30 @@ const Login = () => {
 export default Login;
 
 ***PasswordReset.js:
-// PasswordReset.js
+// src/PasswordReset.js
 import React, { useState } from 'react';
+import './comstrap.min.css';
 
 const PasswordReset = () => {
     const [email, setEmail] = useState('');
-    const [message, setMessage] = useState(null);
-    const [token, setToken] = useState('');
-    const [newPassword, setNewPassword] = useState('');
 
-    const handleRequestToken = async () => {
-        const response = await fetch('/request-password-reset', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email }),
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-            setMessage('Reset token sent to your email');
-        } else {
-            setMessage(data.error);
-        }
-    };
-
-    const handleResetPassword = async () => {
-        const response = await fetch('/reset-password', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, token, newPassword }),
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-            setMessage('Password updated successfully');
-        } else {
-            setMessage(data.error);
-        }
+    const handleResetRequest = async (event) => {
+        event.preventDefault();
+        // Add logic to handle password reset request
+        console.log("Requesting password reset for:", email);
     };
 
     return (
-        <div>
-            <h2>Password Reset</h2>
-            <div>
-                <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                />
-                <button onClick={handleRequestToken}>Request Token</button>
-            </div>
-            <div>
-                <input
-                    type="text"
-                    value={token}
-                    onChange={(e) => setToken(e.target.value)}
-                    placeholder="Enter your token"
-                />
-                <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter new password"
-                />
-                <button onClick={handleResetPassword}>Reset Password</button>
-            </div>
-            {message && <div className="message">{message}</div>}
+        <div className="password-reset-container">
+            <h2>Passwort zurücksetzen.</h2>
+            <p>Du erhältst ein Link per E-Mail, um dein Passwort zurückzusetzen.</p>
+            <form onSubmit={handleResetRequest}>
+                <div className="form-group">
+                    <label>E-mail</label>
+                    <input type="email" className="form-control" value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <button type="submit" className="btn btn-primary">Submit</button>
+            </form>
         </div>
     );
 };
@@ -21027,66 +20966,40 @@ const PasswordReset = () => {
 export default PasswordReset;
 
 ***Register.js:
-// Register.js
+// src/Register.js
 import React, { useState } from 'react';
-import './comstrap.min.css'; // Import local CSS
+import './comstrap.min.css';
 
 const Register = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [role, setRole] = useState('User');
-    const [message, setMessage] = useState(null);
-    const [messageType, setMessageType] = useState(null);
+    const [confirmPassword, setConfirmPassword] = useState('');
 
-    const handleSubmit = async (event) => {
+    const handleRegister = async (event) => {
         event.preventDefault();
-
-        const response = await fetch('/register', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password, role }),
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            setMessage('Registration successful!');
-            setMessageType('success');
-        } else {
-            setMessage(data.error || 'Registration failed.');
-            setMessageType('error');
-        }
+        // Implement registration logic here
+        console.log("Registering:", { email, password, confirmPassword });
     };
 
     return (
-        <div>
-            <form onSubmit={handleSubmit} className="form-horizontal">
-                <h2 className="h2">Register</h2>
-                <label className="control-label">
-                    Email:
-                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="form-control" />
-                </label>
-                <label className="control-label">
-                    Password:
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="form-control" />
-                </label>
-                <label className="control-label">
-                    Role:
-                    <select value={role} onChange={(e) => setRole(e.target.value)} className="form-control">
-                        <option value="User">User</option>
-                        <option value="Leader">Leader</option>
-                        <option value="Admin">Admin</option>
-                    </select>
-                </label>
-                <button type="submit" className="btn btn-primary">Register</button>
-            </form>
-            {message && (
-                <div className={`message ${messageType === 'success' ? 'text-success' : 'text-danger'}`}>
-                    {message}
+        <div className="register-container">
+            <h2>Account erstellen.</h2>
+            <p>Achtung! Verwende bitte nicht dein Corproot-Passwort für die Registrierung.</p>
+            <form onSubmit={handleRegister}>
+                <div className="form-group">
+                    <label>E-mail Adresse</label>
+                    <input type="email" className="form-control" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
-            )}
+                <div className="form-group">
+                    <label>Passwort</label>
+                    <input type="password" className="form-control" value={password} onChange={(e) => setPassword(e.target.value)} />
+                </div>
+                <div className="form-group">
+                    <label>Passwort bestätigen</label>
+                    <input type="password" className="form-control" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                </div>
+                <button type="submit" className="btn btn-primary">Account erstellen</button>
+            </form>
         </div>
     );
 };

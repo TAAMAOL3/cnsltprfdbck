@@ -1,21 +1,20 @@
 require("dotenv").config();
-const db = require('./config/db');
 const express = require("express");
-const registerRoutes = require('./routes/registerRoutes');
 const path = require("path");
-const mysql = require("mysql");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { body, validationResult } = require("express-validator");
+const db = require("./config/db");
+const registerRoutes = require("./routes/registerRoutes");
+const passwordResetRoutes = require("./routes/passwordResetRoutes"); // New import
 const app = express();
 const port = process.env.PORT || 3000;
-
-
 
 // Middleware
 app.use(express.json());
 
 app.use('/register', registerRoutes);
+app.use('/password-reset', passwordResetRoutes); // New route for password reset
 
 // Store the current random number
 let currentRandomNumber = generateRandomNumber();
@@ -24,11 +23,6 @@ let currentRandomNumber = generateRandomNumber();
 function generateRandomNumber() {
   return Math.floor(Math.random() * 100) + 1;
 }
-
-// GET endpoint to retrieve the current random number
-// app.get("/", (req, res) => {
-//   res.json({ randomNumber: currentRandomNumber });
-// });
 
 // POST endpoint to regenerate a random number
 app.post("/regenerate", (req, res) => {
@@ -63,28 +57,38 @@ app.post(
 
     const { email, password, role } = req.body;
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Find role ID
-    db.query("SELECT id FROM roles WHERE name = ?", [role], (err, results) => {
-      if (err || results.length === 0) {
-        return res.status(500).json({ error: "Role not found" });
+    // Check if email already exists
+    db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
+      if (err) {
+        return res.status(500).json({ error: "Database error" });
       }
 
-      const roleId = results[0].id;
+      if (results.length > 0) {
+        return res.status(400).json({ error: "Email already registered" });
+      }
 
-      // Insert user into the database
-      db.query(
-        "INSERT INTO users (email, password, role_id) VALUES (?, ?, ?)",
-        [email, hashedPassword, roleId],
-        (error) => {
-          if (error) {
-            return res.status(500).json({ error: "Error registering user" });
-          }
-          res.status(201).json({ message: "User registered successfully" });
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Find role ID
+      db.query("SELECT id FROM roles WHERE name = ?", [role], (err, results) => {
+        if (err || results.length === 0) {
+          return res.status(500).json({ error: "Role not found" });
         }
-      );
+
+        const roleId = results[0].id;
+
+        // Insert user into the database
+        db.query(
+          "INSERT INTO users (email, password, role_id) VALUES (?, ?, ?)",
+          [email, hashedPassword, roleId],
+          (error) => {
+            if (error) {
+              return res.status(500).json({ error: "Error registering user" });
+            }
+            res.status(201).json({ message: "User registered successfully" });
+          }
+        );
+      });
     });
   }
 );
@@ -126,7 +130,6 @@ app.use(express.static(path.join(__dirname, "build")));
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "build", "index.html"));
 });
-
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

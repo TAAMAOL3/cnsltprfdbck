@@ -1,73 +1,45 @@
-import React, { useState, useContext } from 'react';
-import { Link } from 'react-router-dom';
-import { AuthContext } from './AuthContext';
-import './comstrap.min.css'; // Lokales CSS für Corporate Design
+// src/Login.js
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './comstrap.min.css';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [stayLoggedIn, setStayLoggedIn] = useState(false);
-    const { login } = useContext(AuthContext);
+    const navigate = useNavigate();
 
-    const handleSubmit = async (event) => {
+    const handleLogin = async (event) => {
         event.preventDefault();
-        const response = await fetch('/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-        });
 
-        if (response.ok) {
-            const { token } = await response.json();
-            login(token);
-            alert('Login successful!');
-        } else {
-            alert('Login failed.');
-        }
+        // Implement login logic here
+        console.log("Login attempt with:", { email, password, stayLoggedIn });
+        // Simulate navigation:
+        navigate('/dashboard');
     };
 
     return (
-        <div className="login-container" style={{ fontFamily: 'TheSans, Arial, sans-serif' }}>
-            <h2 className="h2">Log in.</h2>
-            <form onSubmit={handleSubmit} className="form-horizontal">
+        <div className="login-container">
+            <h2>Log in.</h2>
+            <form onSubmit={handleLogin}>
                 <div className="form-group">
-                    <label htmlFor="email" className="control-label">E-Mail</label>
-                    <input
-                        type="email"
-                        id="email"
-                        value={email}
-                        onChange={e => setEmail(e.target.value)}
-                        required
-                        className="form-control"
-                    />
+                    <label>E-Mail</label>
+                    <input type="email" className="form-control" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
                 <div className="form-group">
-                    <label htmlFor="password" className="control-label">Passwort</label>
-                    <input
-                        type="password"
-                        id="password"
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        required
-                        className="form-control"
-                    />
+                    <label>Passwort</label>
+                    <input type="password" className="form-control" value={password} onChange={(e) => setPassword(e.target.value)} />
                 </div>
                 <div className="checkbox">
-                    <input
-                        type="checkbox"
-                        id="stay-logged-in"
-                        checked={stayLoggedIn}
-                        onChange={e => setStayLoggedIn(e.target.checked)}
-                        className="form-check-input"
-                    />
-                    <label htmlFor="stay-logged-in" className="form-check-label">angemeldet bleiben?</label>
+                    <label>
+                        <input type="checkbox" checked={stayLoggedIn} onChange={(e) => setStayLoggedIn(e.target.checked)} />
+                        angemeldet bleiben?
+                    </label>
                 </div>
                 <button type="submit" className="btn btn-primary">Log in</button>
                 <div className="links">
-                    <a href="#forgot-password" className="text-primary">Passwort vergessen</a>
-                    <Link to="/register" className="text-primary">Neu registrieren</Link>
+                    <a onClick={() => navigate('/password-reset')}>Passwort vergessen</a>
+                    <a onClick={() => navigate('/register')}>Neu registrieren</a>
                 </div>
             </form>
         </div>

@@ -1,4 +1,4 @@
-// registerController.js
+// controllers/registerController.js
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
 const db = require('../config/db');

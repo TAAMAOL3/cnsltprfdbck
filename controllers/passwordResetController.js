@@ -1,5 +1,6 @@
-// passwordResetController.js
+// controllers/passwordResetController.js
 const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 const db = require('../config/db');
 
 exports.requestPasswordReset = (req, res) => {
@@ -19,13 +20,12 @@ exports.requestPasswordReset = (req, res) => {
             if (result.affectedRows === 0) {
                 return res.status(400).json({ error: "Email not found" });
             }
-            // Send email with token here
+            // TODO: Send email with token here
             res.json({ message: "Password reset token sent" });
         }
     );
 };
 
-// passwordResetController.js
 exports.resetPassword = (req, res) => {
     const { email, token, newPassword } = req.body;
 
@@ -52,4 +52,3 @@ exports.resetPassword = (req, res) => {
         }
     );
 };
-
