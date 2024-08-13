@@ -15,6 +15,8 @@ def create_directory_structure(path, ignore_dirs=None):
 
         # Hinzufügen von Dateien, die den Bedingungen entsprechen
         for file in files:
+            if file == 'comstrap.min.css':
+                continue  # Ignoriert die Datei "comstrap.min.css"
             if file.endswith(('.js', '.css', '.html', '.scss', '.env', '.json')):
                 subindent = '│   ' * level + '├── '
                 output_lines.append(f"{subindent}{file}")
@@ -29,6 +31,8 @@ def extract_code_from_files(path, ignore_dirs=None):
             dirs[:] = [d for d in dirs if d not in ignore_dirs]
 
         for file in files:
+            if file == 'comstrap.min.css':
+                continue  # Ignoriert die Datei "comstrap.min.css"
             if file.endswith(('.js', '.css', '.html', '.scss', '.env', '.json')):
                 file_path = os.path.join(root, file)
                 try:

@@ -9608,3 +9608,16 @@ footer {
     -webkit-box-shadow: none;
     box-shadow: none
 }
+
+.message {
+    margin-top: 15px;
+    font-size: 16px;
+}
+
+.text-success {
+    color: #28a745;
+}
+
+.text-danger {
+    color: #dc3545;
+}
