@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from './AuthContext';
+import './comstrap.min.css'; // Lokales CSS für Corporate Design
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -29,10 +30,10 @@ const Login = () => {
 
     return (
         <div className="login-container" style={{ fontFamily: 'TheSans, Arial, sans-serif' }}>
-            <h2 style={{ color: '#333' }}>Log in.</h2>
-            <form onSubmit={handleSubmit} style={{ color: '#333' }}>
+            <h2 className="h2">Log in.</h2>
+            <form onSubmit={handleSubmit} className="form-horizontal">
                 <div className="form-group">
-                    <label htmlFor="email" style={{ fontWeight: 'bold' }}>E-Mail</label>
+                    <label htmlFor="email" className="control-label">E-Mail</label>
                     <input
                         type="email"
                         id="email"
@@ -43,7 +44,7 @@ const Login = () => {
                     />
                 </div>
                 <div className="form-group">
-                    <label htmlFor="password" style={{ fontWeight: 'bold' }}>Passwort</label>
+                    <label htmlFor="password" className="control-label">Passwort</label>
                     <input
                         type="password"
                         id="password"
@@ -59,8 +60,9 @@ const Login = () => {
                         id="stay-logged-in"
                         checked={stayLoggedIn}
                         onChange={e => setStayLoggedIn(e.target.checked)}
+                        className="form-check-input"
                     />
-                    <label htmlFor="stay-logged-in">angemeldet bleiben?</label>
+                    <label htmlFor="stay-logged-in" className="form-check-label">angemeldet bleiben?</label>
                 </div>
                 <button type="submit" className="btn btn-primary">Log in</button>
                 <div className="links">

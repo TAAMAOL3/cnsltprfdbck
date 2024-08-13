@@ -15,7 +15,7 @@ def create_directory_structure(path, ignore_dirs=None):
 
         # Hinzufügen von Dateien, die den Bedingungen entsprechen
         for file in files:
-            if file.endswith(('.js', '.css', '.html', '.scss')):
+            if file.endswith(('.js', '.css', '.html', '.scss', '.env', '.json')):
                 subindent = '│   ' * level + '├── '
                 output_lines.append(f"{subindent}{file}")
 
@@ -29,12 +29,12 @@ def extract_code_from_files(path, ignore_dirs=None):
             dirs[:] = [d for d in dirs if d not in ignore_dirs]
 
         for file in files:
-            if file.endswith(('.js', '.css', '.html', '.scss')):
+            if file.endswith(('.js', '.css', '.html', '.scss', '.env', '.json')):
                 file_path = os.path.join(root, file)
                 try:
                     with open(file_path, 'r', encoding='utf-8') as f:
                         code = f.read()
-                    code_output.append(f"***{file}:\n{code}\n_____")
+                    code_output.append(f"***{file}:\n{code}")
                 except (UnicodeDecodeError, PermissionError) as e:
                     print(f"Error reading {file_path}: {e}")
 
