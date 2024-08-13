@@ -9,7 +9,7 @@ exports.registerUser = async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password, role } = req.body;
+    const { email, password } = req.body;
 
     // Check if email already exists
     db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
@@ -23,12 +23,14 @@ exports.registerUser = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        db.query("SELECT id FROM roles WHERE name = ?", [role], (err, results) => {
+        db.query("SELECT id FROM roles WHERE name = 'user'", (err, results) => {
             if (err || results.length === 0) {
                 return res.status(500).json({ error: "Role not found" });
             }
 
             const roleId = results[0].id;
+            console.log("Role found:", roleId);
+            console.log("Inserting user with email:", email);
 
             db.query(
                 "INSERT INTO users (email, password, role_id) VALUES (?, ?, ?)",

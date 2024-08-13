@@ -1,7 +1,7 @@
 // src/Login.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './comstrap.min.css';
+import './comstrap.min.css'; // Ensure this CSS contains all the classes you need
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -14,32 +14,34 @@ const Login = () => {
 
         // Implement login logic here
         console.log("Login attempt with:", { email, password, stayLoggedIn });
-        // Simulate navigation:
-        navigate('/dashboard');
+        // Simulate successful navigation:
+        navigate('/dashboard'); // Adjust according to your routing
     };
 
     return (
-        <div className="login-container">
+        <div className="content-wrapper main-content clear-fix">
             <h2>Log in.</h2>
-            <form onSubmit={handleLogin}>
+            <form onSubmit={handleLogin} noValidate>
                 <div className="form-group">
-                    <label>E-Mail</label>
-                    <input type="email" className="form-control" value={email} onChange={(e) => setEmail(e.target.value)} />
+                    <label htmlFor="email">E-Mail</label>
+                    <input type="email" id="email" name="email" className="form-control" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </div>
                 <div className="form-group">
-                    <label>Passwort</label>
-                    <input type="password" className="form-control" value={password} onChange={(e) => setPassword(e.target.value)} />
+                    <label htmlFor="password">Passwort</label>
+                    <input type="password" id="password" name="password" className="form-control" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </div>
-                <div className="checkbox">
-                    <label>
-                        <input type="checkbox" checked={stayLoggedIn} onChange={(e) => setStayLoggedIn(e.target.checked)} />
-                        angemeldet bleiben?
-                    </label>
+                <div className="form-group">
+                    <div className="checkbox">
+                        <label>
+                            <input type="checkbox" name="remember" checked={stayLoggedIn} onChange={(e) => setStayLoggedIn(e.target.checked)} />
+                            angemeldet bleiben?
+                        </label>
+                    </div>
                 </div>
-                <button type="submit" className="btn btn-primary">Log in</button>
+                <button type="submit" className="btn btn-default">Log in</button>
                 <div className="links">
-                    <a onClick={() => navigate('/password-reset')}>Passwort vergessen</a>
-                    <a onClick={() => navigate('/register')}>Neu registrieren</a>
+                    <a href="#" onClick={() => navigate('/password-reset')}>Passwort vergessen</a>
+                    <a href="#" onClick={() => navigate('/register')}>Neu registrieren</a>
                 </div>
             </form>
         </div>
