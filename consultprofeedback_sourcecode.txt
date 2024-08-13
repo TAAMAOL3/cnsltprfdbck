@@ -1,0 +1,543 @@
+consultprofeedback/
+├── server.js
+├── .github/
+│   ├── workflows/
+├── config/
+│   ├── db.js
+├── controllers/
+│   ├── registerController.js
+├── public/
+│   ├── index.html
+├── routes/
+│   ├── registerRoutes.js
+├── src/
+│   ├── App.css
+│   ├── App.js
+│   ├── App.test.js
+│   ├── AuthContext.js
+│   ├── index.css
+│   ├── index.js
+│   ├── Login.js
+│   ├── Register.js
+│   ├── reportWebVitals.js
+│   ├── setupTests.js
+
+
+***server.js:
+require("dotenv").config();
+const db = require('./config/db');
+const express = require("express");
+const registerRoutes = require('./routes/registerRoutes');
+const path = require("path");
+const mysql = require("mysql");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const { body, validationResult } = require("express-validator");
+const app = express();
+const port = process.env.PORT || 3000;
+
+
+
+// Middleware
+app.use(express.json());
+
+app.use('/register', registerRoutes);
+
+// Store the current random number
+let currentRandomNumber = generateRandomNumber();
+
+// Function to generate a random whole number between 1 and 100
+function generateRandomNumber() {
+  return Math.floor(Math.random() * 100) + 1;
+}
+
+// GET endpoint to retrieve the current random number
+// app.get("/", (req, res) => {
+//   res.json({ randomNumber: currentRandomNumber });
+// });
+
+// POST endpoint to regenerate a random number
+app.post("/regenerate", (req, res) => {
+  currentRandomNumber = generateRandomNumber();
+  res.json({ randomNumber: currentRandomNumber });
+});
+
+// New GET endpoint to fetch data from 't_test' table
+app.get("/fetch-test-data", (req, res) => {
+  db.query("SELECT * FROM t_test", (error, results, fields) => {
+    if (error) {
+      res.status(500).send("Error fetching data: " + error.message);
+    } else {
+      res.json(results);
+    }
+  });
+});
+
+// Registration endpoint
+app.post(
+  "/register",
+  [
+    body("email").isEmail(),
+    body("password").isLength({ min: 6 }),
+    body("role").isIn(["User", "Leader", "Admin"]),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email, password, role } = req.body;
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Find role ID
+    db.query("SELECT id FROM roles WHERE name = ?", [role], (err, results) => {
+      if (err || results.length === 0) {
+        return res.status(500).json({ error: "Role not found" });
+      }
+
+      const roleId = results[0].id;
+
+      // Insert user into the database
+      db.query(
+        "INSERT INTO users (email, password, role_id) VALUES (?, ?, ?)",
+        [email, hashedPassword, roleId],
+        (error) => {
+          if (error) {
+            return res.status(500).json({ error: "Error registering user" });
+          }
+          res.status(201).json({ message: "User registered successfully" });
+        }
+      );
+    });
+  }
+);
+
+// Login endpoint
+app.post("/login", [body("email").isEmail(), body("password").exists()], (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { email, password } = req.body;
+
+  // Find user in the database
+  db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
+    if (err || results.length === 0) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const user = results[0];
+
+    // Check password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    // Generate JWT
+    const token = jwt.sign({ userId: user.id, role: user.role_id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    res.json({ token });
+  });
+});
+
+app.use(express.static(path.join(__dirname, "build")));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "build", "index.html"));
+});
+
+
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
+
+_____
+***db.js:
+const mysql = require('mysql');
+
+// Erstellen der Datenbankverbindung
+const db = mysql.createConnection({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: 3306
+});
+
+// Verbindungsaufbau
+db.connect(err => {
+  if (err) {
+    console.error('Fehler beim Verbinden zur Datenbank:', err);
+    return;
+  }
+  console.log('Verbunden mit der Datenbank.');
+});
+
+module.exports = db;
+
+_____
+***registerController.js:
+const { body, validationResult } = require('express-validator');
+const bcrypt = require('bcrypt');
+const db = require('../config/db'); // Angenommen, die DB-Verbindung wird hier verwaltet
+
+exports.registerUser = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email, password, role } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    db.query("SELECT id FROM roles WHERE name = ?", [role], async (err, results) => {
+        if (err || results.length === 0) {
+            return res.status(500).json({ error: "Role not found" });
+        }
+
+        const roleId = results[0].id;
+        db.query(
+            "INSERT INTO users (email, password, role_id) VALUES (?, ?, ?)",
+            [email, hashedPassword, roleId],
+            (error) => {
+                if (error) {
+                    return res.status(500).json({ error: "Error registering user" });
+                }
+                res.status(201).json({ message: "User registered successfully" });
+            }
+        );
+    });
+};
+
+_____
+***index.html:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="Web site created using create-react-app" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="stylesheet" href="https://comstrap-cdn.scapp.io/css/comstrap.min.css">
+    <title>React App</title>
+</head>
+<body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <script src="https://comstrap-cdn.scapp.io/js/comstrap.min.js"></script>
+</body>
+</html>
+
+_____
+***registerRoutes.js:
+const express = require('express');
+const router = express.Router();
+const { registerUser } = require('../controllers/registerController');
+
+router.post('/', registerUser);
+
+module.exports = router;
+
+_____
+***App.css:
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+_____
+***App.js:
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Login from './Login';
+import Register from './Register';
+
+function App() {
+  return (
+    <Router>
+      <div>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          {/* Weitere Routen nach Bedarf hinzufügen */}
+          <Route path="/" element={<Login />} />
+        </Routes>
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+
+_____
+***App.test.js:
+import { render, screen } from '@testing-library/react';
+import App from './App';
+
+test('renders learn react link', () => {
+  render(<App />);
+  const linkElement = screen.getByText(/learn react/i);
+  expect(linkElement).toBeInTheDocument();
+});
+
+_____
+***AuthContext.js:
+import React, { createContext, useState } from 'react';
+
+// Create Context
+export const AuthContext = createContext();
+
+// Provider component
+export const AuthProvider = ({ children }) => {
+  const [authToken, setAuthToken] = useState(null);
+
+  const login = (token) => {
+    setAuthToken(token);
+  };
+
+  const logout = () => {
+    setAuthToken(null);
+  };
+
+  return (
+    <AuthContext.Provider value={{ authToken, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+_____
+***index.css:
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+_____
+***index.js:
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import './index.css';
+import App from './App';
+import reportWebVitals from './reportWebVitals';
+import { AuthProvider } from './AuthContext';
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <React.StrictMode>
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  </React.StrictMode>
+);
+
+reportWebVitals();
+
+_____
+***Login.js:
+import React, { useState, useContext } from 'react';
+import { Link } from 'react-router-dom';
+import { AuthContext } from './AuthContext';
+
+const Login = () => {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [stayLoggedIn, setStayLoggedIn] = useState(false);
+    const { login } = useContext(AuthContext);
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        const response = await fetch('/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password }),
+        });
+
+        if (response.ok) {
+            const { token } = await response.json();
+            login(token);
+            alert('Login successful!');
+        } else {
+            alert('Login failed.');
+        }
+    };
+
+    return (
+        <div className="login-container" style={{ fontFamily: 'TheSans, Arial, sans-serif' }}>
+            <h2 style={{ color: '#333' }}>Log in.</h2>
+            <form onSubmit={handleSubmit} style={{ color: '#333' }}>
+                <div className="form-group">
+                    <label htmlFor="email" style={{ fontWeight: 'bold' }}>E-Mail</label>
+                    <input
+                        type="email"
+                        id="email"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        required
+                        className="form-control"
+                    />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="password" style={{ fontWeight: 'bold' }}>Passwort</label>
+                    <input
+                        type="password"
+                        id="password"
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        required
+                        className="form-control"
+                    />
+                </div>
+                <div className="checkbox">
+                    <input
+                        type="checkbox"
+                        id="stay-logged-in"
+                        checked={stayLoggedIn}
+                        onChange={e => setStayLoggedIn(e.target.checked)}
+                    />
+                    <label htmlFor="stay-logged-in">angemeldet bleiben?</label>
+                </div>
+                <button type="submit" className="btn btn-primary">Log in</button>
+                <div className="links">
+                    <a href="#forgot-password" className="text-primary">Passwort vergessen</a>
+                    <Link to="/register" className="text-primary">Neu registrieren</Link>
+                </div>
+            </form>
+        </div>
+    );
+};
+
+export default Login;
+
+_____
+***Register.js:
+import React, { useState } from 'react';
+
+const Register = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState('User'); // Default role
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    const response = await fetch('/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password, role }),
+    });
+
+    if (response.ok) {
+      alert('Registration successful!');
+    } else {
+      alert('Registration failed.');
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <h2>Register</h2>
+      <label>
+        Email:
+        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+      </label>
+      <label>
+        Password:
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+      </label>
+      <label>
+        Role:
+        <select value={role} onChange={(e) => setRole(e.target.value)}>
+          <option value="User">User</option>
+          <option value="Leader">Leader</option>
+          <option value="Admin">Admin</option>
+        </select>
+      </label>
+      <button type="submit">Register</button>
+    </form>
+  );
+};
+
+export default Register;
+
+_____
+***reportWebVitals.js:
+const reportWebVitals = onPerfEntry => {
+  if (onPerfEntry && onPerfEntry instanceof Function) {
+    import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
+      getCLS(onPerfEntry);
+      getFID(onPerfEntry);
+      getFCP(onPerfEntry);
+      getLCP(onPerfEntry);
+      getTTFB(onPerfEntry);
+    });
+  }
+};
+
+export default reportWebVitals;
+
+_____
+***setupTests.js:
+// jest-dom adds custom jest matchers for asserting on DOM nodes.
+// allows you to do things like:
+// expect(element).toHaveTextContent(/react/i)
+// learn more: https://github.com/testing-library/jest-dom
+import '@testing-library/jest-dom';
+
+_____

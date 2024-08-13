@@ -1,31 +1,21 @@
-const express = require('express');
-const path = require('path');
-const fs = require('fs');
-const mysql = require('mysql');
+require("dotenv").config();
+const db = require('./config/db');
+const express = require("express");
+const registerRoutes = require('./routes/registerRoutes');
+const path = require("path");
+const mysql = require("mysql");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const { body, validationResult } = require("express-validator");
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Setup database connection
-const db = mysql.createConnection({
-  host: 'reactappbackend.mysql.database.azure.com',
-  user: 'ijzrmfgqx',
-  password: 'IxL6keSl4NehCb0Do2Yt',
-  database: 'consultprofeedbackdb',
-  port: 3306,
-  ssl: {
-    ca: fs.readFileSync(path.join(__dirname, 'config', 'DigiCertGlobalRootG2.crt.pem'))
-  }
-});
 
-db.connect(err => {
-  if (err) {
-    console.error('Error connecting to the Azure MySQL database:', err);
-    return;
-  }
-  console.log('Connected to Azure MySQL database!');
-});
 
-app.use(express.static(path.join(__dirname, 'build')));
+// Middleware
+app.use(express.json());
+
+app.use('/register', registerRoutes);
 
 // Store the current random number
 let currentRandomNumber = generateRandomNumber();
@@ -36,9 +26,9 @@ function generateRandomNumber() {
 }
 
 // GET endpoint to retrieve the current random number
-app.get("/", (req, res) => {
-  res.json({ randomNumber: currentRandomNumber });
-});
+// app.get("/", (req, res) => {
+//   res.json({ randomNumber: currentRandomNumber });
+// });
 
 // POST endpoint to regenerate a random number
 app.post("/regenerate", (req, res) => {
@@ -46,9 +36,97 @@ app.post("/regenerate", (req, res) => {
   res.json({ randomNumber: currentRandomNumber });
 });
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+// New GET endpoint to fetch data from 't_test' table
+app.get("/fetch-test-data", (req, res) => {
+  db.query("SELECT * FROM t_test", (error, results, fields) => {
+    if (error) {
+      res.status(500).send("Error fetching data: " + error.message);
+    } else {
+      res.json(results);
+    }
+  });
 });
+
+// Registration endpoint
+app.post(
+  "/register",
+  [
+    body("email").isEmail(),
+    body("password").isLength({ min: 6 }),
+    body("role").isIn(["User", "Leader", "Admin"]),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email, password, role } = req.body;
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Find role ID
+    db.query("SELECT id FROM roles WHERE name = ?", [role], (err, results) => {
+      if (err || results.length === 0) {
+        return res.status(500).json({ error: "Role not found" });
+      }
+
+      const roleId = results[0].id;
+
+      // Insert user into the database
+      db.query(
+        "INSERT INTO users (email, password, role_id) VALUES (?, ?, ?)",
+        [email, hashedPassword, roleId],
+        (error) => {
+          if (error) {
+            return res.status(500).json({ error: "Error registering user" });
+          }
+          res.status(201).json({ message: "User registered successfully" });
+        }
+      );
+    });
+  }
+);
+
+// Login endpoint
+app.post("/login", [body("email").isEmail(), body("password").exists()], (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { email, password } = req.body;
+
+  // Find user in the database
+  db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
+    if (err || results.length === 0) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const user = results[0];
+
+    // Check password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    // Generate JWT
+    const token = jwt.sign({ userId: user.id, role: user.role_id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    res.json({ token });
+  });
+});
+
+app.use(express.static(path.join(__dirname, "build")));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "build", "index.html"));
+});
+
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
