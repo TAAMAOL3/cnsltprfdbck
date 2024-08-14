@@ -1,0 +1,12 @@
+@font-face {
+    font-family: "TheSerif B3 Light";
+    src: url("TheSerifB_300_.eot"); /* IE9 */
+    src: url("TheSerifB_300_.eot?#iefix") format("embedded-opentype"), /* IE6-IE8 */
+    url("TheSerifB_300_.woff") format("woff"), /* chrome, firefox */
+    url("TheSerifB_300_.ttf") format("truetype"), /* chrome, firefox, opera, Safari, Android, iOS 4.2+ */
+    url("TheSerifB_300_.svg#TheSerif B3 Light") format("svg"); /* iOS 4.1- */
+    font-style: normal;
+    font-weight: normal;
+}
+
+

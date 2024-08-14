@@ -1,29 +1,47 @@
-// src/PasswordReset.js
 import React, { useState } from 'react';
-import './comstrap.min.css';
+import { Link } from 'react-router-dom'; // Importiere die Link-Komponente
+
 
 const PasswordReset = () => {
-    const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('');
 
-    const handleResetRequest = async (event) => {
-        event.preventDefault();
-        // Add logic to handle password reset request
-        console.log("Requesting password reset for:", email);
-    };
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    // Hier könnte ein API-Aufruf zum Zurücksetzen des Passworts hinzugefügt werden
+    console.log('Email:', email);
+  };
 
-    return (
-        <div className="password-reset-container">
-            <h2>Passwort zurücksetzen.</h2>
-            <p>Du erhältst ein Link per E-Mail, um dein Passwort zurückzusetzen.</p>
-            <form onSubmit={handleResetRequest}>
+  return (
+    <div className="container mt-5">
+      <div className="row justify-content-center">
+        <div className="col-md-6">
+          <div className="card">
+            <div className="card-body">
+              <h5 className="card-title">Passwort zurücksetzen</h5>
+              <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                    <label>E-mail</label>
-                    <input type="email" className="form-control" value={email} onChange={(e) => setEmail(e.target.value)} />
+                  <label htmlFor="email">E-mail Adresse</label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="E-mail Adresse"
+                    required
+                  />
                 </div>
-                <button type="submit" className="btn btn-primary">Submit</button>
-            </form>
+                <button type="submit" className="btn btn-primary">Passwort zurücksetzen</button>
+              </form>
+              <div className="mt-3">
+                <Link to="/login" className="btn btn-link">Zurück zur Anmeldung</Link>
+              </div>
+            </div>
+          </div>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
 export default PasswordReset;

@@ -1,51 +1,62 @@
-// src/Login.js
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import './comstrap.min.css'; // Ensure this CSS contains all the classes you need
+import { Link } from 'react-router-dom'; // Importiere die Link-Komponente
+
 
 const Login = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [stayLoggedIn, setStayLoggedIn] = useState(false);
-    const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-    const handleLogin = async (event) => {
-        event.preventDefault();
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    // Hier könnte ein API-Aufruf zum Login hinzugefügt werden
+    console.log('Email:', email);
+    console.log('Password:', password);
+  };
 
-        // Implement login logic here
-        console.log("Login attempt with:", { email, password, stayLoggedIn });
-        // Simulate successful navigation:
-        navigate('/dashboard'); // Adjust according to your routing
-    };
-
-    return (
-        <div className="content-wrapper main-content clear-fix">
-            <h2>Log in.</h2>
-            <form onSubmit={handleLogin} noValidate>
+  return (
+    <div className="container mt-5">
+      <div className="row justify-content-center">
+        <div className="col-md-6">
+          <div className="card">
+            <div className="card-body">
+              <h5 className="card-title">Login</h5>
+              <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                    <label htmlFor="email">E-Mail</label>
-                    <input type="email" id="email" name="email" className="form-control" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  <label htmlFor="email">E-mail Adresse</label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="E-mail Adresse"
+                    required
+                  />
                 </div>
                 <div className="form-group">
-                    <label htmlFor="password">Passwort</label>
-                    <input type="password" id="password" name="password" className="form-control" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  <label htmlFor="password">Passwort</label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Passwort"
+                    required
+                  />
                 </div>
-                <div className="form-group">
-                    <div className="checkbox">
-                        <label>
-                            <input type="checkbox" name="remember" checked={stayLoggedIn} onChange={(e) => setStayLoggedIn(e.target.checked)} />
-                            angemeldet bleiben?
-                        </label>
-                    </div>
-                </div>
-                <button type="submit" className="btn btn-default">Log in</button>
-                <div className="links">
-                    <a href="#" onClick={() => navigate('/password-reset')}>Passwort vergessen</a>
-                    <a href="#" onClick={() => navigate('/register')}>Neu registrieren</a>
-                </div>
-            </form>
+                <button type="submit" className="btn btn-primary">Anmelden</button>
+              </form>
+              <div className="mt-3">
+                <Link to="/register" className="btn btn-link">Neu registrieren</Link>
+                <Link to="/password-reset" className="btn btn-link">Passwort vergessen?</Link>
+              </div>
+            </div>
+          </div>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
 export default Login;

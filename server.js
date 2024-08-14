@@ -3,18 +3,30 @@ const express = require("express");
 const path = require("path");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const cors = require("cors");
+const helmet = require("helmet");
+const morgan = require("morgan");
+const rateLimit = require("express-rate-limit");
 const { body, validationResult } = require("express-validator");
 const db = require("./config/db");
 const registerRoutes = require("./routes/registerRoutes");
-const passwordResetRoutes = require("./routes/passwordResetRoutes"); // New import
+const passwordResetRoutes = require("./routes/passwordResetRoutes");
+
 const app = express();
 const port = process.env.PORT || 3000;
 
 // Middleware
+app.use(cors());
+app.use(helmet());
 app.use(express.json());
+app.use(morgan('combined'));
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 Minuten
+  max: 100 // Limit jeder IP auf 100 Requests pro 15 Minuten
+}));
 
 app.use('/register', registerRoutes);
-app.use('/password-reset', passwordResetRoutes); // New route for password reset
+app.use('/password-reset', passwordResetRoutes);
 
 // Store the current random number
 let currentRandomNumber = generateRandomNumber();
@@ -130,6 +142,21 @@ app.use(express.static(path.join(__dirname, "build")));
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "build", "index.html"));
 });
+
+// General error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
+
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; script-src 'self' https://code.jquery.com https://comstrap-cdn.scapp.io; style-src 'self' 'unsafe-inline' https://comstrap-cdn.scapp.io; img-src 'self' data: https:;"
+  );
+  next();
+});
+
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

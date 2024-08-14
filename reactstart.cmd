@@ -6,14 +6,9 @@ REM Führt das Python-Skript aus
 echo Running directory_structure.py.py...
 python directory_structure.py.py
 
-REM Erstellt die Build-Dateien für das React-Projekt
-echo Running npm start build...
-npm run build
-
-
-REM Startet das React-Projekt
-echo Running npm start...
-npm start
+REM Führt den Build-Prozess und startet die App
+echo Building and starting the app...
+npm run build && npm start
 
 echo Process completed.
 pause
