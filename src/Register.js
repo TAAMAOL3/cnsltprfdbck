@@ -1,21 +1,45 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom'; // Importiere die Link-Komponente
-
+import { Link } from 'react-router-dom';
 
 const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [message, setMessage] = useState(''); // Nachricht für Erfolg oder Fehler
+  const [error, setError] = useState(false); // Status für Fehlermeldungen
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    // Hier könnte ein API-Aufruf zur Registrierung hinzugefügt werden
+
     if (password !== confirmPassword) {
-      console.log('Passwörter stimmen nicht überein');
+      setMessage('Passwörter stimmen nicht überein');
+      setError(true);
       return;
     }
-    console.log('Email:', email);
-    console.log('Password:', password);
+
+    try {
+      const response = await fetch('/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        setMessage('Erfolgreich registriert');
+        setError(false);
+        // Hier kannst du auch eine Weiterleitung zur Login-Seite hinzufügen, z.B.:
+        // window.location.href = '/login';
+      } else {
+        const result = await response.json();
+        setMessage(result.error || 'Registrierung fehlgeschlagen');
+        setError(true);
+      }
+    } catch (error) {
+      setMessage('Ein Fehler ist aufgetreten. Bitte versuche es erneut.');
+      setError(true);
+    }
   };
 
   return (
@@ -25,6 +49,11 @@ const Register = () => {
           <div className="card">
             <div className="card-body">
               <h5 className="card-title">Registrieren</h5>
+              {message && (
+                <div className={`alert ${error ? 'alert-danger' : 'alert-success'}`}>
+                  {message}
+                </div>
+              )}
               <form onSubmit={handleSubmit}>
                 <div className="form-group">
                   <label htmlFor="email">E-mail Adresse</label>

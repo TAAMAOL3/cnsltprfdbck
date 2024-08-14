@@ -1,16 +1,38 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom'; // Importiere die Link-Komponente
+import { Link } from 'react-router-dom';
 
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState(''); // Hinzufügen eines State für Fehlermeldungen
+  const [success, setSuccess] = useState(''); // State für Erfolgsmeldungen
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    // Hier könnte ein API-Aufruf zum Login hinzugefügt werden
-    console.log('Email:', email);
-    console.log('Password:', password);
+    
+    // API-Aufruf zum Login
+    try {
+      const response = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSuccess('Login erfolgreich!'); // Erfolgsmeldung setzen
+        setError(''); // Fehler-Reset
+        // Weitere Verarbeitung z.B. Token speichern, Redirect etc.
+      } else {
+        const errorData = await response.json();
+        setError('Fehler: ' + (errorData.error || 'Login fehlgeschlagen')); // Fehlermeldung setzen
+        setSuccess(''); // Erfolgsmeldung zurücksetzen
+      }
+    } catch (error) {
+      setError('Fehler: Netzwerkproblem');
+      setSuccess('');
+    }
   };
 
   return (
@@ -20,6 +42,8 @@ const Login = () => {
           <div className="card">
             <div className="card-body">
               <h5 className="card-title">Login</h5>
+              {error && <div className="alert alert-danger">{error}</div>} {/* Fehlermeldung anzeigen */}
+              {success && <div className="alert alert-success">{success}</div>} {/* Erfolgsmeldung anzeigen */}
               <form onSubmit={handleSubmit}>
                 <div className="form-group">
                   <label htmlFor="email">E-mail Adresse</label>

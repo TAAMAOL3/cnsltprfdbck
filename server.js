@@ -130,7 +130,7 @@ app.post("/login", [body("email").isEmail(), body("password").exists()], (req, r
 
     // Generate JWT
     const token = jwt.sign({ userId: user.id, role: user.role_id }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
+      expiresIn: '1h',
     });
 
     res.json({ token });
