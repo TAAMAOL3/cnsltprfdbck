@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const Register = () => {
+  const [vorname, setVorname] = useState('');
+  const [nachname, setNachname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -23,14 +25,12 @@ const Register = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ vorname, nachname, email, password }),
       });
 
       if (response.ok) {
         setMessage('Erfolgreich registriert');
         setError(false);
-        // Hier kannst du auch eine Weiterleitung zur Login-Seite hinzufügen, z.B.:
-        // window.location.href = '/login';
       } else {
         const result = await response.json();
         setMessage(result.error || 'Registrierung fehlgeschlagen');
@@ -55,6 +55,30 @@ const Register = () => {
                 </div>
               )}
               <form onSubmit={handleSubmit}>
+                <div className="form-group">
+                  <label htmlFor="vorname">Vorname</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="vorname"
+                    value={vorname}
+                    onChange={(e) => setVorname(e.target.value)}
+                    placeholder="Vorname"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="nachname">Nachname</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="nachname"
+                    value={nachname}
+                    onChange={(e) => setNachname(e.target.value)}
+                    placeholder="Nachname"
+                    required
+                  />
+                </div>
                 <div className="form-group">
                   <label htmlFor="email">E-mail Adresse</label>
                   <input

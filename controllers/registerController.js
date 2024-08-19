@@ -1,4 +1,3 @@
-// controllers/registerController.js
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
 const db = require('../config/db');
@@ -9,10 +8,10 @@ exports.registerUser = async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password } = req.body;
+    const { vorname, nachname, email, password } = req.body;
 
     // Check if email already exists
-    db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
+    db.query("SELECT * FROM t_users WHERE usersEmail = ?", [email], async (err, results) => {
         if (err) {
             return res.status(500).json({ error: "Database error" });
         }
@@ -23,18 +22,18 @@ exports.registerUser = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        db.query("SELECT id FROM roles WHERE name = 'user'", (err, results) => {
+        db.query("SELECT rolesID FROM t_roles WHERE rolesName = 'user'", (err, results) => {
             if (err || results.length === 0) {
                 return res.status(500).json({ error: "Role not found" });
             }
 
-            const roleId = results[0].id;
+            const roleId = results[0].rolesID;
             console.log("Role found:", roleId);
             console.log("Inserting user with email:", email);
 
             db.query(
-                "INSERT INTO users (email, password, role_id) VALUES (?, ?, ?)",
-                [email, hashedPassword, roleId],
+                "INSERT INTO t_users (usersVorname, usersNachname, usersEmail, password, rolesFK) VALUES (?, ?, ?, ?, ?)",
+                [vorname, nachname, email, hashedPassword, roleId],
                 (error) => {
                     if (error) {
                         return res.status(500).json({ error: "Error registering user" });

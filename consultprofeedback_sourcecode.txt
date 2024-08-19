@@ -11,8 +11,13 @@ consultprofeedback/
 ├── config/
 │   ├── db.js
 ├── controllers/
+│   ├── adminController.js
 │   ├── passwordResetController.js
 │   ├── registerController.js
+│   ├── textMiningController.js
+│   ├── variousFeedbackController.js
+├── middleware/
+│   ├── authenticateToken.js
 ├── public/
 │   ├── index.html
 │   ├── manifest.json
@@ -74,28 +79,48 @@ consultprofeedback/
 │   │   ├── knockout-3.4.2.debug.js
 │   │   ├── knockout-3.4.2.js
 │   │   ├── modernizr-2.8.3.js
+│   ├── uploads/
+├── resources/
 ├── routes/
+│   ├── adminRoutes.js
 │   ├── passwordResetRoutes.js
 │   ├── registerRoutes.js
+│   ├── textMiningRoutes.js
+│   ├── variousFeedbackRoutes.js
 ├── src/
+│   ├── Admin.js
+│   ├── AdminRole.js
+│   ├── AdminTeam.js
+│   ├── AdminUser.js
 │   ├── App.css
 │   ├── App.js
 │   ├── AuthContext.js
+│   ├── Dashboard.js
 │   ├── index.css
 │   ├── index.js
+│   ├── linkGenerator.js
 │   ├── Login.js
+│   ├── Navigation.js
 │   ├── PasswordReset.js
 │   ├── Register.js
 │   ├── reportWebVitals.js
 │   ├── setupTests.js
+│   ├── TextMining.js
+│   ├── User.js
+│   ├── UserFeedback.js
+│   ├── variousFeedback.js
 
 
 ***.env:
+REACT_APP_URL_HOST=https://localhost:3000
 DB_HOST=127.0.0.1
 DB_USER=dba
 DB_PASSWORD=Geheim4711
 DB_NAME=consultprofeedbackdb
 JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
+UPLOAD_PATH=E:/azure/public/uploads
+
+
 
 ***package-lock.json:
 {
@@ -111,8 +136,10 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
         "@testing-library/jest-dom": "^5.17.0",
         "@testing-library/react": "^13.4.0",
         "@testing-library/user-event": "^13.5.0",
+        "axios": "^1.7.4",
         "bcrypt": "^5.1.1",
         "cors": "^2.8.5",
+        "date-fns": "^3.6.0",
         "express": "^4.19.2",
         "express-rate-limit": "^7.4.0",
         "express-validator": "^7.2.0",
@@ -120,11 +147,14 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
         "jquery": "^3.7.1",
         "jsonwebtoken": "^9.0.2",
         "morgan": "^1.10.0",
+        "multer": "^1.4.5-lts.1",
         "mysql": "^2.18.1",
         "react": "^18.3.1",
+        "react-datepicker": "^7.3.0",
         "react-dom": "^18.3.1",
         "react-router-dom": "^6.26.0",
         "react-scripts": "5.0.1",
+        "sharp": "^0.33.4",
         "web-vitals": "^2.1.4"
       }
     },
@@ -2687,6 +2717,16 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
         "postcss-selector-parser": "^6.0.10"
       }
     },
+    "node_modules/@emnapi/runtime": {
+      "version": "1.2.0",
+      "resolved": "https://registry.npmjs.org/@emnapi/runtime/-/runtime-1.2.0.tgz",
+      "integrity": "sha512-bV21/9LQmcQeCPEg3BDFtvwL6cwiTMksYNWQQ4KOxCZikEGalWtenoZ0wCiukJINlGCIi2KXx01g4FoH/LxpzQ==",
+      "license": "MIT",
+      "optional": true,
+      "dependencies": {
+        "tslib": "^2.4.0"
+      }
+    },
     "node_modules/@eslint-community/eslint-utils": {
       "version": "4.4.0",
       "resolved": "https://registry.npmjs.org/@eslint-community/eslint-utils/-/eslint-utils-4.4.0.tgz",
@@ -2811,6 +2851,59 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
         "node": "^12.22.0 || ^14.17.0 || >=16.0.0"
       }
     },
+    "node_modules/@floating-ui/core": {
+      "version": "1.6.7",
+      "resolved": "https://registry.npmjs.org/@floating-ui/core/-/core-1.6.7.tgz",
+      "integrity": "sha512-yDzVT/Lm101nQ5TCVeK65LtdN7Tj4Qpr9RTXJ2vPFLqtLxwOrpoxAHAJI8J3yYWUc40J0BDBheaitK5SJmno2g==",
+      "license": "MIT",
+      "dependencies": {
+        "@floating-ui/utils": "^0.2.7"
+      }
+    },
+    "node_modules/@floating-ui/dom": {
+      "version": "1.6.10",
+      "resolved": "https://registry.npmjs.org/@floating-ui/dom/-/dom-1.6.10.tgz",
+      "integrity": "sha512-fskgCFv8J8OamCmyun8MfjB1Olfn+uZKjOKZ0vhYF3gRmEUXcGOjxWL8bBr7i4kIuPZ2KD2S3EUIOxnjC8kl2A==",
+      "license": "MIT",
+      "dependencies": {
+        "@floating-ui/core": "^1.6.0",
+        "@floating-ui/utils": "^0.2.7"
+      }
+    },
+    "node_modules/@floating-ui/react": {
+      "version": "0.26.22",
+      "resolved": "https://registry.npmjs.org/@floating-ui/react/-/react-0.26.22.tgz",
+      "integrity": "sha512-LNv4azPt8SpT4WW7Kku5JNVjLk2GcS0bGGjFTAgqOONRFo9r/aaGHHPpdiIuQbB1t8shmWyWqTTUDmZ9fcNshg==",
+      "license": "MIT",
+      "dependencies": {
+        "@floating-ui/react-dom": "^2.1.1",
+        "@floating-ui/utils": "^0.2.7",
+        "tabbable": "^6.0.0"
+      },
+      "peerDependencies": {
+        "react": ">=16.8.0",
+        "react-dom": ">=16.8.0"
+      }
+    },
+    "node_modules/@floating-ui/react-dom": {
+      "version": "2.1.1",
+      "resolved": "https://registry.npmjs.org/@floating-ui/react-dom/-/react-dom-2.1.1.tgz",
+      "integrity": "sha512-4h84MJt3CHrtG18mGsXuLCHMrug49d7DFkU0RMIyshRveBeyV2hmV/pDaF2Uxtu8kgq5r46llp5E5FQiR0K2Yg==",
+      "license": "MIT",
+      "dependencies": {
+        "@floating-ui/dom": "^1.0.0"
+      },
+      "peerDependencies": {
+        "react": ">=16.8.0",
+        "react-dom": ">=16.8.0"
+      }
+    },
+    "node_modules/@floating-ui/utils": {
+      "version": "0.2.7",
+      "resolved": "https://registry.npmjs.org/@floating-ui/utils/-/utils-0.2.7.tgz",
+      "integrity": "sha512-X8R8Oj771YRl/w+c1HqAC1szL8zWQRwFvgDwT129k9ACdBoud/+/rX9V0qiMl6LWUdP9voC2nDVZYPMQQsb6eA==",
+      "license": "MIT"
+    },
     "node_modules/@humanwhocodes/config-array": {
       "version": "0.11.14",
       "resolved": "https://registry.npmjs.org/@humanwhocodes/config-array/-/config-array-0.11.14.tgz",
@@ -2868,6 +2961,456 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
       "integrity": "sha512-93zYdMES/c1D69yZiKDBj0V24vqNzB/koF26KPaagAfd3P/4gUlh3Dys5ogAK+Exi9QyzlD8x/08Zt7wIKcDcA==",
       "deprecated": "Use @eslint/object-schema instead",
       "license": "BSD-3-Clause"
+    },
+    "node_modules/@img/sharp-darwin-arm64": {
+      "version": "0.33.4",
+      "resolved": "https://registry.npmjs.org/@img/sharp-darwin-arm64/-/sharp-darwin-arm64-0.33.4.tgz",
+      "integrity": "sha512-p0suNqXufJs9t3RqLBO6vvrgr5OhgbWp76s5gTRvdmxmuv9E1rcaqGUsl3l4mKVmXPkTkTErXediAui4x+8PSA==",
+      "cpu": [
+        "arm64"
+      ],
+      "license": "Apache-2.0",
+      "optional": true,
+      "os": [
+        "darwin"
+      ],
+      "engines": {
+        "glibc": ">=2.26",
+        "node": "^18.17.0 || ^20.3.0 || >=21.0.0",
+        "npm": ">=9.6.5",
+        "pnpm": ">=7.1.0",
+        "yarn": ">=3.2.0"
+      },
+      "funding": {
+        "url": "https://opencollective.com/libvips"
+      },
+      "optionalDependencies": {
+        "@img/sharp-libvips-darwin-arm64": "1.0.2"
+      }
+    },
+    "node_modules/@img/sharp-darwin-x64": {
+      "version": "0.33.4",
+      "resolved": "https://registry.npmjs.org/@img/sharp-darwin-x64/-/sharp-darwin-x64-0.33.4.tgz",
+      "integrity": "sha512-0l7yRObwtTi82Z6ebVI2PnHT8EB2NxBgpK2MiKJZJ7cz32R4lxd001ecMhzzsZig3Yv9oclvqqdV93jo9hy+Dw==",
+      "cpu": [
+        "x64"
+      ],
+      "license": "Apache-2.0",
+      "optional": true,
+      "os": [
+        "darwin"
+      ],
+      "engines": {
+        "glibc": ">=2.26",
+        "node": "^18.17.0 || ^20.3.0 || >=21.0.0",
+        "npm": ">=9.6.5",
+        "pnpm": ">=7.1.0",
+        "yarn": ">=3.2.0"
+      },
+      "funding": {
+        "url": "https://opencollective.com/libvips"
+      },
+      "optionalDependencies": {
+        "@img/sharp-libvips-darwin-x64": "1.0.2"
+      }
+    },
+    "node_modules/@img/sharp-libvips-darwin-arm64": {
+      "version": "1.0.2",
+      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-darwin-arm64/-/sharp-libvips-darwin-arm64-1.0.2.tgz",
+      "integrity": "sha512-tcK/41Rq8IKlSaKRCCAuuY3lDJjQnYIW1UXU1kxcEKrfL8WR7N6+rzNoOxoQRJWTAECuKwgAHnPvqXGN8XfkHA==",
+      "cpu": [
+        "arm64"
+      ],
+      "license": "LGPL-3.0-or-later",
+      "optional": true,
+      "os": [
+        "darwin"
+      ],
+      "engines": {
+        "macos": ">=11",
+        "npm": ">=9.6.5",
+        "pnpm": ">=7.1.0",
+        "yarn": ">=3.2.0"
+      },
+      "funding": {
+        "url": "https://opencollective.com/libvips"
+      }
+    },
+    "node_modules/@img/sharp-libvips-darwin-x64": {
+      "version": "1.0.2",
+      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-darwin-x64/-/sharp-libvips-darwin-x64-1.0.2.tgz",
+      "integrity": "sha512-Ofw+7oaWa0HiiMiKWqqaZbaYV3/UGL2wAPeLuJTx+9cXpCRdvQhCLG0IH8YGwM0yGWGLpsF4Su9vM1o6aer+Fw==",
+      "cpu": [
+        "x64"
+      ],
+      "license": "LGPL-3.0-or-later",
+      "optional": true,
+      "os": [
+        "darwin"
+      ],
+      "engines": {
+        "macos": ">=10.13",
+        "npm": ">=9.6.5",
+        "pnpm": ">=7.1.0",
+        "yarn": ">=3.2.0"
+      },
+      "funding": {
+        "url": "https://opencollective.com/libvips"
+      }
+    },
+    "node_modules/@img/sharp-libvips-linux-arm": {
+      "version": "1.0.2",
+      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-arm/-/sharp-libvips-linux-arm-1.0.2.tgz",
+      "integrity": "sha512-iLWCvrKgeFoglQxdEwzu1eQV04o8YeYGFXtfWU26Zr2wWT3q3MTzC+QTCO3ZQfWd3doKHT4Pm2kRmLbupT+sZw==",
+      "cpu": [
+        "arm"
+      ],
+      "license": "LGPL-3.0-or-later",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "glibc": ">=2.28",
+        "npm": ">=9.6.5",
+        "pnpm": ">=7.1.0",
+        "yarn": ">=3.2.0"
+      },
+      "funding": {
+        "url": "https://opencollective.com/libvips"
+      }
+    },
+    "node_modules/@img/sharp-libvips-linux-arm64": {
+      "version": "1.0.2",
+      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-arm64/-/sharp-libvips-linux-arm64-1.0.2.tgz",
+      "integrity": "sha512-x7kCt3N00ofFmmkkdshwj3vGPCnmiDh7Gwnd4nUwZln2YjqPxV1NlTyZOvoDWdKQVDL911487HOueBvrpflagw==",
+      "cpu": [
+        "arm64"
+      ],
+      "license": "LGPL-3.0-or-later",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "glibc": ">=2.26",
+        "npm": ">=9.6.5",
+        "pnpm": ">=7.1.0",
+        "yarn": ">=3.2.0"
+      },
+      "funding": {
+        "url": "https://opencollective.com/libvips"
+      }
+    },
+    "node_modules/@img/sharp-libvips-linux-s390x": {
+      "version": "1.0.2",
+      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-s390x/-/sharp-libvips-linux-s390x-1.0.2.tgz",
+      "integrity": "sha512-cmhQ1J4qVhfmS6szYW7RT+gLJq9dH2i4maq+qyXayUSn9/3iY2ZeWpbAgSpSVbV2E1JUL2Gg7pwnYQ1h8rQIog==",
+      "cpu": [
+        "s390x"
+      ],
+      "license": "LGPL-3.0-or-later",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "glibc": ">=2.28",
+        "npm": ">=9.6.5",
+        "pnpm": ">=7.1.0",
+        "yarn": ">=3.2.0"
+      },
+      "funding": {
+        "url": "https://opencollective.com/libvips"
+      }
+    },
+    "node_modules/@img/sharp-libvips-linux-x64": {
+      "version": "1.0.2",
+      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-x64/-/sharp-libvips-linux-x64-1.0.2.tgz",
+      "integrity": "sha512-E441q4Qdb+7yuyiADVi5J+44x8ctlrqn8XgkDTwr4qPJzWkaHwD489iZ4nGDgcuya4iMN3ULV6NwbhRZJ9Z7SQ==",
+      "cpu": [
+        "x64"
+      ],
+      "license": "LGPL-3.0-or-later",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "glibc": ">=2.26",
+        "npm": ">=9.6.5",
+        "pnpm": ">=7.1.0",
+        "yarn": ">=3.2.0"
+      },
+      "funding": {
+        "url": "https://opencollective.com/libvips"
+      }
+    },
+    "node_modules/@img/sharp-libvips-linuxmusl-arm64": {
+      "version": "1.0.2",
+      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linuxmusl-arm64/-/sharp-libvips-linuxmusl-arm64-1.0.2.tgz",
+      "integrity": "sha512-3CAkndNpYUrlDqkCM5qhksfE+qSIREVpyoeHIU6jd48SJZViAmznoQQLAv4hVXF7xyUB9zf+G++e2v1ABjCbEQ==",
+      "cpu": [
+        "arm64"
+      ],
+      "license": "LGPL-3.0-or-later",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "musl": ">=1.2.2",
+        "npm": ">=9.6.5",
+        "pnpm": ">=7.1.0",
+        "yarn": ">=3.2.0"
+      },
+      "funding": {
+        "url": "https://opencollective.com/libvips"
+      }
+    },
+    "node_modules/@img/sharp-libvips-linuxmusl-x64": {
+      "version": "1.0.2",
+      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linuxmusl-x64/-/sharp-libvips-linuxmusl-x64-1.0.2.tgz",
+      "integrity": "sha512-VI94Q6khIHqHWNOh6LLdm9s2Ry4zdjWJwH56WoiJU7NTeDwyApdZZ8c+SADC8OH98KWNQXnE01UdJ9CSfZvwZw==",
+      "cpu": [
+        "x64"
+      ],
+      "license": "LGPL-3.0-or-later",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "musl": ">=1.2.2",
+        "npm": ">=9.6.5",
+        "pnpm": ">=7.1.0",
+        "yarn": ">=3.2.0"
+      },
+      "funding": {
+        "url": "https://opencollective.com/libvips"
+      }
+    },
+    "node_modules/@img/sharp-linux-arm": {
+      "version": "0.33.4",
+      "resolved": "https://registry.npmjs.org/@img/sharp-linux-arm/-/sharp-linux-arm-0.33.4.tgz",
+      "integrity": "sha512-RUgBD1c0+gCYZGCCe6mMdTiOFS0Zc/XrN0fYd6hISIKcDUbAW5NtSQW9g/powkrXYm6Vzwd6y+fqmExDuCdHNQ==",
+      "cpu": [
+        "arm"
+      ],
+      "license": "Apache-2.0",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "glibc": ">=2.28",
+        "node": "^18.17.0 || ^20.3.0 || >=21.0.0",
+        "npm": ">=9.6.5",
+        "pnpm": ">=7.1.0",
+        "yarn": ">=3.2.0"
+      },
+      "funding": {
+        "url": "https://opencollective.com/libvips"
+      },
+      "optionalDependencies": {
+        "@img/sharp-libvips-linux-arm": "1.0.2"
+      }
+    },
+    "node_modules/@img/sharp-linux-arm64": {
+      "version": "0.33.4",
+      "resolved": "https://registry.npmjs.org/@img/sharp-linux-arm64/-/sharp-linux-arm64-0.33.4.tgz",
+      "integrity": "sha512-2800clwVg1ZQtxwSoTlHvtm9ObgAax7V6MTAB/hDT945Tfyy3hVkmiHpeLPCKYqYR1Gcmv1uDZ3a4OFwkdBL7Q==",
+      "cpu": [
+        "arm64"
+      ],
+      "license": "Apache-2.0",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "glibc": ">=2.26",
+        "node": "^18.17.0 || ^20.3.0 || >=21.0.0",
+        "npm": ">=9.6.5",
+        "pnpm": ">=7.1.0",
+        "yarn": ">=3.2.0"
+      },
+      "funding": {
+        "url": "https://opencollective.com/libvips"
+      },
+      "optionalDependencies": {
+        "@img/sharp-libvips-linux-arm64": "1.0.2"
+      }
+    },
+    "node_modules/@img/sharp-linux-s390x": {
+      "version": "0.33.4",
+      "resolved": "https://registry.npmjs.org/@img/sharp-linux-s390x/-/sharp-linux-s390x-0.33.4.tgz",
+      "integrity": "sha512-h3RAL3siQoyzSoH36tUeS0PDmb5wINKGYzcLB5C6DIiAn2F3udeFAum+gj8IbA/82+8RGCTn7XW8WTFnqag4tQ==",
+      "cpu": [
+        "s390x"
+      ],
+      "license": "Apache-2.0",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "glibc": ">=2.31",
+        "node": "^18.17.0 || ^20.3.0 || >=21.0.0",
+        "npm": ">=9.6.5",
+        "pnpm": ">=7.1.0",
+        "yarn": ">=3.2.0"
+      },
+      "funding": {
+        "url": "https://opencollective.com/libvips"
+      },
+      "optionalDependencies": {
+        "@img/sharp-libvips-linux-s390x": "1.0.2"
+      }
+    },
+    "node_modules/@img/sharp-linux-x64": {
+      "version": "0.33.4",
+      "resolved": "https://registry.npmjs.org/@img/sharp-linux-x64/-/sharp-linux-x64-0.33.4.tgz",
+      "integrity": "sha512-GoR++s0XW9DGVi8SUGQ/U4AeIzLdNjHka6jidVwapQ/JebGVQIpi52OdyxCNVRE++n1FCLzjDovJNozif7w/Aw==",
+      "cpu": [
+        "x64"
+      ],
+      "license": "Apache-2.0",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "glibc": ">=2.26",
+        "node": "^18.17.0 || ^20.3.0 || >=21.0.0",
+        "npm": ">=9.6.5",
+        "pnpm": ">=7.1.0",
+        "yarn": ">=3.2.0"
+      },
+      "funding": {
+        "url": "https://opencollective.com/libvips"
+      },
+      "optionalDependencies": {
+        "@img/sharp-libvips-linux-x64": "1.0.2"
+      }
+    },
+    "node_modules/@img/sharp-linuxmusl-arm64": {
+      "version": "0.33.4",
+      "resolved": "https://registry.npmjs.org/@img/sharp-linuxmusl-arm64/-/sharp-linuxmusl-arm64-0.33.4.tgz",
+      "integrity": "sha512-nhr1yC3BlVrKDTl6cO12gTpXMl4ITBUZieehFvMntlCXFzH2bvKG76tBL2Y/OqhupZt81pR7R+Q5YhJxW0rGgQ==",
+      "cpu": [
+        "arm64"
+      ],
+      "license": "Apache-2.0",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "musl": ">=1.2.2",
+        "node": "^18.17.0 || ^20.3.0 || >=21.0.0",
+        "npm": ">=9.6.5",
+        "pnpm": ">=7.1.0",
+        "yarn": ">=3.2.0"
+      },
+      "funding": {
+        "url": "https://opencollective.com/libvips"
+      },
+      "optionalDependencies": {
+        "@img/sharp-libvips-linuxmusl-arm64": "1.0.2"
+      }
+    },
+    "node_modules/@img/sharp-linuxmusl-x64": {
+      "version": "0.33.4",
+      "resolved": "https://registry.npmjs.org/@img/sharp-linuxmusl-x64/-/sharp-linuxmusl-x64-0.33.4.tgz",
+      "integrity": "sha512-uCPTku0zwqDmZEOi4ILyGdmW76tH7dm8kKlOIV1XC5cLyJ71ENAAqarOHQh0RLfpIpbV5KOpXzdU6XkJtS0daw==",
+      "cpu": [
+        "x64"
+      ],
+      "license": "Apache-2.0",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "musl": ">=1.2.2",
+        "node": "^18.17.0 || ^20.3.0 || >=21.0.0",
+        "npm": ">=9.6.5",
+        "pnpm": ">=7.1.0",
+        "yarn": ">=3.2.0"
+      },
+      "funding": {
+        "url": "https://opencollective.com/libvips"
+      },
+      "optionalDependencies": {
+        "@img/sharp-libvips-linuxmusl-x64": "1.0.2"
+      }
+    },
+    "node_modules/@img/sharp-wasm32": {
+      "version": "0.33.4",
+      "resolved": "https://registry.npmjs.org/@img/sharp-wasm32/-/sharp-wasm32-0.33.4.tgz",
+      "integrity": "sha512-Bmmauh4sXUsUqkleQahpdNXKvo+wa1V9KhT2pDA4VJGKwnKMJXiSTGphn0gnJrlooda0QxCtXc6RX1XAU6hMnQ==",
+      "cpu": [
+        "wasm32"
+      ],
+      "license": "Apache-2.0 AND LGPL-3.0-or-later AND MIT",
+      "optional": true,
+      "dependencies": {
+        "@emnapi/runtime": "^1.1.1"
+      },
+      "engines": {
+        "node": "^18.17.0 || ^20.3.0 || >=21.0.0",
+        "npm": ">=9.6.5",
+        "pnpm": ">=7.1.0",
+        "yarn": ">=3.2.0"
+      },
+      "funding": {
+        "url": "https://opencollective.com/libvips"
+      }
+    },
+    "node_modules/@img/sharp-win32-ia32": {
+      "version": "0.33.4",
+      "resolved": "https://registry.npmjs.org/@img/sharp-win32-ia32/-/sharp-win32-ia32-0.33.4.tgz",
+      "integrity": "sha512-99SJ91XzUhYHbx7uhK3+9Lf7+LjwMGQZMDlO/E/YVJ7Nc3lyDFZPGhjwiYdctoH2BOzW9+TnfqcaMKt0jHLdqw==",
+      "cpu": [
+        "ia32"
+      ],
+      "license": "Apache-2.0 AND LGPL-3.0-or-later",
+      "optional": true,
+      "os": [
+        "win32"
+      ],
+      "engines": {
+        "node": "^18.17.0 || ^20.3.0 || >=21.0.0",
+        "npm": ">=9.6.5",
+        "pnpm": ">=7.1.0",
+        "yarn": ">=3.2.0"
+      },
+      "funding": {
+        "url": "https://opencollective.com/libvips"
+      }
+    },
+    "node_modules/@img/sharp-win32-x64": {
+      "version": "0.33.4",
+      "resolved": "https://registry.npmjs.org/@img/sharp-win32-x64/-/sharp-win32-x64-0.33.4.tgz",
+      "integrity": "sha512-3QLocdTRVIrFNye5YocZl+KKpYKP+fksi1QhmOArgx7GyhIbQp/WrJRu176jm8IxromS7RIkzMiMINVdBtC8Aw==",
+      "cpu": [
+        "x64"
+      ],
+      "license": "Apache-2.0 AND LGPL-3.0-or-later",
+      "optional": true,
+      "os": [
+        "win32"
+      ],
+      "engines": {
+        "node": "^18.17.0 || ^20.3.0 || >=21.0.0",
+        "npm": ">=9.6.5",
+        "pnpm": ">=7.1.0",
+        "yarn": ">=3.2.0"
+      },
+      "funding": {
+        "url": "https://opencollective.com/libvips"
+      }
     },
     "node_modules/@isaacs/cliui": {
       "version": "8.0.2",
@@ -5615,6 +6158,12 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
         "node": ">= 8"
       }
     },
+    "node_modules/append-field": {
+      "version": "1.0.0",
+      "resolved": "https://registry.npmjs.org/append-field/-/append-field-1.0.0.tgz",
+      "integrity": "sha512-klpgFSWLW1ZEs8svjfb7g4qWY0YS5imI82dTg+QahUvJ8YqAY0P10Uk8tTyh9ZGuYEZEMaeJYCF5BFuX552hsw==",
+      "license": "MIT"
+    },
     "node_modules/aproba": {
       "version": "2.0.0",
       "resolved": "https://registry.npmjs.org/aproba/-/aproba-2.0.0.tgz",
@@ -5951,6 +6500,31 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
       "license": "MPL-2.0",
       "engines": {
         "node": ">=4"
+      }
+    },
+    "node_modules/axios": {
+      "version": "1.7.4",
+      "resolved": "https://registry.npmjs.org/axios/-/axios-1.7.4.tgz",
+      "integrity": "sha512-DukmaFRnY6AzAALSH4J2M3k6PkaC+MfaAGdEERRWcC9q3/TWQwLpHR8ZRLKTdQ3aBDL64EdluRDjJqKw+BPZEw==",
+      "license": "MIT",
+      "dependencies": {
+        "follow-redirects": "^1.15.6",
+        "form-data": "^4.0.0",
+        "proxy-from-env": "^1.1.0"
+      }
+    },
+    "node_modules/axios/node_modules/form-data": {
+      "version": "4.0.0",
+      "resolved": "https://registry.npmjs.org/form-data/-/form-data-4.0.0.tgz",
+      "integrity": "sha512-ETEklSGi5t0QMZuiXoA/Q6vcnxcLQP5vdugSpuAyi6SVGi2clPPp+xgEhuMaHC+zGgn31Kd235W35f7Hykkaww==",
+      "license": "MIT",
+      "dependencies": {
+        "asynckit": "^0.4.0",
+        "combined-stream": "^1.0.8",
+        "mime-types": "^2.1.12"
+      },
+      "engines": {
+        "node": ">= 6"
       }
     },
     "node_modules/axobject-query": {
@@ -6450,6 +7024,17 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
         "url": "https://github.com/sponsors/sindresorhus"
       }
     },
+    "node_modules/busboy": {
+      "version": "1.6.0",
+      "resolved": "https://registry.npmjs.org/busboy/-/busboy-1.6.0.tgz",
+      "integrity": "sha512-8SFQbg/0hQ9xy3UNTB0YEnsNBbWfhf7RtnzpL7TkBiTBRfrQ9Fxcnz7VJsleJpyp6rVLvXiuORqjlHi5q+PYuA==",
+      "dependencies": {
+        "streamsearch": "^1.1.0"
+      },
+      "engines": {
+        "node": ">=10.16.0"
+      }
+    },
     "node_modules/bytes": {
       "version": "3.1.2",
       "resolved": "https://registry.npmjs.org/bytes/-/bytes-3.1.2.tgz",
@@ -6697,6 +7282,15 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
         "wrap-ansi": "^7.0.0"
       }
     },
+    "node_modules/clsx": {
+      "version": "2.1.1",
+      "resolved": "https://registry.npmjs.org/clsx/-/clsx-2.1.1.tgz",
+      "integrity": "sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==",
+      "license": "MIT",
+      "engines": {
+        "node": ">=6"
+      }
+    },
     "node_modules/co": {
       "version": "4.6.0",
       "resolved": "https://registry.npmjs.org/co/-/co-4.6.0.tgz",
@@ -6798,6 +7392,19 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
       "integrity": "sha512-lHl4d5/ONEbLlJvaJNtsF/Lz+WvB07u2ycqTYbdrq7UypDXailES4valYb2eWiJFxZlVmpGekfqoxQhzyFdT4Q==",
       "license": "MIT"
     },
+    "node_modules/color": {
+      "version": "4.2.3",
+      "resolved": "https://registry.npmjs.org/color/-/color-4.2.3.tgz",
+      "integrity": "sha512-1rXeuUUiGGrykh+CeBdu5Ie7OJwinCgQY0bc7GCRxy5xVHy+moaqkpL/jqQq0MtQOeYcrqEz4abc5f0KtU7W4A==",
+      "license": "MIT",
+      "dependencies": {
+        "color-convert": "^2.0.1",
+        "color-string": "^1.9.0"
+      },
+      "engines": {
+        "node": ">=12.5.0"
+      }
+    },
     "node_modules/color-convert": {
       "version": "2.0.1",
       "resolved": "https://registry.npmjs.org/color-convert/-/color-convert-2.0.1.tgz",
@@ -6815,6 +7422,16 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
       "resolved": "https://registry.npmjs.org/color-name/-/color-name-1.1.4.tgz",
       "integrity": "sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==",
       "license": "MIT"
+    },
+    "node_modules/color-string": {
+      "version": "1.9.1",
+      "resolved": "https://registry.npmjs.org/color-string/-/color-string-1.9.1.tgz",
+      "integrity": "sha512-shrVawQFojnZv6xM40anx4CkoDP+fZsw/ZerEMsW/pyzsRbElpsL/DBVW7q3ExxwusdNXI3lXpuhEZkzs8p5Eg==",
+      "license": "MIT",
+      "dependencies": {
+        "color-name": "^1.0.0",
+        "simple-swizzle": "^0.2.2"
+      }
     },
     "node_modules/color-support": {
       "version": "1.1.3",
@@ -6923,6 +7540,21 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
       "resolved": "https://registry.npmjs.org/concat-map/-/concat-map-0.0.1.tgz",
       "integrity": "sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==",
       "license": "MIT"
+    },
+    "node_modules/concat-stream": {
+      "version": "1.6.2",
+      "resolved": "https://registry.npmjs.org/concat-stream/-/concat-stream-1.6.2.tgz",
+      "integrity": "sha512-27HBghJxjiZtIk3Ycvn/4kbJk/1uZuJFfuPEns6LaEvpvG1f0hTea8lilrouyo9mVc2GWdcEZ8OLoGmSADlrCw==",
+      "engines": [
+        "node >= 0.8"
+      ],
+      "license": "MIT",
+      "dependencies": {
+        "buffer-from": "^1.0.0",
+        "inherits": "^2.0.3",
+        "readable-stream": "^2.2.2",
+        "typedarray": "^0.0.6"
+      }
     },
     "node_modules/confusing-browser-globals": {
       "version": "1.0.11",
@@ -7556,6 +8188,16 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
       },
       "funding": {
         "url": "https://github.com/sponsors/ljharb"
+      }
+    },
+    "node_modules/date-fns": {
+      "version": "3.6.0",
+      "resolved": "https://registry.npmjs.org/date-fns/-/date-fns-3.6.0.tgz",
+      "integrity": "sha512-fRHTG8g/Gif+kSh50gaGEdToemgfj74aRX3swtiouboip5JDLAyDE9F11nHMIcvOaXeOC6D7SpNhi7uFyB7Uww==",
+      "license": "MIT",
+      "funding": {
+        "type": "github",
+        "url": "https://github.com/sponsors/kossnocorp"
       }
     },
     "node_modules/debug": {
@@ -13974,6 +14616,24 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
       "integrity": "sha512-Tpp60P6IUJDTuOq/5Z8cdskzJujfwqfOTkrwIwj7IRISpnkJnT6SyJ4PCPnGMoFjC9ddhal5KVIYtAt97ix05A==",
       "license": "MIT"
     },
+    "node_modules/multer": {
+      "version": "1.4.5-lts.1",
+      "resolved": "https://registry.npmjs.org/multer/-/multer-1.4.5-lts.1.tgz",
+      "integrity": "sha512-ywPWvcDMeH+z9gQq5qYHCCy+ethsk4goepZ45GLD63fOu0YcNecQxi64nDs3qluZB+murG3/D4dJ7+dGctcCQQ==",
+      "license": "MIT",
+      "dependencies": {
+        "append-field": "^1.0.0",
+        "busboy": "^1.0.0",
+        "concat-stream": "^1.5.2",
+        "mkdirp": "^0.5.4",
+        "object-assign": "^4.1.1",
+        "type-is": "^1.6.4",
+        "xtend": "^4.0.0"
+      },
+      "engines": {
+        "node": ">= 6.0.0"
+      }
+    },
     "node_modules/multicast-dns": {
       "version": "7.2.5",
       "resolved": "https://registry.npmjs.org/multicast-dns/-/multicast-dns-7.2.5.tgz",
@@ -16160,6 +16820,12 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
         "node": ">= 0.10"
       }
     },
+    "node_modules/proxy-from-env": {
+      "version": "1.1.0",
+      "resolved": "https://registry.npmjs.org/proxy-from-env/-/proxy-from-env-1.1.0.tgz",
+      "integrity": "sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==",
+      "license": "MIT"
+    },
     "node_modules/psl": {
       "version": "1.9.0",
       "resolved": "https://registry.npmjs.org/psl/-/psl-1.9.0.tgz",
@@ -16304,6 +16970,23 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
       "integrity": "sha512-kY1AZVr2Ra+t+piVaJ4gxaFaReZVH40AKNo7UCX6W+dEwBo/2oZJzqfuN1qLq1oL45o56cPaTXELwrTh8Fpggg==",
       "license": "MIT"
     },
+    "node_modules/react-datepicker": {
+      "version": "7.3.0",
+      "resolved": "https://registry.npmjs.org/react-datepicker/-/react-datepicker-7.3.0.tgz",
+      "integrity": "sha512-EqRKLAtLZUTztiq6a+tjSjQX9ES0Xd229JPckAtyZZ4GoY3rtvNWAzkYZnQUf6zTWT50Ki0+t+W9VRQIkSJLfg==",
+      "license": "MIT",
+      "dependencies": {
+        "@floating-ui/react": "^0.26.2",
+        "clsx": "^2.1.0",
+        "date-fns": "^3.3.1",
+        "prop-types": "^15.7.2",
+        "react-onclickoutside": "^6.13.0"
+      },
+      "peerDependencies": {
+        "react": "^16.9.0 || ^17 || ^18",
+        "react-dom": "^16.9.0 || ^17 || ^18"
+      }
+    },
     "node_modules/react-dev-utils": {
       "version": "12.0.1",
       "resolved": "https://registry.npmjs.org/react-dev-utils/-/react-dev-utils-12.0.1.tgz",
@@ -16433,6 +17116,20 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
       "resolved": "https://registry.npmjs.org/react-is/-/react-is-17.0.2.tgz",
       "integrity": "sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==",
       "license": "MIT"
+    },
+    "node_modules/react-onclickoutside": {
+      "version": "6.13.1",
+      "resolved": "https://registry.npmjs.org/react-onclickoutside/-/react-onclickoutside-6.13.1.tgz",
+      "integrity": "sha512-LdrrxK/Yh9zbBQdFbMTXPp3dTSN9B+9YJQucdDu3JNKRrbdU+H+/TVONJoWtOwy4II8Sqf1y/DTI6w/vGPYW0w==",
+      "license": "MIT",
+      "funding": {
+        "type": "individual",
+        "url": "https://github.com/Pomax/react-onclickoutside/blob/master/FUNDING.md"
+      },
+      "peerDependencies": {
+        "react": "^15.5.x || ^16.x || ^17.x || ^18.x",
+        "react-dom": "^15.5.x || ^16.x || ^17.x || ^18.x"
+      }
     },
     "node_modules/react-refresh": {
       "version": "0.11.0",
@@ -17384,6 +18081,46 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
       "integrity": "sha512-E5LDX7Wrp85Kil5bhZv46j8jOeboKq5JMmYM3gVGdGH8xFpPWXUMsNrlODCrkoxMEeNi/XZIwuRvY4XNwYMJpw==",
       "license": "ISC"
     },
+    "node_modules/sharp": {
+      "version": "0.33.4",
+      "resolved": "https://registry.npmjs.org/sharp/-/sharp-0.33.4.tgz",
+      "integrity": "sha512-7i/dt5kGl7qR4gwPRD2biwD2/SvBn3O04J77XKFgL2OnZtQw+AG9wnuS/csmu80nPRHLYE9E41fyEiG8nhH6/Q==",
+      "hasInstallScript": true,
+      "license": "Apache-2.0",
+      "dependencies": {
+        "color": "^4.2.3",
+        "detect-libc": "^2.0.3",
+        "semver": "^7.6.0"
+      },
+      "engines": {
+        "libvips": ">=8.15.2",
+        "node": "^18.17.0 || ^20.3.0 || >=21.0.0"
+      },
+      "funding": {
+        "url": "https://opencollective.com/libvips"
+      },
+      "optionalDependencies": {
+        "@img/sharp-darwin-arm64": "0.33.4",
+        "@img/sharp-darwin-x64": "0.33.4",
+        "@img/sharp-libvips-darwin-arm64": "1.0.2",
+        "@img/sharp-libvips-darwin-x64": "1.0.2",
+        "@img/sharp-libvips-linux-arm": "1.0.2",
+        "@img/sharp-libvips-linux-arm64": "1.0.2",
+        "@img/sharp-libvips-linux-s390x": "1.0.2",
+        "@img/sharp-libvips-linux-x64": "1.0.2",
+        "@img/sharp-libvips-linuxmusl-arm64": "1.0.2",
+        "@img/sharp-libvips-linuxmusl-x64": "1.0.2",
+        "@img/sharp-linux-arm": "0.33.4",
+        "@img/sharp-linux-arm64": "0.33.4",
+        "@img/sharp-linux-s390x": "0.33.4",
+        "@img/sharp-linux-x64": "0.33.4",
+        "@img/sharp-linuxmusl-arm64": "0.33.4",
+        "@img/sharp-linuxmusl-x64": "0.33.4",
+        "@img/sharp-wasm32": "0.33.4",
+        "@img/sharp-win32-ia32": "0.33.4",
+        "@img/sharp-win32-x64": "0.33.4"
+      }
+    },
     "node_modules/shebang-command": {
       "version": "2.0.0",
       "resolved": "https://registry.npmjs.org/shebang-command/-/shebang-command-2.0.0.tgz",
@@ -17437,6 +18174,21 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
       "resolved": "https://registry.npmjs.org/signal-exit/-/signal-exit-3.0.7.tgz",
       "integrity": "sha512-wnD2ZE+l+SPC/uoS0vXeE9L1+0wuaMqKlfz9AMUo38JsyLSBWSFcHR1Rri62LZc12vLr1gb3jl7iwQhgwpAbGQ==",
       "license": "ISC"
+    },
+    "node_modules/simple-swizzle": {
+      "version": "0.2.2",
+      "resolved": "https://registry.npmjs.org/simple-swizzle/-/simple-swizzle-0.2.2.tgz",
+      "integrity": "sha512-JA//kQgZtbuY83m+xT+tXJkmJncGMTFT+C+g2h2R9uxkYIrE2yy9sgmcLhCnw57/WSD+Eh3J97FPEDFnbXnDUg==",
+      "license": "MIT",
+      "dependencies": {
+        "is-arrayish": "^0.3.1"
+      }
+    },
+    "node_modules/simple-swizzle/node_modules/is-arrayish": {
+      "version": "0.3.2",
+      "resolved": "https://registry.npmjs.org/is-arrayish/-/is-arrayish-0.3.2.tgz",
+      "integrity": "sha512-eVRqCvVlZbuw3GrM63ovNSNAeA1K16kaR/LRY/92w0zxQ5/1YzwblUX652i4Xs9RwAGjW9d9y6X88t8OaAJfWQ==",
+      "license": "MIT"
     },
     "node_modules/sisteransi": {
       "version": "1.0.5",
@@ -17805,6 +18557,14 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
       },
       "engines": {
         "node": ">= 0.4"
+      }
+    },
+    "node_modules/streamsearch": {
+      "version": "1.1.0",
+      "resolved": "https://registry.npmjs.org/streamsearch/-/streamsearch-1.1.0.tgz",
+      "integrity": "sha512-Mcc5wHehp9aXz1ax6bZUyY5afg9u2rv5cqQI3mRrYkGC8rW2hM02jWuwjtL++LS5qinSyhj2QfLyNsuc+VsExg==",
+      "engines": {
+        "node": ">=10.0.0"
       }
     },
     "node_modules/string_decoder": {
@@ -18390,6 +19150,12 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
       "integrity": "sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==",
       "license": "MIT"
     },
+    "node_modules/tabbable": {
+      "version": "6.2.0",
+      "resolved": "https://registry.npmjs.org/tabbable/-/tabbable-6.2.0.tgz",
+      "integrity": "sha512-Cat63mxsVJlzYvN51JmVXIgNoUokrIaT2zLclCXjRd8boZ0004U4KCs/sToJ75C6sdlByWxpYnb5Boif1VSFew==",
+      "license": "MIT"
+    },
     "node_modules/tailwindcss": {
       "version": "3.4.10",
       "resolved": "https://registry.npmjs.org/tailwindcss/-/tailwindcss-3.4.10.tgz",
@@ -18911,6 +19677,12 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
       "funding": {
         "url": "https://github.com/sponsors/ljharb"
       }
+    },
+    "node_modules/typedarray": {
+      "version": "0.0.6",
+      "resolved": "https://registry.npmjs.org/typedarray/-/typedarray-0.0.6.tgz",
+      "integrity": "sha512-/aCDEGatGvZ2BIk+HmLf4ifCJFwvKFNb9/JeZPMulfgFracn9QFcAf5GO8B/mweUjSoblS5In0cWhqpfs/5PQA==",
+      "license": "MIT"
     },
     "node_modules/typedarray-to-buffer": {
       "version": "3.1.5",
@@ -20075,6 +20847,15 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
       "integrity": "sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw==",
       "license": "MIT"
     },
+    "node_modules/xtend": {
+      "version": "4.0.2",
+      "resolved": "https://registry.npmjs.org/xtend/-/xtend-4.0.2.tgz",
+      "integrity": "sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==",
+      "license": "MIT",
+      "engines": {
+        "node": ">=0.4"
+      }
+    },
     "node_modules/y18n": {
       "version": "5.0.8",
       "resolved": "https://registry.npmjs.org/y18n/-/y18n-5.0.8.tgz",
@@ -20150,8 +20931,10 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.7.4",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
+    "date-fns": "^3.6.0",
     "express": "^4.19.2",
     "express-rate-limit": "^7.4.0",
     "express-validator": "^7.2.0",
@@ -20159,11 +20942,14 @@ JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
     "jquery": "^3.7.1",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
     "mysql": "^2.18.1",
     "react": "^18.3.1",
+    "react-datepicker": "^7.3.0",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.0",
     "react-scripts": "5.0.1",
+    "sharp": "^0.33.4",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -20206,6 +20992,9 @@ const { body, validationResult } = require("express-validator");
 const db = require("./config/db");
 const registerRoutes = require("./routes/registerRoutes");
 const passwordResetRoutes = require("./routes/passwordResetRoutes");
+const variousFeedbackRoutes = require('./routes/variousFeedbackRoutes'); // Import the new routes
+const adminRoutes = require('./routes/adminRoutes');
+const textMiningRoutes = require('./routes/textMiningRoutes');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -20220,88 +21009,45 @@ app.use(rateLimit({
   max: 100 // Limit jeder IP auf 100 Requests pro 15 Minuten
 }));
 
-app.use('/register', registerRoutes);
-app.use('/password-reset', passwordResetRoutes);
+app.use('/api/register', registerRoutes);
+app.use('/api/password-reset', passwordResetRoutes);
+app.use('/api/feedback', variousFeedbackRoutes); // Add the new feedback routes
+app.use('/api/admin', adminRoutes);
+app.use('/api', textMiningRoutes);
 
-// Store the current random number
-let currentRandomNumber = generateRandomNumber();
 
-// Function to generate a random whole number between 1 and 100
-function generateRandomNumber() {
-  return Math.floor(Math.random() * 100) + 1;
-}
+// New /api/user endpoint to get user information based on token
+app.get("/api/user", (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
 
-// POST endpoint to regenerate a random number
-app.post("/regenerate", (req, res) => {
-  currentRandomNumber = generateRandomNumber();
-  res.json({ randomNumber: currentRandomNumber });
-});
-
-// New GET endpoint to fetch data from 't_test' table
-app.get("/fetch-test-data", (req, res) => {
-  db.query("SELECT * FROM t_test", (error, results, fields) => {
-    if (error) {
-      res.status(500).send("Error fetching data: " + error.message);
-    } else {
-      res.json(results);
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ error: "Invalid token" });
     }
+
+    // Fetch the user information from the database
+    db.query("SELECT * FROM t_users WHERE usersID = ?", [decoded.userId], (err, results) => {
+      if (err || results.length === 0) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const user = results[0];
+      res.json({ user: { 
+        id: user.usersID, 
+        email: user.usersEmail, 
+        role: user.rolesFK, 
+        vorname: user.usersVorname, 
+        nachname: user.usersNachname 
+      }});
+    });
   });
 });
 
-// Registration endpoint
-app.post(
-  "/register",
-  [
-    body("email").isEmail(),
-    body("password").isLength({ min: 6 }),
-    body("role").isIn(["User", "Leader", "Admin"]),
-  ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const { email, password, role } = req.body;
-
-    // Check if email already exists
-    db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
-      if (err) {
-        return res.status(500).json({ error: "Database error" });
-      }
-
-      if (results.length > 0) {
-        return res.status(400).json({ error: "Email already registered" });
-      }
-
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      // Find role ID
-      db.query("SELECT id FROM roles WHERE name = ?", [role], (err, results) => {
-        if (err || results.length === 0) {
-          return res.status(500).json({ error: "Role not found" });
-        }
-
-        const roleId = results[0].id;
-
-        // Insert user into the database
-        db.query(
-          "INSERT INTO users (email, password, role_id) VALUES (?, ?, ?)",
-          [email, hashedPassword, roleId],
-          (error) => {
-            if (error) {
-              return res.status(500).json({ error: "Error registering user" });
-            }
-            res.status(201).json({ message: "User registered successfully" });
-          }
-        );
-      });
-    });
-  }
-);
-
 // Login endpoint
-app.post("/login", [body("email").isEmail(), body("password").exists()], (req, res) => {
+app.post("/api/login", [body("email").isEmail(), body("password").exists()], (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -20310,7 +21056,7 @@ app.post("/login", [body("email").isEmail(), body("password").exists()], (req, r
   const { email, password } = req.body;
 
   // Find user in the database
-  db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
+  db.query("SELECT * FROM t_users WHERE usersEmail = ?", [email], async (err, results) => {
     if (err || results.length === 0) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
@@ -20324,7 +21070,7 @@ app.post("/login", [body("email").isEmail(), body("password").exists()], (req, r
     }
 
     // Generate JWT
-    const token = jwt.sign({ userId: user.id, role: user.role_id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ userId: user.usersID, role: user.rolesFK }, process.env.JWT_SECRET, {
       expiresIn: '1h',
     });
 
@@ -20352,6 +21098,10 @@ app.use((req, res, next) => {
   next();
 });
 
+// Logout endpoint
+app.post('/api/logout', (req, res) => {
+  res.json({ message: 'Successfully logged out' });
+});
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
@@ -20379,6 +21129,105 @@ db.connect(err => {
 });
 
 module.exports = db;
+
+***adminController.js:
+const db = require('../config/db');
+
+// Alle Benutzer abrufen
+exports.getUsers = (req, res) => {
+  const query = 'SELECT * FROM t_users';
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).send('Fehler beim Abrufen der Benutzer.');
+    res.json(results);
+  });
+};
+
+// Benutzer bearbeiten
+exports.updateUser = (req, res) => {
+  const { id } = req.params;
+  const { usersEmail, usersVorname, usersNachname, rolesFK } = req.body;
+  const query = 'UPDATE t_users SET usersEmail = ?, usersVorname = ?, usersNachname = ?, rolesFK = ? WHERE usersID = ?';
+  const values = [usersEmail, usersVorname, usersNachname, rolesFK, id];
+
+  db.query(query, values, (err, results) => {
+    if (err) return res.status(500).send('Fehler beim Bearbeiten des Benutzers.');
+    res.status(200).send('Benutzer erfolgreich bearbeitet.');
+  });
+};
+
+// Alle Rollen abrufen
+exports.getRoles = (req, res) => {
+  const query = 'SELECT * FROM t_roles';
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).send('Fehler beim Abrufen der Rollen.');
+    res.json(results);
+  });
+};
+
+// Rolle bearbeiten
+exports.updateRole = (req, res) => {
+  const { id } = req.params;
+  const { rolesName } = req.body;
+  const query = 'UPDATE t_roles SET rolesName = ? WHERE rolesID = ?';
+  const values = [rolesName, id];
+
+  db.query(query, values, (err, results) => {
+    if (err) return res.status(500).send('Fehler beim Bearbeiten der Rolle.');
+    res.status(200).send('Rolle erfolgreich bearbeitet.');
+  });
+};
+
+// Alle Teams abrufen
+exports.getTeams = (req, res) => {
+  const query = 'SELECT * FROM t_team';
+  db.query(query, (err, results) => {
+    if (err) return res.status(500).send('Fehler beim Abrufen der Teams.');
+    res.json(results);
+  });
+};
+
+// Team bearbeiten
+exports.updateTeam = (req, res) => {
+  const { id } = req.params;
+  const { teamName, teamLeaderFK } = req.body;
+  const query = 'UPDATE t_team SET teamName = ?, teamLeaderFK = ? WHERE teamID = ?';
+  const values = [teamName, teamLeaderFK, id];
+
+  db.query(query, values, (err, results) => {
+    if (err) return res.status(500).send('Fehler beim Bearbeiten des Teams.');
+    res.status(200).send('Team erfolgreich bearbeitet.');
+  });
+};
+
+// Benutzer löschen
+exports.deleteUser = (req, res) => {
+  const { id } = req.params;
+  const query = 'DELETE FROM t_users WHERE usersID = ?';
+  db.query(query, [id], (err, results) => {
+    if (err) return res.status(500).send('Fehler beim Löschen des Benutzers.');
+    res.status(204).send();
+  });
+};
+
+// Rolle löschen
+exports.deleteRole = (req, res) => {
+  const { id } = req.params;
+  const query = 'DELETE FROM t_roles WHERE rolesID = ?';
+  db.query(query, [id], (err, results) => {
+    if (err) return res.status(500).send('Fehler beim Löschen der Rolle.');
+    res.status(204).send();
+  });
+};
+
+// Team löschen
+exports.deleteTeam = (req, res) => {
+  const { id } = req.params;
+  const query = 'DELETE FROM t_team WHERE teamID = ?';
+  db.query(query, [id], (err, results) => {
+    if (err) return res.status(500).send('Fehler beim Löschen des Teams.');
+    res.status(204).send();
+  });
+};
 
 ***passwordResetController.js:
 // controllers/passwordResetController.js
@@ -20437,7 +21286,6 @@ exports.resetPassword = (req, res) => {
 };
 
 ***registerController.js:
-// controllers/registerController.js
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
 const db = require('../config/db');
@@ -20448,10 +21296,10 @@ exports.registerUser = async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password } = req.body;
+    const { vorname, nachname, email, password } = req.body;
 
     // Check if email already exists
-    db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
+    db.query("SELECT * FROM t_users WHERE usersEmail = ?", [email], async (err, results) => {
         if (err) {
             return res.status(500).json({ error: "Database error" });
         }
@@ -20462,18 +21310,18 @@ exports.registerUser = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        db.query("SELECT id FROM roles WHERE name = 'user'", (err, results) => {
+        db.query("SELECT rolesID FROM t_roles WHERE rolesName = 'user'", (err, results) => {
             if (err || results.length === 0) {
                 return res.status(500).json({ error: "Role not found" });
             }
 
-            const roleId = results[0].id;
+            const roleId = results[0].rolesID;
             console.log("Role found:", roleId);
             console.log("Inserting user with email:", email);
 
             db.query(
-                "INSERT INTO users (email, password, role_id) VALUES (?, ?, ?)",
-                [email, hashedPassword, roleId],
+                "INSERT INTO t_users (usersVorname, usersNachname, usersEmail, password, rolesFK) VALUES (?, ?, ?, ?, ?)",
+                [vorname, nachname, email, hashedPassword, roleId],
                 (error) => {
                     if (error) {
                         return res.status(500).json({ error: "Error registering user" });
@@ -20484,6 +21332,196 @@ exports.registerUser = async (req, res) => {
         });
     });
 };
+
+***textMiningController.js:
+const fs = require('fs');
+const path = require('path');
+
+// Funktion zum Bereinigen des Textes
+const cleanText = (text) => {
+  return text.replace(/[^\w\s]/gi, '').toLowerCase();
+};
+
+// Funktion zum Laden der Wörter aus den Textdateien
+const loadWords = (filePath) => {
+  const fullPath = path.join(__dirname, '..', 'resources', filePath);
+  const words = fs.readFileSync(fullPath, 'utf8').split('\n').map(word => word.trim());
+  return words;
+};
+
+const analyzeText = (text) => {
+  const positiveWords = loadWords('positiveWords.txt');
+  const negativeWords = loadWords('negativeWords.txt');
+
+  let score = 0;
+  let foundWords = 0;
+
+  // Text bereinigen und analysieren
+  const cleanedText = cleanText(text);
+  const words = cleanedText.split(/\s+/);
+
+  words.forEach(word => {
+    if (positiveWords.includes(word)) {
+      score += 1;
+      foundWords += 1; // Ein Wort aus der positiven Liste wurde gefunden
+    } else if (negativeWords.includes(word)) {
+      score -= 1;
+      foundWords += 1; // Ein Wort aus der negativen Liste wurde gefunden
+    }
+  });
+
+  return { score, foundWords };
+};
+
+const classifySentiment = (score, foundWords) => {
+  // Wenn keine Wörter gefunden wurden, die mit den Listen übereinstimmen
+  if (foundWords === 0) {
+    return 'Unbekannt';
+  }
+
+  // Klassifizierung des Sentiments basierend auf dem Score
+  if (score >= 3) {
+    return 'Sehr positiv';
+  } else if (score >= 1 && score <= 2) {
+    return 'Positiv';
+  } else if (score === 0) {
+    return 'Neutral';
+  } else if (score <= -1 && score >= -2) {
+    return 'Negativ';
+  } else if (score <= -3) {
+    return 'Sehr negativ';
+  }
+
+  return 'Unbekannt';
+};
+
+const textMining = (req, res) => {
+  const { text } = req.body;
+
+  if (!text || text.trim() === '') {
+    return res.json({ score: 0, sentiment: 'Unbekannt' });
+  }
+
+  const { score, foundWords } = analyzeText(text);
+  const sentiment = classifySentiment(score, foundWords);
+
+  return res.json({ score, sentiment });
+};
+
+module.exports = {
+  textMining
+};
+
+***variousFeedbackController.js:
+const db = require('../config/db');
+const multer = require('multer');
+const path = require('path');
+const sharp = require('sharp');
+
+// Multer-Konfiguration für Datei-Uploads
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage }).single('uploadUrl');
+
+// Abrufen aller Feedbacks eines Benutzers
+exports.getFeedbackByUser = (req, res) => {
+  const userId = req.params.userID;
+
+  const query = `
+    SELECT variousFdbckID, variousFdbckReceived, variousFdbckCustomer, variousFdbckDescription, uploadUrl 
+    FROM t_variousFdbck WHERE usersFK = ?
+  `;
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error('Fehler beim Abrufen der Feedbacks:', err);
+      return res.status(500).send('Fehler beim Abrufen der Feedbacks');
+    }
+    res.json(results);
+  });
+};
+
+// Erstellen eines neuen Feedbacks
+exports.createFeedback = (req, res) => {
+  upload(req, res, async (err) => {
+    if (err) {
+      console.error('Fehler beim Hochladen der Datei:', err);
+      return res.status(500).send('Fehler beim Hochladen der Datei');
+    }
+
+    const { variousFdbckCustomer, variousFdbckDescription, variousFdbckReceived } = req.body;
+
+    if (!req.user || !req.user.userId) {
+      return res.status(401).json({ error: 'Unauthorized: Token fehlt oder ungültig' });
+    }
+
+    const userId = req.user.userId;
+    let uploadUrl = null;
+
+    if (req.file) {
+      const fileName = `feedback_${Date.now()}_${req.file.originalname}`;
+      const uploadPath = path.join(process.env.UPLOAD_PATH, fileName);
+
+      try {
+        await sharp(req.file.buffer).toFile(uploadPath);
+        uploadUrl = `/uploads/${fileName}`;
+      } catch (error) {
+        console.error('Fehler beim Speichern der Datei:', error);
+        return res.status(500).send('Fehler beim Speichern der Datei');
+      }
+    }
+
+    const query = `
+      INSERT INTO t_variousFdbck (variousFdbckCustomer, variousFdbckDescription, variousFdbckReceived, uploadUrl, usersFK)
+      VALUES (?, ?, ?, ?, ?)
+    `;
+    const values = [variousFdbckCustomer, variousFdbckDescription, variousFdbckReceived, uploadUrl, userId];
+
+    db.query(query, values, (err, results) => {
+      if (err) {
+        console.error('Fehler beim Einfügen des Feedbacks in die Datenbank:', err);
+        return res.status(500).send('Fehler beim Speichern des Feedbacks');
+      }
+
+      res.status(201).send('Feedback erfolgreich hinzugefügt');
+    });
+  });
+};
+
+// Feedback löschen
+exports.deleteFeedback = (req, res) => {
+  const feedbackID = req.params.feedbackID;
+
+  const query = 'DELETE FROM t_variousFdbck WHERE variousFdbckID = ?';
+  db.query(query, [feedbackID], (err, results) => {
+    if (err) {
+      console.error('Fehler beim Löschen des Feedbacks:', err);
+      return res.status(500).send('Fehler beim Löschen des Feedbacks');
+    }
+    res.send('Feedback erfolgreich gelöscht');
+  });
+};
+
+***authenticateToken.js:
+const jwt = require('jsonwebtoken');
+
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Extrahiere das Token
+
+  if (!token) {
+    return res.status(401).json({ error: 'Token fehlt' });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Ungültiges Token' });
+    }
+
+    req.user = user; // Speichere die Benutzerdaten aus dem Token in req.user
+    next();
+  });
+};
+
+module.exports = authenticateToken;
 
 ***index.html:
 <!DOCTYPE html>
@@ -85124,6 +86162,38 @@ window.Modernizr = (function( window, document, undefined ) {
 
 })(this, this.document);
 
+***adminRoutes.js:
+const express = require('express');
+const router = express.Router();
+const {
+  getUsers,
+  deleteUser,
+  updateUser,  // Neue Funktion für Benutzer bearbeiten
+  getRoles,
+  deleteRole,
+  updateRole,  // Neue Funktion für Rollen bearbeiten
+  getTeams,
+  deleteTeam,
+  updateTeam  // Neue Funktion für Teams bearbeiten
+} = require('../controllers/adminController');
+
+// Benutzerverwaltung
+router.get('/users', getUsers);
+router.delete('/users/:id', deleteUser);
+router.put('/users/:id', updateUser); // Benutzer bearbeiten
+
+// Rollenverwaltung
+router.get('/roles', getRoles);
+router.delete('/roles/:id', deleteRole);
+router.put('/roles/:id', updateRole); // Rolle bearbeiten
+
+// Teamverwaltung
+router.get('/teams', getTeams);
+router.delete('/teams/:id', deleteTeam);
+router.put('/teams/:id', updateTeam); // Team bearbeiten
+
+module.exports = router;
+
 ***passwordResetRoutes.js:
 // routes/passwordResetRoutes.js
 const express = require('express');
@@ -85143,6 +86213,378 @@ const { registerUser } = require('../controllers/registerController');
 router.post('/', registerUser);
 
 module.exports = router;
+
+***textMiningRoutes.js:
+const express = require('express');
+const router = express.Router();
+const { textMining } = require('../controllers/textMiningController');
+
+// Route für das Textmining
+router.post('/analyze', textMining);
+
+module.exports = router;
+
+***variousFeedbackRoutes.js:
+const express = require('express');
+const router = express.Router();
+const variousFeedbackController = require('../controllers/variousFeedbackController');
+const authenticateToken = require('../middleware/authenticateToken'); // JWT Middleware importieren
+
+// Route zum Abrufen von Feedbacks für den angemeldeten Benutzer
+router.get('/user/:userID', authenticateToken, variousFeedbackController.getFeedbackByUser);
+
+// Route zum Erstellen eines neuen Feedbacks
+router.post('/', authenticateToken, variousFeedbackController.createFeedback);
+
+// Route zum Löschen eines Feedbacks
+router.delete('/:feedbackID', authenticateToken, variousFeedbackController.deleteFeedback);
+
+module.exports = router;
+
+***Admin.js:
+import React, { useContext, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AuthContext } from './AuthContext';
+import AdminUser from './AdminUser';
+import AdminRole from './AdminRole';
+import AdminTeam from './AdminTeam';
+
+const Admin = () => {
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  // Stelle sicher, dass nur Admins Zugriff haben
+  useEffect(() => {
+    if (!user || user.role !== 3) {
+      navigate('/dashboard'); // Nicht-Admin-Benutzer weiterleiten
+    }
+  }, [user, navigate]);
+
+  return (
+    <div className="container-fluid mt-5"> {/* Full width for the banner */}
+      <section className="featured">
+        <div className="content-wrapper banner">
+          <div className="float-right">
+            <img className="page-icon" src="/Content/themes/base/images/person_BOLD.svg" alt="Admin icon" />
+          </div>
+          <hgroup className="title">
+            <h1>Adminbereich</h1>
+          </hgroup>
+        </div>
+      </section>
+      <div className="container mt-5"> {/* Centered content for the rest */}
+        {/* Benutzerverwaltung */}
+        <AdminUser />
+
+        {/* Rollenverwaltung */}
+        <AdminRole />
+
+        {/* Teamverwaltung */}
+        <AdminTeam />
+      </div>
+    </div>
+  );
+};
+
+export default Admin;
+
+***AdminRole.js:
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const AdminRole = () => {
+  const [roles, setRoles] = useState([]);
+  const [editingRole, setEditingRole] = useState(null);
+
+  // Lade alle Rollen
+  useEffect(() => {
+    const fetchRoles = async () => {
+      const response = await axios.get('/api/admin/roles');
+      setRoles(response.data);
+    };
+    fetchRoles();
+  }, []);
+
+  // Rolle löschen
+  const handleDeleteRole = async (roleId) => {
+    await axios.delete(`/api/admin/roles/${roleId}`);
+    setRoles(roles.filter((role) => role.rolesID !== roleId));
+  };
+
+  // Rolle speichern
+  const handleSaveRole = async () => {
+    const { rolesID, rolesName } = editingRole;
+    await axios.put(`/api/admin/roles/${rolesID}`, {
+      rolesName
+    });
+    setRoles(roles.map((role) =>
+      role.rolesID === rolesID ? editingRole : role
+    ));
+    setEditingRole(null); // Bearbeitungsformular schließen
+  };
+
+  return (
+    <div className="mb-5">
+      <h3>Rollenverwaltung</h3>
+      <table className="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Rollenname</th>
+            <th>Aktionen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {roles.map((role) => (
+            <tr key={role.rolesID}>
+              <td>{role.rolesID}</td>
+              <td>{role.rolesName}</td>
+              <td>
+                <button onClick={() => setEditingRole(role)}>Bearbeiten</button>
+                <button onClick={() => handleDeleteRole(role.rolesID)}>Löschen</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {editingRole && (
+        <div className="mb-5">
+          <h3>Rolle bearbeiten</h3>
+          <form onSubmit={handleSaveRole}>
+            <div className="form-group">
+              <label>Rollenname</label>
+              <input
+                type="text"
+                className="form-control"
+                value={editingRole.rolesName}
+                onChange={(e) => setEditingRole({ ...editingRole, rolesName: e.target.value })}
+              />
+            </div>
+            <button type="button" className="btn btn-primary" onClick={handleSaveRole}>Speichern</button>
+            <button type="button" className="btn btn-secondary ml-2" onClick={() => setEditingRole(null)}>Abbrechen</button>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AdminRole;
+
+***AdminTeam.js:
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const AdminTeam = () => {
+  const [teams, setTeams] = useState([]);
+  const [editingTeam, setEditingTeam] = useState(null);
+
+  // Lade alle Teams
+  useEffect(() => {
+    const fetchTeams = async () => {
+      const response = await axios.get('/api/admin/teams');
+      setTeams(response.data);
+    };
+    fetchTeams();
+  }, []);
+
+  // Team löschen
+  const handleDeleteTeam = async (teamId) => {
+    await axios.delete(`/api/admin/teams/${teamId}`);
+    setTeams(teams.filter((team) => team.teamID !== teamId));
+  };
+
+  // Team speichern
+  const handleSaveTeam = async () => {
+    const { teamID, teamName, teamLeaderFK } = editingTeam;
+    await axios.put(`/api/admin/teams/${teamID}`, {
+      teamName,
+      teamLeaderFK
+    });
+    setTeams(teams.map((team) =>
+      team.teamID === teamID ? editingTeam : team
+    ));
+    setEditingTeam(null); // Bearbeitungsformular schließen
+  };
+
+  return (
+    <div className="mb-5">
+      <h3>Teamverwaltung</h3>
+      <table className="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Teamname</th>
+            <th>Teamleiter</th>
+            <th>Aktionen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {teams.map((team) => (
+            <tr key={team.teamID}>
+              <td>{team.teamID}</td>
+              <td>{team.teamName}</td>
+              <td>{team.teamLeaderFK}</td>
+              <td>
+                <button onClick={() => setEditingTeam(team)}>Bearbeiten</button>
+                <button onClick={() => handleDeleteTeam(team.teamID)}>Löschen</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {editingTeam && (
+        <div className="mb-5">
+          <h3>Team bearbeiten</h3>
+          <form onSubmit={handleSaveTeam}>
+            <div className="form-group">
+              <label>Teamname</label>
+              <input
+                type="text"
+                className="form-control"
+                value={editingTeam.teamName}
+                onChange={(e) => setEditingTeam({ ...editingTeam, teamName: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label>Teamleiter (teamLeaderFK)</label>
+              <input
+                type="number"
+                className="form-control"
+                value={editingTeam.teamLeaderFK}
+                onChange={(e) => setEditingTeam({ ...editingTeam, teamLeaderFK: e.target.value })}
+              />
+            </div>
+            <button type="button" className="btn btn-primary" onClick={handleSaveTeam}>Speichern</button>
+            <button type="button" className="btn btn-secondary ml-2" onClick={() => setEditingTeam(null)}>Abbrechen</button>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AdminTeam;
+
+***AdminUser.js:
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const AdminUser = () => {
+  const [users, setUsers] = useState([]);
+  const [editingUser, setEditingUser] = useState(null);
+
+  // Lade alle Benutzer
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const response = await axios.get('/api/admin/users');
+      setUsers(response.data);
+    };
+    fetchUsers();
+  }, []);
+
+  // Benutzer löschen
+  const handleDeleteUser = async (userId) => {
+    await axios.delete(`/api/admin/users/${userId}`);
+    setUsers(users.filter((user) => user.usersID !== userId));
+  };
+
+  // Benutzer speichern
+  const handleSaveUser = async () => {
+    const { usersID, usersEmail, usersVorname, usersNachname, rolesFK } = editingUser;
+    await axios.put(`/api/admin/users/${usersID}`, {
+      usersEmail,
+      usersVorname,
+      usersNachname,
+      rolesFK
+    });
+    setUsers(users.map((user) =>
+      user.usersID === usersID ? editingUser : user
+    ));
+    setEditingUser(null); // Bearbeitungsformular schließen
+  };
+
+  return (
+    <div className="mb-5">
+      <h3>Benutzerverwaltung</h3>
+      <table className="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Email</th>
+            <th>Vorname</th>
+            <th>Nachname</th>
+            <th>Aktionen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map((user) => (
+            <tr key={user.usersID}>
+              <td>{user.usersID}</td>
+              <td>{user.usersEmail}</td>
+              <td>{user.usersVorname}</td>
+              <td>{user.usersNachname}</td>
+              <td>
+                <button onClick={() => setEditingUser(user)}>Bearbeiten</button>
+                <button onClick={() => handleDeleteUser(user.usersID)}>Löschen</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {editingUser && (
+        <div className="mb-5">
+          <h3>Benutzer bearbeiten</h3>
+          <form onSubmit={handleSaveUser}>
+            <div className="form-group">
+              <label>Email</label>
+              <input
+                type="email"
+                className="form-control"
+                value={editingUser.usersEmail}
+                onChange={(e) => setEditingUser({ ...editingUser, usersEmail: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label>Vorname</label>
+              <input
+                type="text"
+                className="form-control"
+                value={editingUser.usersVorname}
+                onChange={(e) => setEditingUser({ ...editingUser, usersVorname: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label>Nachname</label>
+              <input
+                type="text"
+                className="form-control"
+                value={editingUser.usersNachname}
+                onChange={(e) => setEditingUser({ ...editingUser, usersNachname: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label>Rolle (rolesFK)</label>
+              <input
+                type="number"
+                className="form-control"
+                value={editingUser.rolesFK}
+                onChange={(e) => setEditingUser({ ...editingUser, rolesFK: e.target.value })}
+              />
+            </div>
+            <button type="button" className="btn btn-primary" onClick={handleSaveUser}>Speichern</button>
+            <button type="button" className="btn btn-secondary ml-2" onClick={() => setEditingUser(null)}>Abbrechen</button>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AdminUser;
 
 ***App.css:
 .App {
@@ -85185,24 +86627,55 @@ module.exports = router;
 }
 
 ***App.js:
-// src/App.js
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './AuthContext';
+import React, { useContext } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, AuthContext } from './AuthContext';
+import Navigation from './Navigation';
 import Login from './Login';
 import Register from './Register';
 import PasswordReset from './PasswordReset';
+import Dashboard from './Dashboard';
+import VariousFeedback from './variousFeedback';
+import Admin from './Admin';
+import TextMining from './TextMining'; 
+import User from './User'; // Importiere die neue UserFeedback-Komponente
+
+// ProtectedRoute component to restrict access to authenticated users
+const ProtectedRoute = ({ children }) => {
+  const { user } = useContext(AuthContext);
+
+  // If no user is logged in, redirect to the login page
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  return children;
+};
 
 function App() {
+  const { loading } = useContext(AuthContext); 
+
+  if (loading) {
+    return <div>Lade Benutzerdaten...</div>; 
+  }
+
   return (
     <Router>
       <AuthProvider>
         <div>
+          <Navigation />
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/password-reset" element={<PasswordReset />} />
-            <Route path="/" element={<Login />} />
+            <Route path="/" element={<Navigate to="/login" />} />
+
+            {/* Protected routes */}
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/variousFeedback" element={<ProtectedRoute><VariousFeedback /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+            <Route path="/textmining" element={<ProtectedRoute><TextMining /></ProtectedRoute>} />
+            <Route path="/User" element={<ProtectedRoute><User /></ProtectedRoute>} /> {/* Neue Route */}
           </Routes>
         </div>
       </AuthProvider>
@@ -85213,65 +86686,85 @@ function App() {
 export default App;
 
 ***AuthContext.js:
-import React, { createContext, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Link } from 'react-router-dom';
+import React, { createContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    // const navigate = useNavigate();
+    const [loading, setLoading] = useState(true); // Ladezustand für Benutzerdaten
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            setLoading(true); // Explicitly setting loading to true while fetching user
+            fetch('/api/user', {
+                headers: { Authorization: `Bearer ${token}` },
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    setUser(data.user); // Benutzerdaten speichern
+                    setLoading(false); // Ladezustand beenden
+                })
+                .catch(() => {
+                    setUser(null);
+                    setLoading(false); // Ladezustand beenden
+                });
+        } else {
+            setLoading(false); // Kein Token, Ladezustand auf false setzen
+        }
+    }, []);
 
     const login = async (email, password) => {
-        // API-Aufruf zur Authentifizierung
+        setLoading(true); // Explicitly set loading before attempting login
         const response = await fetch('/api/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ email, password }),
         });
 
         if (response.ok) {
             const data = await response.json();
-            setUser(data.user);
-            localStorage.setItem('token', data.token);
-            <Link to="/dashboard">Dashboard</Link>
+            setUser(data.user); // Set user immediately after login
+            localStorage.setItem('token', data.token); // Token im LocalStorage speichern
+            setLoading(false); // Ladezustand beenden
+            return '/dashboard'; // Weiterleitungspfad nach Login
         }
 
-        return response;
+        setLoading(false); // Set loading to false on failed login
+        return null; // Rückgabe null, wenn der Login fehlschlägt
     };
 
-    const register = async (email, password) => {
-        const response = await fetch('/api/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            setUser(data.user);
-            localStorage.setItem('token', data.token);
-            <Link to="/dashboard">Dashboard</Link>
-        }
-
-        return response;
-    };
-
-    const logout = () => {
+    const logout = async () => {
+        setLoading(true); // Set loading while logging out
+        await fetch('/api/logout', { method: 'POST' });
         setUser(null);
         localStorage.removeItem('token');
-        <Link to="/login">Login</Link>
+        setLoading(false); // Ladezustand beenden
+        return '/login'; // Weiterleitung zur Login-Seite
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout }}>
+        <AuthContext.Provider value={{ user, login, logout, loading }}>
             {children}
         </AuthContext.Provider>
     );
 };
 
-export default AuthContext;
+export { AuthContext };
+
+***Dashboard.js:
+import React from 'react';
+
+const Dashboard = () => {
+  return (
+    <div>
+      <h1>Willkommen im Dashboard</h1>
+    </div>
+  );
+};
+
+export default Dashboard;
 
 ***index.css:
 body {
@@ -85306,43 +86799,74 @@ root.render(
 
 reportWebVitals();
 
-***Login.js:
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+***linkGenerator.js:
+// src/linkGenerator.js
 
+class LinkGenerator {
+    // Funktion zur Erzeugung einer zufälligen Zeichenkette
+    static randomString(length) {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        for (let i = 0; i < length; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return result;
+    }
+
+    // Extrahiert den URL-Code nach dem '?' Zeichen
+    static rawUrlCode(url, forFeedbackHashcode = false) {
+        let urlCode = url.split('?')[1] || '';
+        if (forFeedbackHashcode) {
+            // Entfernt Sonderzeichen, um einen sauberen Feedback-Code zu erstellen
+            urlCode = urlCode.replace(/[^\w\s]/gi, '');
+        }
+        return urlCode;
+    }
+
+    // Extrahiert und dekodiert den Kunden-Namen aus der URL
+    static getCustomerForProjectName(url) {
+        const customerName = url.split('&')[0];
+        return decodeURIComponent(customerName);
+    }
+}
+
+export default LinkGenerator;
+
+***Login.js:
+import React, { useState, useContext, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { AuthContext } from './AuthContext'; // Verwende den AuthContext
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(''); // Hinzufügen eines State für Fehlermeldungen
-  const [success, setSuccess] = useState(''); // State für Erfolgsmeldungen
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const { user, login, loading } = useContext(AuthContext); // Ladezustand und login-Funktion verwenden
+  const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    
-    // API-Aufruf zum Login
-    try {
-      const response = await fetch('/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify({ email, password }),
-      });
+    const redirectPath = await login(email, password); // Login aufrufen
 
-      if (response.ok) {
-        const data = await response.json();
-        setSuccess('Login erfolgreich!'); // Erfolgsmeldung setzen
-        setError(''); // Fehler-Reset
-        // Weitere Verarbeitung z.B. Token speichern, Redirect etc.
-      } else {
-        const errorData = await response.json();
-        setError('Fehler: ' + (errorData.error || 'Login fehlgeschlagen')); // Fehlermeldung setzen
-        setSuccess(''); // Erfolgsmeldung zurücksetzen
-      }
-    } catch (error) {
-      setError('Fehler: Netzwerkproblem');
+    if (redirectPath) {
+      setSuccess('Login erfolgreich!');
+      setError('');
+      setTimeout(() => {
+        window.location.reload(); // Refresh the page after login
+      }, 1);
+    } else {
+      setError('Login fehlgeschlagen. Bitte überprüfe deine Anmeldedaten.');
       setSuccess('');
     }
   };
+
+  useEffect(() => {
+    // Benutzer weiterleiten, wenn er bereits eingeloggt ist und die Benutzerdaten geladen sind
+    if (user && !loading) {
+      navigate('/dashboard');
+    }
+  }, [user, loading, navigate]);
 
   return (
     <div className="container mt-5">
@@ -85350,9 +86874,9 @@ const Login = () => {
         <div className="col-md-6">
           <div className="card">
             <div className="card-body">
-              <h5 className="card-title">Login</h5>
-              {error && <div className="alert alert-danger">{error}</div>} {/* Fehlermeldung anzeigen */}
-              {success && <div className="alert alert-success">{success}</div>} {/* Erfolgsmeldung anzeigen */}
+              <h1 className="card-title">Login</h1> {/* Geändert zu H1 */}
+              {error && <div className="alert alert-danger">{error}</div>}
+              {success && <div className="alert alert-success">{success}</div>}
               <form onSubmit={handleSubmit}>
                 <div className="form-group">
                   <label htmlFor="email">E-mail Adresse</label>
@@ -85378,7 +86902,9 @@ const Login = () => {
                     required
                   />
                 </div>
-                <button type="submit" className="btn btn-primary">Anmelden</button>
+                <button type="submit" className="btn btn-primary" disabled={loading}>
+                  {loading ? 'Lade...' : 'Anmelden'}
+                </button>
               </form>
               <div className="mt-3">
                 <Link to="/register" className="btn btn-link">Neu registrieren</Link>
@@ -85393,6 +86919,66 @@ const Login = () => {
 };
 
 export default Login;
+
+***Navigation.js:
+import React, { useContext } from 'react';
+import { AuthContext } from './AuthContext';
+import { Link, useNavigate } from 'react-router-dom';
+
+function Navigation() {
+  const { user, logout, loading } = useContext(AuthContext); // Include loading from AuthContext
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    const redirectPath = await logout(); // Perform logout
+    navigate(redirectPath); // Navigate to login page
+  };
+
+  // Do not render navigation while loading
+  if (loading) {
+    return null; // Optionally return a loading spinner or placeholder
+  }
+
+  return (
+    <nav className="navbar navbar-default">
+      <div className="container-fluid">
+        <div className="navbar-header">
+          <a href="/" className="navbar-brand">
+            <img src="/dist/img/sc_logo.png" id="sc-logo" alt="swisscom-logo" />
+          </a>
+          <button className="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar-main">
+            <span className="icon-bar"></span>
+            <span className="icon-bar"></span>
+            <span className="icon-bar"></span>
+          </button>
+        </div>
+        <div className="navbar-collapse collapse" id="navbar-main">
+          <ul className="nav navbar-nav navbar-right">
+            {!user ? (
+              <li><Link to="/login">Login</Link></li> // Add a fallback in case user is not logged in
+            ) : (
+              <>
+                <li><Link to="/generate">Feedback einholen</Link></li>
+                <li><Link to="/variousFeedback">Feedback Erfassen</Link></li>
+                {/* <li><Link to="/project">Projekt erstellen</Link></li> */}
+                {/* <li><Link to="/account/manage">Mein Account</Link></li> */}
+                <li><Link to="/User">Meine Feedbacks</Link></li>
+                <li><Link to="/teamleader">Alle Feedbacks</Link></li>
+                {/* <li><Link to="/invite">Einladen</Link></li> */}
+                {user.role === 3 && (
+                  <li><Link to="/admin">Admin</Link></li>
+                )}
+                <li><Link to="#" onClick={handleLogout}>Ausloggen</Link></li>
+              </>
+            )}
+          </ul>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+export default Navigation;
 
 ***PasswordReset.js:
 import React, { useState } from 'react';
@@ -85448,6 +87034,8 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const Register = () => {
+  const [vorname, setVorname] = useState('');
+  const [nachname, setNachname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -85469,14 +87057,12 @@ const Register = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ vorname, nachname, email, password }),
       });
 
       if (response.ok) {
         setMessage('Erfolgreich registriert');
         setError(false);
-        // Hier kannst du auch eine Weiterleitung zur Login-Seite hinzufügen, z.B.:
-        // window.location.href = '/login';
       } else {
         const result = await response.json();
         setMessage(result.error || 'Registrierung fehlgeschlagen');
@@ -85501,6 +87087,30 @@ const Register = () => {
                 </div>
               )}
               <form onSubmit={handleSubmit}>
+                <div className="form-group">
+                  <label htmlFor="vorname">Vorname</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="vorname"
+                    value={vorname}
+                    onChange={(e) => setVorname(e.target.value)}
+                    placeholder="Vorname"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="nachname">Nachname</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="nachname"
+                    value={nachname}
+                    onChange={(e) => setNachname(e.target.value)}
+                    placeholder="Nachname"
+                    required
+                  />
+                </div>
                 <div className="form-group">
                   <label htmlFor="email">E-mail Adresse</label>
                   <input
@@ -85573,4 +87183,378 @@ export default reportWebVitals;
 // expect(element).toHaveTextContent(/react/i)
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
+
+***TextMining.js:
+import React, { useState } from 'react';
+import LinkGenerator from './linkGenerator'; // Import the LinkGenerator
+
+function TextMining() {
+  const [text, setText] = useState('');
+  const [result, setResult] = useState(null);
+  const [generatedLink, setGeneratedLink] = useState(''); // State for the generated link
+
+  const handleAnalyze = async () => {
+    const response = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text }),
+    });
+
+    const data = await response.json();
+    setResult(data);
+  };
+
+  // Function to generate a link using LinkGenerator
+  const handleGenerateLink = () => {
+    const randomString = LinkGenerator.randomString(10);
+    const host = process.env.REACT_APP_URL_HOST; // Access the environment variable
+    const link = `${host}/analyze?code=${randomString}`;
+    setGeneratedLink(link);
+  };
+  
+
+  return (
+    <div>
+      <h2>Textmining Analyse</h2>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Text eingeben..."
+      />
+      <button onClick={handleAnalyze}>Analysieren</button>
+      
+      <button onClick={handleGenerateLink}>Link Generieren</button> {/* Button to generate link */}
+      {generatedLink && (
+        <div>
+          <h3>Generierter Link:</h3>
+          <p>{generatedLink}</p>
+        </div>
+      )}
+
+      {result && (
+        <div>
+          <h3>Ergebnis:</h3>
+          <p>Score: {result.score}</p>
+          <p>Sentiment: {result.sentiment}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default TextMining;
+
+***User.js:
+import React, { useContext, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AuthContext } from './AuthContext';
+import UserFeedback from './UserFeedback.js';
+
+const User = () => {
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  // Stelle sicher, dass nur angemeldete Benutzer Zugriff haben
+  useEffect(() => {
+    if (!user) {
+      navigate('/login'); // Nicht angemeldete Benutzer weiterleiten
+    }
+  }, [user, navigate]);
+
+  return (
+    <div className="container-fluid mt-5">
+      <section className="featured">
+        <div className="content-wrapper banner">
+          <div className="float-right">
+            <img className="page-icon" src="/Content/themes/base/images/person_BOLD.svg" alt="User icon" />
+          </div>
+          <hgroup className="title">
+            <h1>Benutzerbereich</h1>
+          </hgroup>
+        </div>
+      </section>
+      <div className="container mt-5">
+        {/* Feedback-Tabelle */}
+        <UserFeedback />
+
+        {/* Zukünftige Tabellen oder Abschnitte für den Benutzerbereich */}
+      </div>
+    </div>
+  );
+};
+
+export default User;
+
+***UserFeedback.js:
+import React, { useState, useEffect, useContext } from 'react';
+import axios from 'axios';
+import { AuthContext } from './AuthContext';
+
+const UserFeedback = () => {
+  const { user } = useContext(AuthContext);  // Hole die Benutzerdaten aus dem AuthContext
+  const [feedbacks, setFeedbacks] = useState([]);  // Initialisiere feedbacks als leeres Array
+  const [editingFeedback, setEditingFeedback] = useState(null);
+  const [customer, setCustomer] = useState('');
+  const [description, setDescription] = useState('');
+  const [received, setReceived] = useState('');
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    const fetchFeedbacks = async () => {
+      const token = localStorage.getItem('token');
+      if (token && user && user.id) {  // Stelle sicher, dass der Token und die user.id vorhanden sind
+        try {
+          const response = await axios.get(`/api/feedback/user/${user.id}`, {  // Füge die user.id zur Anfrage hinzu
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setFeedbacks(response.data || []);  // Füge ein Fallback hinzu, falls keine Daten zurückkommen
+        } catch (error) {
+          console.error('Fehler beim Abrufen der Feedbacks:', error);
+          setFeedbacks([]);  // Falls ein Fehler auftritt, setze feedbacks auf ein leeres Array
+        }
+      }
+    };
+
+    fetchFeedbacks();
+  }, [user]);  // Füge user als Abhängigkeit hinzu, um sicherzustellen, dass die Daten geladen werden, sobald der Benutzer verfügbar ist
+
+  const handleEdit = (feedback) => {
+    setEditingFeedback(feedback);
+    setCustomer(feedback.variousFdbckCustomer);
+    setDescription(feedback.variousFdbckDescription);
+    
+    // Das Datum in das richtige Format bringen (YYYY-MM-DD) für das Eingabefeld
+    const formattedDate = new Date(feedback.variousFdbckReceived).toISOString().split('T')[0];
+    setReceived(formattedDate);
+  };
+
+  const handleSaveFeedback = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      await axios.put(`/api/feedback/${editingFeedback.variousFdbckID}`, {
+        variousFdbckCustomer: customer,
+        variousFdbckDescription: description,
+        variousFdbckReceived: received,
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setFeedbacks(feedbacks.map(fb => 
+        fb.variousFdbckID === editingFeedback.variousFdbckID ? { ...fb, variousFdbckCustomer: customer, variousFdbckDescription: description, variousFdbckReceived: received } : fb
+      ));
+      setEditingFeedback(null);
+      setMessage('Feedback erfolgreich aktualisiert!');
+    } catch (error) {
+      console.error('Fehler beim Speichern des Feedbacks:', error);
+    }
+  };
+
+  const handleDeleteFeedback = async (feedbackID) => {
+    const token = localStorage.getItem('token');
+    try {
+      await axios.delete(`/api/feedback/${feedbackID}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setFeedbacks(feedbacks.filter(fb => fb.variousFdbckID !== feedbackID));
+    } catch (error) {
+      console.error('Fehler beim Löschen des Feedbacks:', error);
+    }
+  };
+
+  const handleDownloadFile = (url) => {
+    window.open(url, '_blank');
+  };
+
+  return (
+    <div className="mb-5">
+      <h3>Meine Feedbacks</h3>
+      {message && <p>{message}</p>}
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Feedback Erhalten</th>
+            <th>Kunde</th>
+            <th>Beschreibung</th>
+            <th>Datei</th>
+            <th>Aktionen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.isArray(feedbacks) && feedbacks.length > 0 ? (  // Überprüfe, ob feedbacks ein Array ist
+            feedbacks.map((feedback) => (
+              <tr key={feedback.variousFdbckID}>
+                <td>{new Date(feedback.variousFdbckReceived).toLocaleDateString()}</td>
+                <td>{feedback.variousFdbckCustomer}</td>
+                <td>{feedback.variousFdbckDescription}</td>
+                <td>
+                  <a href={feedback.uploadUrl} download className="btn btn-link">
+                    Datei herunterladen
+                  </a>
+                </td>
+                <td>
+                  <button className="btn btn-primary mr-2" onClick={() => handleEdit(feedback)}>Bearbeiten</button>
+                  <button className="btn btn-danger" onClick={() => handleDeleteFeedback(feedback.variousFdbckID)}>
+                    Löschen
+                  </button>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="5">Keine Feedbacks gefunden.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+
+      {editingFeedback && (
+        <div className="mt-5">
+          <h3>Feedback bearbeiten</h3>
+          <div className="form-group">
+            <label>Kunde</label>
+            <input
+              type="text"
+              className="form-control"
+              value={customer}
+              onChange={(e) => setCustomer(e.target.value)}
+            />
+          </div>
+          <div className="form-group">
+            <label>Beschreibung</label>
+            <input
+              type="text"
+              className="form-control"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+          <div className="form-group">
+            <label>Erhalten am</label>
+            <input
+              type="date"
+              className="form-control"
+              value={received}
+              onChange={(e) => setReceived(e.target.value)}
+            />
+          </div>
+          <button className="btn btn-primary" onClick={handleSaveFeedback}>Speichern</button>
+          <button className="btn btn-secondary ml-2" onClick={() => setEditingFeedback(null)}>Abbrechen</button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default UserFeedback;
+
+***variousFeedback.js:
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css'; // Import the datepicker styles
+
+const VariousFeedback = () => {
+  const [customer, setCustomer] = useState('');
+  const [description, setDescription] = useState('');
+  const [received, setReceived] = useState(new Date());
+  const [file, setFile] = useState(null);
+  const [message, setMessage] = useState('');
+  const navigate = useNavigate();
+
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData();
+    formData.append('variousFdbckCustomer', customer);
+    formData.append('variousFdbckDescription', description);
+    formData.append('variousFdbckReceived', received.toLocaleDateString('de-DE')); // Format the date as dd.MM.yyyy
+    formData.append('uploadUrl', file); // Datei hochladen
+
+    const token = localStorage.getItem('token');
+
+    try {
+      const response = await axios.post('/api/feedback', formData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.status === 201) {
+        setMessage('Feedback erfolgreich hinzugefügt!');
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 3000);
+      }
+    } catch (error) {
+      setMessage('Ein Fehler ist aufgetreten. Bitte versuche es erneut.');
+    }
+  };
+
+  return (
+    <div className="container-fluid mt-5"> {/* Banner is full width */}
+      <section className="featured">
+        <div className="content-wrapper banner">
+          <div className="float-right">
+            <img className="page-icon" src="/Content/themes/base/images/person_BOLD.svg" alt="Person icon" />
+          </div>
+          <hgroup className="title">
+            <h1>Feedback Erfassen</h1>
+          </hgroup>
+        </div>
+      </section>
+      <div className="container mt-5"> {/* This keeps the form centered */}
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Kunde</label>
+            <input
+              type="text"
+              className="form-control"
+              value={customer}
+              onChange={(e) => setCustomer(e.target.value)}
+              placeholder="Kundenname"
+            />
+          </div>
+          <div className="form-group">
+            <label>Beschreibung</label>
+            <textarea
+              className="form-control"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Feedback-Beschreibung"
+            />
+          </div>
+          <div className="form-group">
+            <label>Erhalten am</label>
+            <DatePicker
+              selected={received}
+              onChange={(date) => setReceived(date)}
+              dateFormat="dd.MM.yyyy"
+              className="form-control"
+            />
+          </div>
+          <div className="form-group">
+            <label>Datei hochladen (Bilder, PDFs, E-Mails)</label>
+            <input type="file" className="form-control" onChange={handleFileChange} />
+          </div>
+          {message && <p>{message}</p>}
+          <button type="submit" className="btn btn-primary">Feedback hinzufügen</button>
+          <button type="button" className="btn btn-secondary ml-3" onClick={() => navigate('/dashboard')}>
+            Abbrechen
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+
+};
+
+export default VariousFeedback;
 

@@ -11,6 +11,10 @@ const { body, validationResult } = require("express-validator");
 const db = require("./config/db");
 const registerRoutes = require("./routes/registerRoutes");
 const passwordResetRoutes = require("./routes/passwordResetRoutes");
+const variousFeedbackRoutes = require('./routes/variousFeedbackRoutes'); // Import the new routes
+const adminRoutes = require('./routes/adminRoutes');
+const textMiningRoutes = require('./routes/textMiningRoutes');
+const customerFeedbackRoutes = require('./routes/customerFeedbackRoutes');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -25,88 +29,46 @@ app.use(rateLimit({
   max: 100 // Limit jeder IP auf 100 Requests pro 15 Minuten
 }));
 
-app.use('/register', registerRoutes);
-app.use('/password-reset', passwordResetRoutes);
+app.use('/api/register', registerRoutes);
+app.use('/api/password-reset', passwordResetRoutes);
+app.use('/api/feedback', variousFeedbackRoutes); // Add the new feedback routes
+app.use('/api/admin', adminRoutes);
+app.use('/api', textMiningRoutes);
+app.use('/api/customerFeedback', customerFeedbackRoutes);
 
-// Store the current random number
-let currentRandomNumber = generateRandomNumber();
 
-// Function to generate a random whole number between 1 and 100
-function generateRandomNumber() {
-  return Math.floor(Math.random() * 100) + 1;
-}
+// New /api/user endpoint to get user information based on token
+app.get("/api/user", (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
 
-// POST endpoint to regenerate a random number
-app.post("/regenerate", (req, res) => {
-  currentRandomNumber = generateRandomNumber();
-  res.json({ randomNumber: currentRandomNumber });
-});
-
-// New GET endpoint to fetch data from 't_test' table
-app.get("/fetch-test-data", (req, res) => {
-  db.query("SELECT * FROM t_test", (error, results, fields) => {
-    if (error) {
-      res.status(500).send("Error fetching data: " + error.message);
-    } else {
-      res.json(results);
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ error: "Invalid token" });
     }
+
+    // Fetch the user information from the database
+    db.query("SELECT * FROM t_users WHERE usersID = ?", [decoded.userId], (err, results) => {
+      if (err || results.length === 0) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const user = results[0];
+      res.json({ user: { 
+        id: user.usersID, 
+        email: user.usersEmail, 
+        role: user.rolesFK, 
+        vorname: user.usersVorname, 
+        nachname: user.usersNachname 
+      }});
+    });
   });
 });
 
-// Registration endpoint
-app.post(
-  "/register",
-  [
-    body("email").isEmail(),
-    body("password").isLength({ min: 6 }),
-    body("role").isIn(["User", "Leader", "Admin"]),
-  ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const { email, password, role } = req.body;
-
-    // Check if email already exists
-    db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
-      if (err) {
-        return res.status(500).json({ error: "Database error" });
-      }
-
-      if (results.length > 0) {
-        return res.status(400).json({ error: "Email already registered" });
-      }
-
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      // Find role ID
-      db.query("SELECT id FROM roles WHERE name = ?", [role], (err, results) => {
-        if (err || results.length === 0) {
-          return res.status(500).json({ error: "Role not found" });
-        }
-
-        const roleId = results[0].id;
-
-        // Insert user into the database
-        db.query(
-          "INSERT INTO users (email, password, role_id) VALUES (?, ?, ?)",
-          [email, hashedPassword, roleId],
-          (error) => {
-            if (error) {
-              return res.status(500).json({ error: "Error registering user" });
-            }
-            res.status(201).json({ message: "User registered successfully" });
-          }
-        );
-      });
-    });
-  }
-);
-
 // Login endpoint
-app.post("/login", [body("email").isEmail(), body("password").exists()], (req, res) => {
+app.post("/api/login", [body("email").isEmail(), body("password").exists()], (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -115,7 +77,7 @@ app.post("/login", [body("email").isEmail(), body("password").exists()], (req, r
   const { email, password } = req.body;
 
   // Find user in the database
-  db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
+  db.query("SELECT * FROM t_users WHERE usersEmail = ?", [email], async (err, results) => {
     if (err || results.length === 0) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
@@ -129,7 +91,7 @@ app.post("/login", [body("email").isEmail(), body("password").exists()], (req, r
     }
 
     // Generate JWT
-    const token = jwt.sign({ userId: user.id, role: user.role_id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ userId: user.usersID, role: user.rolesFK }, process.env.JWT_SECRET, {
       expiresIn: '1h',
     });
 
@@ -157,6 +119,10 @@ app.use((req, res, next) => {
   next();
 });
 
+// Logout endpoint
+app.post('/api/logout', (req, res) => {
+  res.json({ message: 'Successfully logged out' });
+});
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
