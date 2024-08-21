@@ -1,15 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { AuthContext } from './AuthContext'; // Assuming you're using AuthContext for the logged-in user
+import LinkGenerator from './linkGenerator'; // Use the LinkGenerator for generating the link
+import { animateButton } from './buttonAnimations'; // Import the button animation function
+import './buttonAnimations.scss'; // Import the SCSS for the animations
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css'; // Import the datepicker styles
 
 const VariousFeedback = () => {
+  const { user } = useContext(AuthContext); // Assuming you're using AuthContext to get the logged-in user
   const [customer, setCustomer] = useState('');
   const [description, setDescription] = useState('');
   const [received, setReceived] = useState(new Date());
   const [file, setFile] = useState(null);
-  const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false); // State to handle form submission
+  const [hideCancel, setHideCancel] = useState(false); // State to hide the "Abbrechen" button
   const navigate = useNavigate();
 
   const handleFileChange = (e) => {
@@ -18,6 +24,11 @@ const VariousFeedback = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const submitButton = e.target.querySelector('button[type="submit"]'); // Get the submit button
+
+    setIsSubmitting(true); // Disable the button while submitting
+    setHideCancel(true); // Hide the "Abbrechen" button
 
     const formData = new FormData();
     formData.append('variousFdbckCustomer', customer);
@@ -36,18 +47,25 @@ const VariousFeedback = () => {
       });
 
       if (response.status === 201) {
-        setMessage('Feedback erfolgreich hinzugefügt!');
+        // Trigger the success animation only for the submit button
+        animateButton(submitButton, 'success');
+
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate('/user');
         }, 3000);
       }
     } catch (error) {
-      setMessage('Ein Fehler ist aufgetreten. Bitte versuche es erneut.');
+      console.error('Ein Fehler ist aufgetreten:', error.response?.data || error.message);
+      animateButton(submitButton, 'error');
+      alert(error.response?.data || 'Fehler beim Hochladen der Datei. Erlaubte Formate: PNG, JPEG, PDF.');
+    } finally {
+      setIsSubmitting(false); // Re-enable the button after the submission
     }
   };
 
+
   return (
-    <div className="container-fluid mt-5"> {/* Banner is full width */}
+    <div className="container-fluid mt-5">
       <section className="featured">
         <div className="content-wrapper banner">
           <div className="float-right">
@@ -58,7 +76,7 @@ const VariousFeedback = () => {
           </hgroup>
         </div>
       </section>
-      <div className="container mt-5"> {/* This keeps the form centered */}
+      <div className="container mt-5">
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Kunde</label>
@@ -68,6 +86,7 @@ const VariousFeedback = () => {
               value={customer}
               onChange={(e) => setCustomer(e.target.value)}
               placeholder="Kundenname"
+              required
             />
           </div>
           <div className="form-group">
@@ -77,6 +96,7 @@ const VariousFeedback = () => {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Feedback-Beschreibung"
+              required
             />
           </div>
           <div className="form-group">
@@ -92,16 +112,22 @@ const VariousFeedback = () => {
             <label>Datei hochladen (Bilder, PDFs, E-Mails)</label>
             <input type="file" className="form-control" onChange={handleFileChange} />
           </div>
-          {message && <p>{message}</p>}
-          <button type="submit" className="btn btn-primary">Feedback hinzufügen</button>
-          <button type="button" className="btn btn-secondary ml-3" onClick={() => navigate('/dashboard')}>
-            Abbrechen
+          <button
+            type="submit"
+            className="btn btn-primary button"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Absenden...' : 'Feedback hinzufügen'}
           </button>
+          {!hideCancel && (
+            <button type="button" className="btn btn-secondary ml-3" onClick={() => navigate('/user')}>
+              Abbrechen
+            </button>
+          )}
         </form>
       </div>
     </div>
   );
-
 };
 
 export default VariousFeedback;

@@ -1,5 +1,3 @@
-// src/linkGenerator.js
-
 class LinkGenerator {
     // Funktion zur Erzeugung einer zufälligen Zeichenkette
     static randomString(length) {
@@ -28,4 +26,5 @@ class LinkGenerator {
     }
 }
 
-export default LinkGenerator;
+// Korrigierter Export für Node.js mit CommonJS
+module.exports = LinkGenerator;

@@ -4,8 +4,8 @@ import axios from 'axios';
 const AdminRole = () => {
   const [roles, setRoles] = useState([]);
   const [editingRole, setEditingRole] = useState(null);
+  const [deletingRoleId, setDeletingRoleId] = useState(null); // Neuer Zustand für die Bestätigung
 
-  // Lade alle Rollen
   useEffect(() => {
     const fetchRoles = async () => {
       const response = await axios.get('/api/admin/roles');
@@ -14,13 +14,20 @@ const AdminRole = () => {
     fetchRoles();
   }, []);
 
-  // Rolle löschen
+  const confirmDelete = (roleId) => {
+    setDeletingRoleId(roleId); // Setzt das zu löschende Role ID
+  };
+
+  const cancelDelete = () => {
+    setDeletingRoleId(null); // Löschen abbrechen
+  };
+
   const handleDeleteRole = async (roleId) => {
     await axios.delete(`/api/admin/roles/${roleId}`);
     setRoles(roles.filter((role) => role.rolesID !== roleId));
+    setDeletingRoleId(null); // Reset delete confirmation state
   };
 
-  // Rolle speichern
   const handleSaveRole = async () => {
     const { rolesID, rolesName } = editingRole;
     await axios.put(`/api/admin/roles/${rolesID}`, {
@@ -38,19 +45,24 @@ const AdminRole = () => {
       <table className="table">
         <thead>
           <tr>
-            <th>ID</th>
             <th>Rollenname</th>
-            <th>Aktionen</th>
+            <th>Aktionen</th> {/* ID wurde entfernt */}
           </tr>
         </thead>
         <tbody>
           {roles.map((role) => (
             <tr key={role.rolesID}>
-              <td>{role.rolesID}</td>
               <td>{role.rolesName}</td>
               <td>
-                <button onClick={() => setEditingRole(role)}>Bearbeiten</button>
-                <button onClick={() => handleDeleteRole(role.rolesID)}>Löschen</button>
+                <button className="btn btn-primary" onClick={() => setEditingRole(role)}>Bearbeiten</button> {/* Blaues Styling hinzugefügt */}
+                {deletingRoleId === role.rolesID ? (
+                  <>
+                    <button className="btn btn-danger mr-2" onClick={() => handleDeleteRole(role.rolesID)}>Wirklich löschen?</button>
+                    <button className="btn btn-secondary" onClick={cancelDelete}>Abbrechen</button>
+                  </>
+                ) : (
+                  <button className="btn btn-danger" onClick={() => confirmDelete(role.rolesID)}>Löschen</button>
+                )}
               </td>
             </tr>
           ))}

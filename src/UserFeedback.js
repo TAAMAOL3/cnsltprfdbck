@@ -3,63 +3,84 @@ import axios from 'axios';
 import { AuthContext } from './AuthContext';
 
 const UserFeedback = () => {
-  const { user } = useContext(AuthContext);  // Hole die Benutzerdaten aus dem AuthContext
-  const [feedbacks, setFeedbacks] = useState([]);  // Initialisiere feedbacks als leeres Array
+  const { user } = useContext(AuthContext);
+  const [feedbacks, setFeedbacks] = useState([]);
   const [editingFeedback, setEditingFeedback] = useState(null);
   const [customer, setCustomer] = useState('');
   const [description, setDescription] = useState('');
   const [received, setReceived] = useState('');
   const [message, setMessage] = useState('');
+  const [deletingFeedbackId, setDeletingFeedbackId] = useState(null);
 
   useEffect(() => {
     const fetchFeedbacks = async () => {
       const token = localStorage.getItem('token');
-      if (token && user && user.id) {  // Stelle sicher, dass der Token und die user.id vorhanden sind
+      if (token && user && user.id) {
         try {
-          const response = await axios.get(`/api/feedback/user/${user.id}`, {  // Füge die user.id zur Anfrage hinzu
+          const response = await axios.get(`/api/feedback/user/${user.id}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
-          setFeedbacks(response.data || []);  // Füge ein Fallback hinzu, falls keine Daten zurückkommen
+          setFeedbacks(response.data || []);
         } catch (error) {
           console.error('Fehler beim Abrufen der Feedbacks:', error);
-          setFeedbacks([]);  // Falls ein Fehler auftritt, setze feedbacks auf ein leeres Array
+          setFeedbacks([]);
         }
       }
     };
 
     fetchFeedbacks();
-  }, [user]);  // Füge user als Abhängigkeit hinzu, um sicherzustellen, dass die Daten geladen werden, sobald der Benutzer verfügbar ist
+  }, [user]);
+
+  // Formatierung des Datums für die Anzeige im Format dd/MM/yyyy
+  const formatDateForDisplay = (dateString) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // Formatierung des Datums für das <input type="date">-Feld (yyyy-MM-dd)
+  const formatDateForInput = (dateString) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${year}-${month}-${day}`;
+  };
 
   const handleEdit = (feedback) => {
     setEditingFeedback(feedback);
     setCustomer(feedback.variousFdbckCustomer);
     setDescription(feedback.variousFdbckDescription);
-    
-    // Das Datum in das richtige Format bringen (YYYY-MM-DD) für das Eingabefeld
-    const formattedDate = new Date(feedback.variousFdbckReceived).toISOString().split('T')[0];
-    setReceived(formattedDate);
+    setReceived(formatDateForInput(feedback.variousFdbckReceived));  // Datum für das input[type="date"] Feld formatieren
   };
 
   const handleSaveFeedback = async () => {
     const token = localStorage.getItem('token');
     try {
+      // Formatierung des Datums sicherstellen
+      const formattedDate = received.split('/').reverse().join('-'); // Von dd/MM/yyyy zu yyyy-MM-dd
+
       await axios.put(`/api/feedback/${editingFeedback.variousFdbckID}`, {
         variousFdbckCustomer: customer,
         variousFdbckDescription: description,
-        variousFdbckReceived: received,
+        variousFdbckReceived: formattedDate,  // Speichere das Datum im yyyy-MM-dd Format
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      setFeedbacks(feedbacks.map(fb => 
-        fb.variousFdbckID === editingFeedback.variousFdbckID ? { ...fb, variousFdbckCustomer: customer, variousFdbckDescription: description, variousFdbckReceived: received } : fb
+      setFeedbacks(feedbacks.map(fb =>
+        fb.variousFdbckID === editingFeedback.variousFdbckID ? { ...fb, variousFdbckCustomer: customer, variousFdbckDescription: description, variousFdbckReceived: formattedDate } : fb
       ));
       setEditingFeedback(null);
       setMessage('Feedback erfolgreich aktualisiert!');
     } catch (error) {
-      console.error('Fehler beim Speichern des Feedbacks:', error);
+      console.error('Fehler beim Speichern des Feedbacks:', error.message || error);
     }
   };
+
+
 
   const handleDeleteFeedback = async (feedbackID) => {
     const token = localStorage.getItem('token');
@@ -68,13 +89,18 @@ const UserFeedback = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setFeedbacks(feedbacks.filter(fb => fb.variousFdbckID !== feedbackID));
+      setDeletingFeedbackId(null);
     } catch (error) {
       console.error('Fehler beim Löschen des Feedbacks:', error);
     }
   };
 
-  const handleDownloadFile = (url) => {
-    window.open(url, '_blank');
+  const confirmDelete = (feedbackID) => {
+    setDeletingFeedbackId(feedbackID);
+  };
+
+  const cancelDelete = () => {
+    setDeletingFeedbackId(null);
   };
 
   return (
@@ -92,22 +118,36 @@ const UserFeedback = () => {
           </tr>
         </thead>
         <tbody>
-          {Array.isArray(feedbacks) && feedbacks.length > 0 ? (  // Überprüfe, ob feedbacks ein Array ist
+          {Array.isArray(feedbacks) && feedbacks.length > 0 ? (
             feedbacks.map((feedback) => (
               <tr key={feedback.variousFdbckID}>
-                <td>{new Date(feedback.variousFdbckReceived).toLocaleDateString()}</td>
+                <td>{formatDateForDisplay(feedback.variousFdbckReceived)}</td>  {/* Datum korrekt formatieren */}
                 <td>{feedback.variousFdbckCustomer}</td>
                 <td>{feedback.variousFdbckDescription}</td>
                 <td>
-                  <a href={feedback.uploadUrl} download className="btn btn-link">
+                  <a href={feedback.uploadUrl} download className="btn btn-link" onClick={() => console.log(feedback.uploadUrl)}>
                     Datei herunterladen
                   </a>
                 </td>
+
                 <td>
-                  <button className="btn btn-primary mr-2" onClick={() => handleEdit(feedback)}>Bearbeiten</button>
-                  <button className="btn btn-danger" onClick={() => handleDeleteFeedback(feedback.variousFdbckID)}>
-                    Löschen
-                  </button>
+                  {deletingFeedbackId === feedback.variousFdbckID ? (
+                    <>
+                      <button className="btn btn-danger mr-2" onClick={() => handleDeleteFeedback(feedback.variousFdbckID)}>
+                        Wirklich löschen?
+                      </button>
+                      <button className="btn btn-secondary" onClick={cancelDelete}>
+                        Abbrechen
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button className="btn btn-primary mr-2" onClick={() => handleEdit(feedback)}>Bearbeiten</button>
+                      <button className="btn btn-danger mr-2" onClick={() => confirmDelete(feedback.variousFdbckID)}>
+                        Löschen
+                      </button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))
@@ -145,7 +185,7 @@ const UserFeedback = () => {
             <input
               type="date"
               className="form-control"
-              value={received}
+              value={received}  // Datum im richtigen Format für <input type="date">
               onChange={(e) => setReceived(e.target.value)}
             />
           </div>

@@ -12,7 +12,7 @@ const Admin = () => {
   // Stelle sicher, dass nur Admins Zugriff haben
   useEffect(() => {
     if (!user || user.role !== 3) {
-      navigate('/dashboard'); // Nicht-Admin-Benutzer weiterleiten
+      navigate('/user'); // Nicht-Admin-Benutzer weiterleiten
     }
   }, [user, navigate]);
 

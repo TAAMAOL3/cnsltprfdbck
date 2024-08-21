@@ -1,31 +1,38 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { AuthContext } from './AuthContext'; // Assuming you have an AuthContext for the logged-in user
+import { AuthContext } from './AuthContext'; // Assuming you're using AuthContext for the logged-in user
 import LinkGenerator from './linkGenerator'; // Use the LinkGenerator for generating the link
+import { animateButton } from './buttonAnimations'; // Import the button animation function
+import './buttonAnimations.scss'; // Import the SCSS for the animations
 
 const CustomerFeedback = () => {
   const { user } = useContext(AuthContext); // Assuming you're using AuthContext to get the logged-in user
   const [company, setCompany] = useState('');
   const [contactPerson, setContactPerson] = useState('');
   const [email, setEmail] = useState('');
-  const [generatedLink, setGeneratedLink] = useState('');
-  const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false); // State to handle form submission
+  const [hideCancel, setHideCancel] = useState(false); // State to hide the "Abbrechen" button
   const navigate = useNavigate();
 
   // Function to generate the feedback URL
   const handleGenerateLink = () => {
     const randomString = LinkGenerator.randomString(10); // Generate random string for the link
     const host = process.env.REACT_APP_URL_HOST; // Assuming REACT_APP_URL_HOST is defined in the environment variables
-    const link = `${host}/feedback?code=${randomString}`;
-    setGeneratedLink(link);
+    const link = `${host}/feedback?id=${randomString}`;
+    return { link, randomString };
   };
 
   // Function to handle form submission and insert the feedback into the database
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    handleGenerateLink(); // First, generate the feedback link
+
+    const submitButton = e.target.querySelector('button[type="submit"]'); // Get the submit button
+
+    setIsSubmitting(true); // Disable the button while submitting
+    setHideCancel(true); // Hide the "Abbrechen" button
+
+    const { link, randomString } = handleGenerateLink(); // Generate the link and get the randomString
 
     const token = localStorage.getItem('token');
     const currentDate = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
@@ -38,7 +45,8 @@ const CustomerFeedback = () => {
         customerFdbckSend: currentDate,
         customerFdbckText: null, // Set to NULL as per your requirement
         customerFdbckReceived: null, // Set to NULL
-        customerFdbckUrl: generatedLink, // Use the generated feedback URL
+        customerFdbckUrl: link, // Store the full generated feedback URL
+        customerFdbckUrlID: randomString, // Store only the randomString in customerFdbckUrlID
         customerFdbckAnswered: 0, // Default to 0 (false)
         usersFK: user.id, // Assuming the user's ID is stored in the AuthContext
       }, {
@@ -49,14 +57,21 @@ const CustomerFeedback = () => {
       });
 
       if (response.status === 201) {
-        setMessage('Feedback-Anfrage erfolgreich generiert!');
+        // Trigger the success animation only for the submit button
+        animateButton(submitButton, 'success');
+
+        // Redirect to /user after 3 seconds
         setTimeout(() => {
-          navigate('/dashboard'); // Redirect after a successful insert
+          navigate('/user');
         }, 3000);
       }
     } catch (error) {
       console.error('Ein Fehler ist aufgetreten:', error);
-      setMessage('Fehler beim Generieren der Feedback-Anfrage. Bitte versuche es erneut.');
+
+      // Trigger the error animation only for the submit button
+      animateButton(submitButton, 'error');
+    } finally {
+      setIsSubmitting(false); // Re-enable the button after the submission
     }
   };
 
@@ -72,6 +87,7 @@ const CustomerFeedback = () => {
           </hgroup>
         </div>
       </section>
+
       <div className="container mt-5">
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -107,11 +123,18 @@ const CustomerFeedback = () => {
               required
             />
           </div>
-          {message && <p>{message}</p>}
-          <button type="submit" className="btn btn-primary">Feedback Anfrage generieren</button>
-          <button type="button" className="btn btn-secondary ml-3" onClick={() => navigate('/dashboard')}>
-            Abbrechen
+          <button
+            type="submit"
+            className="btn btn-primary button" // Original styling with animation class
+            disabled={isSubmitting} // Disable the button while submitting
+          >
+            {isSubmitting ? 'Absenden...' : 'Feedback Anfrage generieren'}
           </button>
+          {!hideCancel && (
+            <button type="button" className="btn btn-secondary ml-3" onClick={() => navigate('/user')}>
+              Abbrechen
+            </button>
+          )}
         </form>
       </div>
     </div>

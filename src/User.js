@@ -1,13 +1,14 @@
 import React, { useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from './AuthContext';
-import UserFeedback from './UserFeedback.js';
+import UserFeedback from './UserFeedback';
+import UserRequest from './UserRequest';
+import UserReceived from './UserReceived'; // Importiere die neue UserReceived-Komponente
 
 const User = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  // Stelle sicher, dass nur angemeldete Benutzer Zugriff haben
   useEffect(() => {
     if (!user) {
       navigate('/login'); // Nicht angemeldete Benutzer weiterleiten
@@ -27,10 +28,16 @@ const User = () => {
         </div>
       </section>
       <div className="container mt-5">
+        {/* Erhaltene Feedbacks-Tabelle */}
+        <UserReceived /> {/* Neue Tabelle hinzugefügt */}
+
         {/* Feedback-Tabelle */}
         <UserFeedback />
 
-        {/* Zukünftige Tabellen oder Abschnitte für den Benutzerbereich */}
+        {/* Feedback-Anfragen-Tabelle */}
+        <UserRequest />
+
+
       </div>
     </div>
   );

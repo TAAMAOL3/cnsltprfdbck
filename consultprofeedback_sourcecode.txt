@@ -12,6 +12,7 @@ consultprofeedback/
 │   ├── db.js
 ├── controllers/
 │   ├── adminController.js
+│   ├── customerFeedbackController.js
 │   ├── passwordResetController.js
 │   ├── registerController.js
 │   ├── textMiningController.js
@@ -83,6 +84,7 @@ consultprofeedback/
 ├── resources/
 ├── routes/
 │   ├── adminRoutes.js
+│   ├── customerFeedbackRoutes.js
 │   ├── passwordResetRoutes.js
 │   ├── registerRoutes.js
 │   ├── textMiningRoutes.js
@@ -95,7 +97,11 @@ consultprofeedback/
 │   ├── App.css
 │   ├── App.js
 │   ├── AuthContext.js
+│   ├── buttonAnimations.js
+│   ├── buttonAnimations.scss
+│   ├── customerFeedback.js
 │   ├── Dashboard.js
+│   ├── feedback.js
 │   ├── index.css
 │   ├── index.js
 │   ├── linkGenerator.js
@@ -108,17 +114,19 @@ consultprofeedback/
 │   ├── TextMining.js
 │   ├── User.js
 │   ├── UserFeedback.js
+│   ├── UserReceived.js
+│   ├── UserRequest.js
 │   ├── variousFeedback.js
 
 
 ***.env:
-REACT_APP_URL_HOST=https://localhost:3000
+REACT_APP_URL_HOST=http://localhost:3000
 DB_HOST=127.0.0.1
 DB_USER=dba
 DB_PASSWORD=Geheim4711
 DB_NAME=consultprofeedbackdb
 JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
-UPLOAD_PATH=E:/azure/public/uploads
+UPLOAD_PATH='../public/uploads'
 
 
 
@@ -154,6 +162,7 @@ UPLOAD_PATH=E:/azure/public/uploads
         "react-dom": "^18.3.1",
         "react-router-dom": "^6.26.0",
         "react-scripts": "5.0.1",
+        "sass": "^1.77.8",
         "sharp": "^0.33.4",
         "web-vitals": "^2.1.4"
       }
@@ -11041,6 +11050,12 @@ UPLOAD_PATH=E:/azure/public/uploads
         "url": "https://opencollective.com/immer"
       }
     },
+    "node_modules/immutable": {
+      "version": "4.3.7",
+      "resolved": "https://registry.npmjs.org/immutable/-/immutable-4.3.7.tgz",
+      "integrity": "sha512-1hqclzwYwjRDFLjcFxOM5AYkkG0rpFPpr1RLPMEuGczoS7YA8gLhy8SWXYRAA/XwfEHpfo3cw5JGioS32fnMRw==",
+      "license": "MIT"
+    },
     "node_modules/import-fresh": {
       "version": "3.3.0",
       "resolved": "https://registry.npmjs.org/import-fresh/-/import-fresh-3.3.0.tgz",
@@ -17771,6 +17786,23 @@ UPLOAD_PATH=E:/azure/public/uploads
       "integrity": "sha512-ZRwKbh/eQ6w9vmTjkuG0Ioi3HBwPFce0O+v//ve+aOq1oeCy7jMV2qzzAlpsNuqpqCBjjriM1lbtZbF/Q8jVyA==",
       "license": "CC0-1.0"
     },
+    "node_modules/sass": {
+      "version": "1.77.8",
+      "resolved": "https://registry.npmjs.org/sass/-/sass-1.77.8.tgz",
+      "integrity": "sha512-4UHg6prsrycW20fqLGPShtEvo/WyHRVRHwOP4DzkUrObWoWI05QBSfzU71TVB7PFaL104TwNaHpjlWXAZbQiNQ==",
+      "license": "MIT",
+      "dependencies": {
+        "chokidar": ">=3.0.0 <4.0.0",
+        "immutable": "^4.0.0",
+        "source-map-js": ">=0.6.2 <2.0.0"
+      },
+      "bin": {
+        "sass": "sass.js"
+      },
+      "engines": {
+        "node": ">=14.0.0"
+      }
+    },
     "node_modules/sass-loader": {
       "version": "12.6.0",
       "resolved": "https://registry.npmjs.org/sass-loader/-/sass-loader-12.6.0.tgz",
@@ -20949,11 +20981,12 @@ UPLOAD_PATH=E:/azure/public/uploads
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.0",
     "react-scripts": "5.0.1",
+    "sass": "^1.77.8",
     "sharp": "^0.33.4",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "node server.js",
+    "start": "node --env-file=.env server.js",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -20995,6 +21028,7 @@ const passwordResetRoutes = require("./routes/passwordResetRoutes");
 const variousFeedbackRoutes = require('./routes/variousFeedbackRoutes'); // Import the new routes
 const adminRoutes = require('./routes/adminRoutes');
 const textMiningRoutes = require('./routes/textMiningRoutes');
+const customerFeedbackRoutes = require('./routes/customerFeedbackRoutes');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -21014,6 +21048,7 @@ app.use('/api/password-reset', passwordResetRoutes);
 app.use('/api/feedback', variousFeedbackRoutes); // Add the new feedback routes
 app.use('/api/admin', adminRoutes);
 app.use('/api', textMiningRoutes);
+app.use('/api/customerFeedback', customerFeedbackRoutes);
 
 
 // New /api/user endpoint to get user information based on token
@@ -21229,6 +21264,153 @@ exports.deleteTeam = (req, res) => {
   });
 };
 
+***customerFeedbackController.js:
+const db = require('../config/db');
+const LinkGenerator = require('../src/linkGenerator');
+
+// Function to create a new customer feedback request
+exports.createCustomerFeedback = (req, res) => {
+  const { customerCompany, customerName, customerMailaddr, customerFdbckSend, customerFdbckUrl, customerFdbckUrlID, usersFK } = req.body;
+
+  const query = `
+    INSERT INTO t_customerfdbck (customerCompany, customerName, customerMailaddr, customerFdbckSend, customerFdbckText, customerFdbckReceived, customerFdbckUrl, customerFdbckUrlID, customerFdbckAnswered, usersFK)
+    VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, 0, ?)
+  `;
+
+  const values = [customerCompany, customerName, customerMailaddr, customerFdbckSend, customerFdbckUrl, customerFdbckUrlID, usersFK];
+
+  db.query(query, values, (err, result) => {
+    if (err) {
+      console.error('Error inserting customer feedback:', err);
+      return res.status(500).send('Error creating customer feedback');
+    }
+    res.status(201).send('Customer feedback successfully created');
+  });
+};
+
+
+// Function to get user-specific feedback requests
+exports.getUserFeedbackRequests = (req, res) => {
+  const userId = req.params.id;
+
+  const query = `
+    SELECT * FROM t_customerfdbck
+    WHERE usersFK = ? AND customerFdbckAnswered = 0
+  `;
+
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error('Error fetching user feedback requests:', err);
+      return res.status(500).send('Error fetching feedback requests');
+    }
+    res.status(200).json(results);
+  });
+};
+
+// Function to get feedback by URL ID
+exports.getFeedbackById = (req, res) => {
+  const { id } = req.params;
+
+  const query = `
+    SELECT * FROM t_customerfdbck
+    WHERE customerFdbckUrlID = ?
+  `;
+
+  db.query(query, [id], (err, results) => {
+    if (err) {
+      console.error('Error fetching feedback by ID:', err);
+      return res.status(500).send('Error fetching feedback');
+    }
+
+    if (results.length > 0) {
+      res.status(200).json(results[0]);
+    } else {
+      res.status(404).send('Feedback not found');
+    }
+  });
+};
+
+// Function to update the customer feedback text, status, and rating
+exports.updateCustomerFeedbackText = (req, res) => {
+  const { id } = req.params;
+  const { customerFdbckText, customerFdbckReceived, customerFdbckAnswered, rating } = req.body;  // Include rating
+
+  const query = `
+    UPDATE t_customerfdbck
+    SET customerFdbckText = ?, customerFdbckReceived = ?, customerFdbckAnswered = ?, rating = ?
+    WHERE customerFdbckUrlID = ?
+  `;
+
+  db.query(query, [customerFdbckText, customerFdbckReceived, customerFdbckAnswered, rating, id], (err, result) => {
+    if (err) {
+      console.error('Error updating customer feedback text:', err);
+      return res.status(500).send('Error updating feedback');
+    }
+
+    res.status(200).send('Customer feedback text and rating updated successfully');
+  });
+};
+
+
+// Function to update customer feedback (generic)
+exports.updateCustomerFeedback = (req, res) => {
+  const { customerCompany, customerName, customerMailaddr } = req.body;
+  const feedbackId = req.params.id;
+
+  const query = `
+    UPDATE t_customerfdbck
+    SET customerCompany = ?, customerName = ?, customerMailaddr = ?
+    WHERE customerFdbckID = ?
+  `;
+
+  db.query(query, [customerCompany, customerName, customerMailaddr, feedbackId], (err, result) => {
+    if (err) {
+      console.error('Error updating customer feedback:', err);
+      return res.status(500).send('Error updating feedback');
+    }
+    res.status(200).send('Customer feedback successfully updated');
+  });
+};
+
+// Function to delete customer feedback
+exports.deleteCustomerFeedback = (req, res) => {
+  const feedbackId = req.params.id;
+
+  const query = `
+    DELETE FROM t_customerfdbck
+    WHERE customerFdbckID = ?
+  `;
+
+  db.query(query, [feedbackId], (err, result) => {
+    if (err) {
+      console.error('Error deleting customer feedback:', err);
+      return res.status(500).send('Error deleting feedback');
+    }
+    res.status(200).send('Customer feedback successfully deleted');
+  });
+};
+
+// customerFeedbackController.js
+
+// Methode zum Abrufen der erhaltenen Feedbacks für einen bestimmten Benutzer
+exports.getUserReceivedFeedbacks = (req, res) => {
+  const userId = req.params.id;
+
+  const query = `
+    SELECT customerFdbckID, customerFdbckReceived, customerCompany, customerName, customerMailaddr, customerFdbckText, rating
+    FROM t_customerfdbck
+    WHERE usersFK = ? AND customerFdbckAnswered = 1
+  `;
+
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error('Fehler beim Abrufen der erhaltenen Feedbacks:', err);
+      return res.status(500).send('Fehler beim Abrufen der Feedbacks');
+    }
+    res.status(200).json(results);
+  });
+};
+
 ***passwordResetController.js:
 // controllers/passwordResetController.js
 const crypto = require('crypto');
@@ -21418,9 +21600,22 @@ const multer = require('multer');
 const path = require('path');
 const sharp = require('sharp');
 
-// Multer-Konfiguration für Datei-Uploads
+// Dateitypen, die erlaubt sind (z.B. PNG, JPEG, PDF)
+const ALLOWED_FILE_TYPES = ['image/png', 'image/jpeg', 'application/pdf'];
+
+// Multer-Konfiguration für Datei-Uploads (Speicherung im Arbeitsspeicher)
 const storage = multer.memoryStorage();
-const upload = multer({ storage: storage }).single('uploadUrl');
+const upload = multer({
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    // Überprüfe, ob der Dateityp zulässig ist
+    if (ALLOWED_FILE_TYPES.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Ungültiger Dateityp. Erlaubt sind nur PNG, JPEG und PDF'));
+    }
+  }
+}).single('uploadUrl');
 
 // Abrufen aller Feedbacks eines Benutzers
 exports.getFeedbackByUser = (req, res) => {
@@ -21443,12 +21638,13 @@ exports.getFeedbackByUser = (req, res) => {
 exports.createFeedback = (req, res) => {
   upload(req, res, async (err) => {
     if (err) {
-      console.error('Fehler beim Hochladen der Datei:', err);
-      return res.status(500).send('Fehler beim Hochladen der Datei');
+      console.error('Fehler beim Hochladen der Datei:', err.message);
+      return res.status(400).send(err.message); // Klarere Fehlermeldung
     }
 
     const { variousFdbckCustomer, variousFdbckDescription, variousFdbckReceived } = req.body;
 
+    // Überprüfe, ob der Benutzer authentifiziert ist
     if (!req.user || !req.user.userId) {
       return res.status(401).json({ error: 'Unauthorized: Token fehlt oder ungültig' });
     }
@@ -21458,22 +21654,39 @@ exports.createFeedback = (req, res) => {
 
     if (req.file) {
       const fileName = `feedback_${Date.now()}_${req.file.originalname}`;
-      const uploadPath = path.join(process.env.UPLOAD_PATH, fileName);
-
+      const uploadPath = path.join(process.env.UPLOAD_PATH || './uploads', fileName);
+    
       try {
-        await sharp(req.file.buffer).toFile(uploadPath);
+        // Überprüfe den Dateityp und Buffer vor der Verarbeitung
+        console.log('Hochgeladene Datei:', req.file.originalname);
+        console.log('Dateityp:', req.file.mimetype);
+        console.log('Buffer Länge:', req.file.buffer.length);
+    
+        // Nur unterstützte Bildformate (PNG, JPEG) mit sharp verarbeiten
+        if (['image/png', 'image/jpeg'].includes(req.file.mimetype)) {
+          await sharp(req.file.buffer).toFile(uploadPath);
+        } else {
+          // PDF- und andere Dateien direkt speichern, ohne sharp zu verwenden
+          await fs.promises.writeFile(uploadPath, req.file.buffer);
+        }
         uploadUrl = `/uploads/${fileName}`;
       } catch (error) {
         console.error('Fehler beim Speichern der Datei:', error);
         return res.status(500).send('Fehler beim Speichern der Datei');
       }
     }
+    
+    
+    
+
+    // Datum in das Format yyyy-MM-dd konvertieren
+    const formattedDate = new Date(variousFdbckReceived.split('.').reverse().join('-'));
 
     const query = `
       INSERT INTO t_variousFdbck (variousFdbckCustomer, variousFdbckDescription, variousFdbckReceived, uploadUrl, usersFK)
       VALUES (?, ?, ?, ?, ?)
     `;
-    const values = [variousFdbckCustomer, variousFdbckDescription, variousFdbckReceived, uploadUrl, userId];
+    const values = [variousFdbckCustomer, variousFdbckDescription, formattedDate, uploadUrl, userId];
 
     db.query(query, values, (err, results) => {
       if (err) {
@@ -21485,6 +21698,7 @@ exports.createFeedback = (req, res) => {
     });
   });
 };
+
 
 // Feedback löschen
 exports.deleteFeedback = (req, res) => {
@@ -21499,6 +21713,33 @@ exports.deleteFeedback = (req, res) => {
     res.send('Feedback erfolgreich gelöscht');
   });
 };
+
+
+// Aktualisieren eines bestehenden Feedbacks
+exports.updateFeedback = (req, res) => {
+  const feedbackID = req.params.feedbackID;
+  const { variousFdbckCustomer, variousFdbckDescription, variousFdbckReceived } = req.body;
+
+  // Überprüfen, ob das Datum korrekt formatiert ist
+  const formattedDate = variousFdbckReceived ? new Date(variousFdbckReceived).toISOString().slice(0, 10) : null;  // Konvertiere ins Format yyyy-MM-dd
+
+  const query = `
+    UPDATE t_variousFdbck
+    SET variousFdbckCustomer = ?, variousFdbckDescription = ?, variousFdbckReceived = ?
+    WHERE variousFdbckID = ?
+  `;
+  const values = [variousFdbckCustomer, variousFdbckDescription, formattedDate, feedbackID];
+
+  db.query(query, values, (err, results) => {
+    if (err) {
+      console.error('Fehler beim Aktualisieren des Feedbacks:', err);
+      return res.status(500).send('Fehler beim Aktualisieren des Feedbacks');
+    }
+    res.status(200).send('Feedback erfolgreich aktualisiert');
+  });
+};
+
+
 
 ***authenticateToken.js:
 const jwt = require('jsonwebtoken');
@@ -86194,6 +86435,38 @@ router.put('/teams/:id', updateTeam); // Team bearbeiten
 
 module.exports = router;
 
+***customerFeedbackRoutes.js:
+const express = require('express');
+const router = express.Router();
+const customerFeedbackController = require('../controllers/customerFeedbackController');
+const authenticateToken = require('../middleware/authenticateToken');
+
+// Route for creating customer feedback
+router.post('/', authenticateToken, customerFeedbackController.createCustomerFeedback);
+
+// Route for fetching user feedback requests
+router.get('/user/:id', authenticateToken, customerFeedbackController.getUserFeedbackRequests);
+
+// Route for fetching feedback by URL ID
+router.get('/:id', customerFeedbackController.getFeedbackById);
+
+// Route for updating customer feedback text and status
+router.put('/text/:id', authenticateToken, customerFeedbackController.updateCustomerFeedbackText);
+
+// Route for updating general customer feedback
+router.put('/:id', authenticateToken, customerFeedbackController.updateCustomerFeedback);
+
+// Route for deleting customer feedback
+router.delete('/:id', authenticateToken, customerFeedbackController.deleteCustomerFeedback);
+
+// customerFeedbackRoutes.js
+
+// Route zum Abrufen der erhaltenen Feedbacks eines Benutzers
+router.get('/userReceived/:id', authenticateToken, customerFeedbackController.getUserReceivedFeedbacks);
+
+
+module.exports = router;
+
 ***passwordResetRoutes.js:
 // routes/passwordResetRoutes.js
 const express = require('express');
@@ -86228,7 +86501,7 @@ module.exports = router;
 const express = require('express');
 const router = express.Router();
 const variousFeedbackController = require('../controllers/variousFeedbackController');
-const authenticateToken = require('../middleware/authenticateToken'); // JWT Middleware importieren
+const authenticateToken = require('../middleware/authenticateToken');
 
 // Route zum Abrufen von Feedbacks für den angemeldeten Benutzer
 router.get('/user/:userID', authenticateToken, variousFeedbackController.getFeedbackByUser);
@@ -86238,6 +86511,10 @@ router.post('/', authenticateToken, variousFeedbackController.createFeedback);
 
 // Route zum Löschen eines Feedbacks
 router.delete('/:feedbackID', authenticateToken, variousFeedbackController.deleteFeedback);
+
+// Route zum Aktualisieren eines Feedbacks
+router.put('/:feedbackID', authenticateToken, variousFeedbackController.updateFeedback);
+
 
 module.exports = router;
 
@@ -86256,7 +86533,7 @@ const Admin = () => {
   // Stelle sicher, dass nur Admins Zugriff haben
   useEffect(() => {
     if (!user || user.role !== 3) {
-      navigate('/dashboard'); // Nicht-Admin-Benutzer weiterleiten
+      navigate('/user'); // Nicht-Admin-Benutzer weiterleiten
     }
   }, [user, navigate]);
 
@@ -86295,8 +86572,8 @@ import axios from 'axios';
 const AdminRole = () => {
   const [roles, setRoles] = useState([]);
   const [editingRole, setEditingRole] = useState(null);
+  const [deletingRoleId, setDeletingRoleId] = useState(null); // Neuer Zustand für die Bestätigung
 
-  // Lade alle Rollen
   useEffect(() => {
     const fetchRoles = async () => {
       const response = await axios.get('/api/admin/roles');
@@ -86305,13 +86582,20 @@ const AdminRole = () => {
     fetchRoles();
   }, []);
 
-  // Rolle löschen
+  const confirmDelete = (roleId) => {
+    setDeletingRoleId(roleId); // Setzt das zu löschende Role ID
+  };
+
+  const cancelDelete = () => {
+    setDeletingRoleId(null); // Löschen abbrechen
+  };
+
   const handleDeleteRole = async (roleId) => {
     await axios.delete(`/api/admin/roles/${roleId}`);
     setRoles(roles.filter((role) => role.rolesID !== roleId));
+    setDeletingRoleId(null); // Reset delete confirmation state
   };
 
-  // Rolle speichern
   const handleSaveRole = async () => {
     const { rolesID, rolesName } = editingRole;
     await axios.put(`/api/admin/roles/${rolesID}`, {
@@ -86329,19 +86613,24 @@ const AdminRole = () => {
       <table className="table">
         <thead>
           <tr>
-            <th>ID</th>
             <th>Rollenname</th>
-            <th>Aktionen</th>
+            <th>Aktionen</th> {/* ID wurde entfernt */}
           </tr>
         </thead>
         <tbody>
           {roles.map((role) => (
             <tr key={role.rolesID}>
-              <td>{role.rolesID}</td>
               <td>{role.rolesName}</td>
               <td>
-                <button onClick={() => setEditingRole(role)}>Bearbeiten</button>
-                <button onClick={() => handleDeleteRole(role.rolesID)}>Löschen</button>
+                <button className="btn btn-primary" onClick={() => setEditingRole(role)}>Bearbeiten</button> {/* Blaues Styling hinzugefügt */}
+                {deletingRoleId === role.rolesID ? (
+                  <>
+                    <button className="btn btn-danger mr-2" onClick={() => handleDeleteRole(role.rolesID)}>Wirklich löschen?</button>
+                    <button className="btn btn-secondary" onClick={cancelDelete}>Abbrechen</button>
+                  </>
+                ) : (
+                  <button className="btn btn-danger" onClick={() => confirmDelete(role.rolesID)}>Löschen</button>
+                )}
               </td>
             </tr>
           ))}
@@ -86378,33 +86667,65 @@ import axios from 'axios';
 
 const AdminTeam = () => {
   const [teams, setTeams] = useState([]);
+  const [users, setUsers] = useState([]); // Neuer Zustand für Benutzer
   const [editingTeam, setEditingTeam] = useState(null);
+  const [deletingTeamId, setDeletingTeamId] = useState(null); // Neuer Zustand für die Bestätigung
 
-  // Lade alle Teams
   useEffect(() => {
     const fetchTeams = async () => {
       const response = await axios.get('/api/admin/teams');
       setTeams(response.data);
     };
+
+    const fetchUsers = async () => {
+      const response = await axios.get('/api/admin/users');
+      setUsers(response.data); // Lade Benutzerliste
+    };
+
     fetchTeams();
+    fetchUsers(); // Lade die Benutzerliste beim Mounten der Komponente
   }, []);
 
-  // Team löschen
+  const getUserFullName = (userId) => {
+    const user = users.find(user => user.usersID === userId);
+    return user ? `${user.usersVorname} ${user.usersNachname}` : 'Unbekannt';
+  };
+
+  const confirmDelete = (teamId) => {
+    setDeletingTeamId(teamId); // Setzt das zu löschende Team ID
+  };
+
+  const cancelDelete = () => {
+    setDeletingTeamId(null); // Löschen abbrechen
+  };
+
   const handleDeleteTeam = async (teamId) => {
     await axios.delete(`/api/admin/teams/${teamId}`);
     setTeams(teams.filter((team) => team.teamID !== teamId));
+    setDeletingTeamId(null); // Reset delete confirmation state
   };
 
-  // Team speichern
   const handleSaveTeam = async () => {
     const { teamID, teamName, teamLeaderFK } = editingTeam;
     await axios.put(`/api/admin/teams/${teamID}`, {
       teamName,
       teamLeaderFK
     });
-    setTeams(teams.map((team) =>
-      team.teamID === teamID ? editingTeam : team
-    ));
+
+    // Teams und Benutzer erneut abrufen, um die aktuelle Anzeige zu aktualisieren
+    const fetchTeams = async () => {
+      const response = await axios.get('/api/admin/teams');
+      setTeams(response.data);
+    };
+
+    const fetchUsers = async () => {
+      const response = await axios.get('/api/admin/users');
+      setUsers(response.data);
+    };
+
+    await fetchTeams();
+    await fetchUsers();
+
     setEditingTeam(null); // Bearbeitungsformular schließen
   };
 
@@ -86414,21 +86735,26 @@ const AdminTeam = () => {
       <table className="table">
         <thead>
           <tr>
-            <th>ID</th>
             <th>Teamname</th>
             <th>Teamleiter</th>
-            <th>Aktionen</th>
+            <th>Aktionen</th> {/* Team ID wurde entfernt */}
           </tr>
         </thead>
         <tbody>
           {teams.map((team) => (
             <tr key={team.teamID}>
-              <td>{team.teamID}</td>
               <td>{team.teamName}</td>
-              <td>{team.teamLeaderFK}</td>
+              <td>{getUserFullName(team.teamLeaderFK)}</td> {/* Zeigt Vor- und Nachname an */}
               <td>
-                <button onClick={() => setEditingTeam(team)}>Bearbeiten</button>
-                <button onClick={() => handleDeleteTeam(team.teamID)}>Löschen</button>
+                <button className="btn btn-primary" onClick={() => setEditingTeam(team)}>Bearbeiten</button> {/* Blaues Styling hinzugefügt */}
+                {deletingTeamId === team.teamID ? (
+                  <>
+                    <button className="btn btn-danger mr-2" onClick={() => handleDeleteTeam(team.teamID)}>Wirklich löschen?</button>
+                    <button className="btn btn-secondary" onClick={cancelDelete}>Abbrechen</button>
+                  </>
+                ) : (
+                  <button className="btn btn-danger" onClick={() => confirmDelete(team.teamID)}>Löschen</button>
+                )}
               </td>
             </tr>
           ))}
@@ -86449,13 +86775,18 @@ const AdminTeam = () => {
               />
             </div>
             <div className="form-group">
-              <label>Teamleiter (teamLeaderFK)</label>
-              <input
-                type="number"
+              <label>Teamleiter</label>
+              <select
                 className="form-control"
                 value={editingTeam.teamLeaderFK}
                 onChange={(e) => setEditingTeam({ ...editingTeam, teamLeaderFK: e.target.value })}
-              />
+              >
+                {users.map(user => (
+                  <option key={user.usersID} value={user.usersID}>
+                    {user.usersVorname} {user.usersNachname}
+                  </option>
+                ))}
+              </select>
             </div>
             <button type="button" className="btn btn-primary" onClick={handleSaveTeam}>Speichern</button>
             <button type="button" className="btn btn-secondary ml-2" onClick={() => setEditingTeam(null)}>Abbrechen</button>
@@ -86474,24 +86805,44 @@ import axios from 'axios';
 
 const AdminUser = () => {
   const [users, setUsers] = useState([]);
+  const [roles, setRoles] = useState([]); // Zustand für Rollenliste
   const [editingUser, setEditingUser] = useState(null);
+  const [deletingUserId, setDeletingUserId] = useState(null); // Neuer Zustand für die Bestätigung
 
-  // Lade alle Benutzer
   useEffect(() => {
     const fetchUsers = async () => {
       const response = await axios.get('/api/admin/users');
       setUsers(response.data);
     };
+
+    const fetchRoles = async () => {
+      const response = await axios.get('/api/admin/roles');
+      setRoles(response.data); // Lade Rollenliste
+    };
+
     fetchUsers();
+    fetchRoles(); // Lade Rollenliste beim Mounten der Komponente
   }, []);
 
-  // Benutzer löschen
+  const getRoleName = (roleId) => {
+    const role = roles.find(role => role.rolesID === roleId);
+    return role ? role.rolesName : 'Unbekannt';
+  };
+
+  const confirmDelete = (userId) => {
+    setDeletingUserId(userId); // Setzt das zu löschende User ID
+  };
+
+  const cancelDelete = () => {
+    setDeletingUserId(null); // Löschen abbrechen
+  };
+
   const handleDeleteUser = async (userId) => {
     await axios.delete(`/api/admin/users/${userId}`);
     setUsers(users.filter((user) => user.usersID !== userId));
+    setDeletingUserId(null); // Reset delete confirmation state
   };
 
-  // Benutzer speichern
   const handleSaveUser = async () => {
     const { usersID, usersEmail, usersVorname, usersNachname, rolesFK } = editingUser;
     await axios.put(`/api/admin/users/${usersID}`, {
@@ -86512,23 +86863,30 @@ const AdminUser = () => {
       <table className="table">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Email</th>
             <th>Vorname</th>
             <th>Nachname</th>
-            <th>Aktionen</th>
+            <th>E-Mail</th>
+            <th>Rolle</th>
+            <th>Aktionen</th> {/* User ID wurde entfernt */}
           </tr>
         </thead>
         <tbody>
           {users.map((user) => (
             <tr key={user.usersID}>
-              <td>{user.usersID}</td>
-              <td>{user.usersEmail}</td>
               <td>{user.usersVorname}</td>
               <td>{user.usersNachname}</td>
+              <td>{user.usersEmail}</td>
+              <td>{getRoleName(user.rolesFK)}</td> {/* Rollenauswahl nach Namen */}
               <td>
-                <button onClick={() => setEditingUser(user)}>Bearbeiten</button>
-                <button onClick={() => handleDeleteUser(user.usersID)}>Löschen</button>
+                <button className="btn btn-primary" onClick={() => setEditingUser(user)}>Bearbeiten</button> {/* Blaues Styling hinzugefügt */}
+                {deletingUserId === user.usersID ? (
+                  <>
+                    <button className="btn btn-danger mr-2" onClick={() => handleDeleteUser(user.usersID)}>Wirklich löschen?</button>
+                    <button className="btn btn-secondary" onClick={cancelDelete}>Abbrechen</button>
+                  </>
+                ) : (
+                  <button className="btn btn-danger" onClick={() => confirmDelete(user.usersID)}>Löschen</button>
+                )}
               </td>
             </tr>
           ))}
@@ -86540,7 +86898,7 @@ const AdminUser = () => {
           <h3>Benutzer bearbeiten</h3>
           <form onSubmit={handleSaveUser}>
             <div className="form-group">
-              <label>Email</label>
+              <label>E-Mail</label>
               <input
                 type="email"
                 className="form-control"
@@ -86567,13 +86925,18 @@ const AdminUser = () => {
               />
             </div>
             <div className="form-group">
-              <label>Rolle (rolesFK)</label>
-              <input
-                type="number"
+              <label>Rolle</label>
+              <select
                 className="form-control"
                 value={editingUser.rolesFK}
                 onChange={(e) => setEditingUser({ ...editingUser, rolesFK: e.target.value })}
-              />
+              >
+                {roles.map(role => (
+                  <option key={role.rolesID} value={role.rolesID}>
+                    {role.rolesName}
+                  </option>
+                ))}
+              </select>
             </div>
             <button type="button" className="btn btn-primary" onClick={handleSaveUser}>Speichern</button>
             <button type="button" className="btn btn-secondary ml-2" onClick={() => setEditingUser(null)}>Abbrechen</button>
@@ -86638,7 +87001,9 @@ import Dashboard from './Dashboard';
 import VariousFeedback from './variousFeedback';
 import Admin from './Admin';
 import TextMining from './TextMining'; 
-import User from './User'; // Importiere die neue UserFeedback-Komponente
+import User from './User'; 
+import CustomerFeedback from './customerFeedback'; 
+import Feedback from './feedback'; // Importing the new Feedback component
 
 // ProtectedRoute component to restrict access to authenticated users
 const ProtectedRoute = ({ children }) => {
@@ -86675,7 +87040,11 @@ function App() {
             <Route path="/variousFeedback" element={<ProtectedRoute><VariousFeedback /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/textmining" element={<ProtectedRoute><TextMining /></ProtectedRoute>} />
-            <Route path="/User" element={<ProtectedRoute><User /></ProtectedRoute>} /> {/* Neue Route */}
+            <Route path="/User" element={<ProtectedRoute><User /></ProtectedRoute>} />
+            <Route path="/customerFeedback" element={<ProtectedRoute><CustomerFeedback /></ProtectedRoute>} /> 
+
+            {/* New route for feedback */}
+            <Route path="/feedback" element={<Feedback />} /> 
           </Routes>
         </div>
       </AuthProvider>
@@ -86687,71 +87056,296 @@ export default App;
 
 ***AuthContext.js:
 import React, { createContext, useState, useEffect } from 'react';
+import axios from 'axios';
 
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true); // Ladezustand für Benutzerdaten
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            setLoading(true); // Explicitly setting loading to true while fetching user
-            fetch('/api/user', {
-                headers: { Authorization: `Bearer ${token}` },
-            })
-                .then((response) => response.json())
-                .then((data) => {
-                    setUser(data.user); // Benutzerdaten speichern
-                    setLoading(false); // Ladezustand beenden
-                })
-                .catch(() => {
-                    setUser(null);
-                    setLoading(false); // Ladezustand beenden
-                });
-        } else {
-            setLoading(false); // Kein Token, Ladezustand auf false setzen
-        }
-    }, []);
-
-    const login = async (email, password) => {
-        setLoading(true); // Explicitly set loading before attempting login
-        const response = await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password }),
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            setUser(data.user); // Set user immediately after login
-            localStorage.setItem('token', data.token); // Token im LocalStorage speichern
-            setLoading(false); // Ladezustand beenden
-            return '/dashboard'; // Weiterleitungspfad nach Login
-        }
-
-        setLoading(false); // Set loading to false on failed login
-        return null; // Rückgabe null, wenn der Login fehlschlägt
-    };
-
-    const logout = async () => {
-        setLoading(true); // Set loading while logging out
-        await fetch('/api/logout', { method: 'POST' });
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      axios.get('/api/user', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(response => {
+        setUser(response.data.user);
+        setLoading(false);
+      })
+      .catch(() => {
         setUser(null);
-        localStorage.removeItem('token');
-        setLoading(false); // Ladezustand beenden
-        return '/login'; // Weiterleitung zur Login-Seite
-    };
+        setLoading(false);
+      });
+    } else {
+      setLoading(false);
+    }
+  }, []);
 
-    return (
-        <AuthContext.Provider value={{ user, login, logout, loading }}>
-            {children}
-        </AuthContext.Provider>
-    );
+  const login = async (email, password) => {
+    try {
+      const response = await axios.post('/api/login', { email, password });
+      localStorage.setItem('token', response.data.token);
+      const userResponse = await axios.get('/api/user', {
+        headers: { Authorization: `Bearer ${response.data.token}` }
+      });
+      setUser(userResponse.data.user);
+      return '/user'; // Redirect to dashboard after login
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const logout = async () => {
+    localStorage.removeItem('token');
+    setUser(null);
+    return '/login';
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-export { AuthContext };
+***buttonAnimations.js:
+// buttonAnimations.js
+
+export const animateButton = (button, type = 'success') => {
+  // Reset animation
+  button.classList.remove('animate');
+  button.classList.remove('success');
+  button.classList.remove('error');
+
+  // Add animation and success/error class
+  button.classList.add('animate');
+  button.classList.add(type);
+
+  // Remove animation class after 6 seconds
+  setTimeout(() => {
+    button.classList.remove('animate');
+  }, 6000);
+};
+
+***buttonAnimations.scss:
+$button-width: 150px;
+$spinner-width: $button-width / 6;
+$btn-bg: #1781e3;
+$text-light: #fefefe;
+
+.button {
+  display: inline-block;
+  min-width: $button-width;
+  margin: 20px auto;
+  background: $btn-bg;
+  color: $text-light;
+  // font-size: 1.2em;
+  // padding: 1em;
+  border-radius: 4px;
+  text-align: center;
+  position: relative;
+  cursor: pointer;
+  appearance: none;
+  border: 0;
+  transition: border-radius linear 0.05s, width linear 0.05s;
+}
+
+.button.animate {
+  width: $button-width / 2.2;
+  height: $button-width / 2.2;
+  border-radius: 50%;
+  color: transparent;
+  min-width: 0;
+}
+
+.button.animate:after {
+  position: absolute;
+  content: '';
+  width: $spinner-width;
+  height: $spinner-width;
+  border: 4px solid $text-light;
+  border-radius: 50%;
+  border-left-color: transparent;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  animation: spin 2.5s ease-in forwards;
+}
+
+.button.animate.success:before {
+  position: absolute;
+  content: '';
+  width: $spinner-width;
+  height: $spinner-width / 2;
+  border: 4px solid $text-light;
+  border-right: 0;
+  border-top: 0;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg) scale(0);
+  animation: success 0.15s ease-in forwards;
+  animation-delay: 2.5s;
+}
+
+@keyframes spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg) scale(1);}
+  90% { transform: translate(-50%, -50%) rotate(1080deg) scale(1); }
+  100% { transform: scale(0); }
+}
+
+@keyframes success {
+  from { transform: translate(-50%, -50%) rotate(0) scale(0); }
+  to { transform: translate(-50%, -50%) rotate(-45deg) scale(1); }
+}
+
+
+***customerFeedback.js:
+import React, { useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { AuthContext } from './AuthContext'; // Assuming you're using AuthContext for the logged-in user
+import LinkGenerator from './linkGenerator'; // Use the LinkGenerator for generating the link
+import { animateButton } from './buttonAnimations'; // Import the button animation function
+import './buttonAnimations.scss'; // Import the SCSS for the animations
+
+const CustomerFeedback = () => {
+  const { user } = useContext(AuthContext); // Assuming you're using AuthContext to get the logged-in user
+  const [company, setCompany] = useState('');
+  const [contactPerson, setContactPerson] = useState('');
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false); // State to handle form submission
+  const [hideCancel, setHideCancel] = useState(false); // State to hide the "Abbrechen" button
+  const navigate = useNavigate();
+
+  // Function to generate the feedback URL
+  const handleGenerateLink = () => {
+    const randomString = LinkGenerator.randomString(10); // Generate random string for the link
+    const host = process.env.REACT_APP_URL_HOST; // Assuming REACT_APP_URL_HOST is defined in the environment variables
+    const link = `${host}/feedback?id=${randomString}`;
+    return { link, randomString };
+  };
+
+  // Function to handle form submission and insert the feedback into the database
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const submitButton = e.target.querySelector('button[type="submit"]'); // Get the submit button
+
+    setIsSubmitting(true); // Disable the button while submitting
+    setHideCancel(true); // Hide the "Abbrechen" button
+
+    const { link, randomString } = handleGenerateLink(); // Generate the link and get the randomString
+
+    const token = localStorage.getItem('token');
+    const currentDate = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
+
+    try {
+      const response = await axios.post('/api/customerFeedback', {
+        customerCompany: company,
+        customerName: contactPerson,
+        customerMailaddr: email,
+        customerFdbckSend: currentDate,
+        customerFdbckText: null, // Set to NULL as per your requirement
+        customerFdbckReceived: null, // Set to NULL
+        customerFdbckUrl: link, // Store the full generated feedback URL
+        customerFdbckUrlID: randomString, // Store only the randomString in customerFdbckUrlID
+        customerFdbckAnswered: 0, // Default to 0 (false)
+        usersFK: user.id, // Assuming the user's ID is stored in the AuthContext
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.status === 201) {
+        // Trigger the success animation only for the submit button
+        animateButton(submitButton, 'success');
+
+        // Redirect to /user after 3 seconds
+        setTimeout(() => {
+          navigate('/user');
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Ein Fehler ist aufgetreten:', error);
+
+      // Trigger the error animation only for the submit button
+      animateButton(submitButton, 'error');
+    } finally {
+      setIsSubmitting(false); // Re-enable the button after the submission
+    }
+  };
+
+  return (
+    <div className="container-fluid mt-5">
+      <section className="featured">
+        <div className="content-wrapper banner">
+          <div className="float-right">
+            <img className="page-icon" src="/Content/themes/base/images/person_BOLD.svg" alt="Person icon" />
+          </div>
+          <hgroup className="title">
+            <h1>Feedback Anfrage generieren</h1>
+          </hgroup>
+        </div>
+      </section>
+
+      <div className="container mt-5">
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Kunden Firma</label>
+            <input
+              type="text"
+              className="form-control"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              placeholder="Firma des Kunden"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Ansprechperson</label>
+            <input
+              type="text"
+              className="form-control"
+              value={contactPerson}
+              onChange={(e) => setContactPerson(e.target.value)}
+              placeholder="Ansprechperson"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>E-Mail</label>
+            <input
+              type="email"
+              className="form-control"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="E-Mail-Adresse"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            className="btn btn-primary button" // Original styling with animation class
+            disabled={isSubmitting} // Disable the button while submitting
+          >
+            {isSubmitting ? 'Absenden...' : 'Feedback Anfrage generieren'}
+          </button>
+          {!hideCancel && (
+            <button type="button" className="btn btn-secondary ml-3" onClick={() => navigate('/user')}>
+              Abbrechen
+            </button>
+          )}
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default CustomerFeedback;
 
 ***Dashboard.js:
 import React from 'react';
@@ -86765,6 +87359,123 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
+***feedback.js:
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useSearchParams } from 'react-router-dom';
+
+const Feedback = () => {
+  const [searchParams] = useSearchParams();
+  const [company, setCompany] = useState('');
+  const [contactPerson, setContactPerson] = useState('');
+  const [feedback, setFeedback] = useState('');
+  const [error, setError] = useState('');
+  const [rating, setRating] = useState(null);  // Neues State für das Rating
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    const feedbackId = searchParams.get('id');
+    if (!feedbackId) {
+      setError('Dieser Feedback Link ist leider ungültig.');
+    } else {
+      fetchCustomerFeedback(feedbackId);
+    }
+  }, [searchParams]);
+
+  const fetchCustomerFeedback = async (id) => {
+    try {
+      const response = await axios.get(`/api/customerFeedback/${id}`);
+      if (response.data) {
+        setCompany(response.data.customerCompany);
+        setContactPerson(response.data.customerName);
+      } else {
+        setError('Dieser Feedback Link ist leider ungültig.');
+      }
+    } catch (error) {
+      setError('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+    }
+  };
+
+  // Funktion zur Textanalyse
+  const analyzeText = async (text) => {
+    try {
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+      });
+      const data = await response.json();
+      setRating(data.score);  // Speichere das Ergebnis der Analyse
+      return data.score;
+    } catch (error) {
+      console.error('Fehler bei der Textanalyse:', error);
+      return null;
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const feedbackId = searchParams.get('id');
+
+    const token = localStorage.getItem('token');  // Token from localStorage
+    
+    // Textanalyse durchführen und Rating erhalten
+    const analyzedRating = await analyzeText(feedback);
+    
+    try {
+      await axios.put(`/api/customerFeedback/text/${feedbackId}`, {
+        customerFdbckText: feedback,
+        customerFdbckReceived: new Date(),
+        customerFdbckAnswered: 1,
+        rating: analyzedRating,  // Neues Rating-Feld
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`  // Add token to the request
+        }
+      });
+      navigate('/feedback-success');
+    } catch (error) {
+      setError('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+    }
+  };
+
+  if (error) {
+    return <div>{error}</div>;
+  }
+
+  return (
+    <div className="container">
+      <h2>Feedback Formular</h2>
+      <form onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label>Kunden Firma</label>
+          <input type="text" className="form-control" value={company} readOnly />
+        </div>
+        <div className="form-group">
+          <label>Ansprechperson</label>
+          <input type="text" className="form-control" value={contactPerson} readOnly />
+        </div>
+        <div className="form-group">
+          <label>Feedback</label>
+          <textarea
+            className="form-control"
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            placeholder="Ihr Feedback"
+            required
+          />
+        </div>
+        <button type="submit" className="btn btn-primary">Absenden</button>
+      </form>
+    </div>
+  );
+};
+
+export default Feedback;
 
 ***index.css:
 body {
@@ -86800,8 +87511,6 @@ root.render(
 reportWebVitals();
 
 ***linkGenerator.js:
-// src/linkGenerator.js
-
 class LinkGenerator {
     // Funktion zur Erzeugung einer zufälligen Zeichenkette
     static randomString(length) {
@@ -86830,41 +87539,36 @@ class LinkGenerator {
     }
 }
 
-export default LinkGenerator;
+// Korrigierter Export für Node.js mit CommonJS
+module.exports = LinkGenerator;
 
 ***Login.js:
 import React, { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AuthContext } from './AuthContext'; // Verwende den AuthContext
+import { AuthContext } from './AuthContext';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const { user, login, loading } = useContext(AuthContext); // Ladezustand und login-Funktion verwenden
+  const { user, login, loading } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const redirectPath = await login(email, password); // Login aufrufen
+    const redirectPath = await login(email, password);
 
     if (redirectPath) {
-      setSuccess('Login erfolgreich!');
       setError('');
-      setTimeout(() => {
-        window.location.reload(); // Refresh the page after login
-      }, 1);
+      navigate(redirectPath);
     } else {
       setError('Login fehlgeschlagen. Bitte überprüfe deine Anmeldedaten.');
-      setSuccess('');
     }
   };
 
   useEffect(() => {
-    // Benutzer weiterleiten, wenn er bereits eingeloggt ist und die Benutzerdaten geladen sind
     if (user && !loading) {
-      navigate('/dashboard');
+      navigate('/user');
     }
   }, [user, loading, navigate]);
 
@@ -86874,9 +87578,8 @@ const Login = () => {
         <div className="col-md-6">
           <div className="card">
             <div className="card-body">
-              <h1 className="card-title">Login</h1> {/* Geändert zu H1 */}
+              <h1 className="card-title">Login</h1>
               {error && <div className="alert alert-danger">{error}</div>}
-              {success && <div className="alert alert-success">{success}</div>}
               <form onSubmit={handleSubmit}>
                 <div className="form-group">
                   <label htmlFor="email">E-mail Adresse</label>
@@ -86926,17 +87629,16 @@ import { AuthContext } from './AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 
 function Navigation() {
-  const { user, logout, loading } = useContext(AuthContext); // Include loading from AuthContext
+  const { user, logout, loading } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    const redirectPath = await logout(); // Perform logout
-    navigate(redirectPath); // Navigate to login page
+    const redirectPath = await logout();
+    navigate(redirectPath);
   };
 
-  // Do not render navigation while loading
   if (loading) {
-    return null; // Optionally return a loading spinner or placeholder
+    return null; // Show a loader if necessary
   }
 
   return (
@@ -86955,16 +87657,13 @@ function Navigation() {
         <div className="navbar-collapse collapse" id="navbar-main">
           <ul className="nav navbar-nav navbar-right">
             {!user ? (
-              <li><Link to="/login">Login</Link></li> // Add a fallback in case user is not logged in
+              <li><Link to="/login">Login</Link></li>
             ) : (
               <>
-                <li><Link to="/generate">Feedback einholen</Link></li>
+                <li><Link to="/customerFeedback">Feedback einholen</Link></li>
                 <li><Link to="/variousFeedback">Feedback Erfassen</Link></li>
-                {/* <li><Link to="/project">Projekt erstellen</Link></li> */}
-                {/* <li><Link to="/account/manage">Mein Account</Link></li> */}
                 <li><Link to="/User">Meine Feedbacks</Link></li>
                 <li><Link to="/teamleader">Alle Feedbacks</Link></li>
-                {/* <li><Link to="/invite">Einladen</Link></li> */}
                 {user.role === 3 && (
                   <li><Link to="/admin">Admin</Link></li>
                 )}
@@ -87044,22 +87743,22 @@ const Register = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
+  
     if (password !== confirmPassword) {
       setMessage('Passwörter stimmen nicht überein');
       setError(true);
       return;
     }
-
+  
     try {
-      const response = await fetch('/register', {
+      const response = await fetch('/api/register', {  // Pfad angepasst
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ vorname, nachname, email, password }),
       });
-
+  
       if (response.ok) {
         setMessage('Erfolgreich registriert');
         setError(false);
@@ -87073,7 +87772,7 @@ const Register = () => {
       setError(true);
     }
   };
-
+  
   return (
     <div className="container mt-5">
       <div className="row justify-content-center">
@@ -87250,13 +87949,14 @@ export default TextMining;
 import React, { useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from './AuthContext';
-import UserFeedback from './UserFeedback.js';
+import UserFeedback from './UserFeedback';
+import UserRequest from './UserRequest';
+import UserReceived from './UserReceived'; // Importiere die neue UserReceived-Komponente
 
 const User = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  // Stelle sicher, dass nur angemeldete Benutzer Zugriff haben
   useEffect(() => {
     if (!user) {
       navigate('/login'); // Nicht angemeldete Benutzer weiterleiten
@@ -87276,10 +87976,16 @@ const User = () => {
         </div>
       </section>
       <div className="container mt-5">
+        {/* Erhaltene Feedbacks-Tabelle */}
+        <UserReceived /> {/* Neue Tabelle hinzugefügt */}
+
         {/* Feedback-Tabelle */}
         <UserFeedback />
 
-        {/* Zukünftige Tabellen oder Abschnitte für den Benutzerbereich */}
+        {/* Feedback-Anfragen-Tabelle */}
+        <UserRequest />
+
+
       </div>
     </div>
   );
@@ -87293,63 +87999,84 @@ import axios from 'axios';
 import { AuthContext } from './AuthContext';
 
 const UserFeedback = () => {
-  const { user } = useContext(AuthContext);  // Hole die Benutzerdaten aus dem AuthContext
-  const [feedbacks, setFeedbacks] = useState([]);  // Initialisiere feedbacks als leeres Array
+  const { user } = useContext(AuthContext);
+  const [feedbacks, setFeedbacks] = useState([]);
   const [editingFeedback, setEditingFeedback] = useState(null);
   const [customer, setCustomer] = useState('');
   const [description, setDescription] = useState('');
   const [received, setReceived] = useState('');
   const [message, setMessage] = useState('');
+  const [deletingFeedbackId, setDeletingFeedbackId] = useState(null);
 
   useEffect(() => {
     const fetchFeedbacks = async () => {
       const token = localStorage.getItem('token');
-      if (token && user && user.id) {  // Stelle sicher, dass der Token und die user.id vorhanden sind
+      if (token && user && user.id) {
         try {
-          const response = await axios.get(`/api/feedback/user/${user.id}`, {  // Füge die user.id zur Anfrage hinzu
+          const response = await axios.get(`/api/feedback/user/${user.id}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
-          setFeedbacks(response.data || []);  // Füge ein Fallback hinzu, falls keine Daten zurückkommen
+          setFeedbacks(response.data || []);
         } catch (error) {
           console.error('Fehler beim Abrufen der Feedbacks:', error);
-          setFeedbacks([]);  // Falls ein Fehler auftritt, setze feedbacks auf ein leeres Array
+          setFeedbacks([]);
         }
       }
     };
 
     fetchFeedbacks();
-  }, [user]);  // Füge user als Abhängigkeit hinzu, um sicherzustellen, dass die Daten geladen werden, sobald der Benutzer verfügbar ist
+  }, [user]);
+
+  // Formatierung des Datums für die Anzeige im Format dd/MM/yyyy
+  const formatDateForDisplay = (dateString) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // Formatierung des Datums für das <input type="date">-Feld (yyyy-MM-dd)
+  const formatDateForInput = (dateString) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${year}-${month}-${day}`;
+  };
 
   const handleEdit = (feedback) => {
     setEditingFeedback(feedback);
     setCustomer(feedback.variousFdbckCustomer);
     setDescription(feedback.variousFdbckDescription);
-    
-    // Das Datum in das richtige Format bringen (YYYY-MM-DD) für das Eingabefeld
-    const formattedDate = new Date(feedback.variousFdbckReceived).toISOString().split('T')[0];
-    setReceived(formattedDate);
+    setReceived(formatDateForInput(feedback.variousFdbckReceived));  // Datum für das input[type="date"] Feld formatieren
   };
 
   const handleSaveFeedback = async () => {
     const token = localStorage.getItem('token');
     try {
+      // Formatierung des Datums sicherstellen
+      const formattedDate = received.split('/').reverse().join('-'); // Von dd/MM/yyyy zu yyyy-MM-dd
+
       await axios.put(`/api/feedback/${editingFeedback.variousFdbckID}`, {
         variousFdbckCustomer: customer,
         variousFdbckDescription: description,
-        variousFdbckReceived: received,
+        variousFdbckReceived: formattedDate,  // Speichere das Datum im yyyy-MM-dd Format
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      setFeedbacks(feedbacks.map(fb => 
-        fb.variousFdbckID === editingFeedback.variousFdbckID ? { ...fb, variousFdbckCustomer: customer, variousFdbckDescription: description, variousFdbckReceived: received } : fb
+      setFeedbacks(feedbacks.map(fb =>
+        fb.variousFdbckID === editingFeedback.variousFdbckID ? { ...fb, variousFdbckCustomer: customer, variousFdbckDescription: description, variousFdbckReceived: formattedDate } : fb
       ));
       setEditingFeedback(null);
       setMessage('Feedback erfolgreich aktualisiert!');
     } catch (error) {
-      console.error('Fehler beim Speichern des Feedbacks:', error);
+      console.error('Fehler beim Speichern des Feedbacks:', error.message || error);
     }
   };
+
+
 
   const handleDeleteFeedback = async (feedbackID) => {
     const token = localStorage.getItem('token');
@@ -87358,13 +88085,18 @@ const UserFeedback = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setFeedbacks(feedbacks.filter(fb => fb.variousFdbckID !== feedbackID));
+      setDeletingFeedbackId(null);
     } catch (error) {
       console.error('Fehler beim Löschen des Feedbacks:', error);
     }
   };
 
-  const handleDownloadFile = (url) => {
-    window.open(url, '_blank');
+  const confirmDelete = (feedbackID) => {
+    setDeletingFeedbackId(feedbackID);
+  };
+
+  const cancelDelete = () => {
+    setDeletingFeedbackId(null);
   };
 
   return (
@@ -87382,22 +88114,36 @@ const UserFeedback = () => {
           </tr>
         </thead>
         <tbody>
-          {Array.isArray(feedbacks) && feedbacks.length > 0 ? (  // Überprüfe, ob feedbacks ein Array ist
+          {Array.isArray(feedbacks) && feedbacks.length > 0 ? (
             feedbacks.map((feedback) => (
               <tr key={feedback.variousFdbckID}>
-                <td>{new Date(feedback.variousFdbckReceived).toLocaleDateString()}</td>
+                <td>{formatDateForDisplay(feedback.variousFdbckReceived)}</td>  {/* Datum korrekt formatieren */}
                 <td>{feedback.variousFdbckCustomer}</td>
                 <td>{feedback.variousFdbckDescription}</td>
                 <td>
-                  <a href={feedback.uploadUrl} download className="btn btn-link">
+                  <a href={feedback.uploadUrl} download className="btn btn-link" onClick={() => console.log(feedback.uploadUrl)}>
                     Datei herunterladen
                   </a>
                 </td>
+
                 <td>
-                  <button className="btn btn-primary mr-2" onClick={() => handleEdit(feedback)}>Bearbeiten</button>
-                  <button className="btn btn-danger" onClick={() => handleDeleteFeedback(feedback.variousFdbckID)}>
-                    Löschen
-                  </button>
+                  {deletingFeedbackId === feedback.variousFdbckID ? (
+                    <>
+                      <button className="btn btn-danger mr-2" onClick={() => handleDeleteFeedback(feedback.variousFdbckID)}>
+                        Wirklich löschen?
+                      </button>
+                      <button className="btn btn-secondary" onClick={cancelDelete}>
+                        Abbrechen
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button className="btn btn-primary mr-2" onClick={() => handleEdit(feedback)}>Bearbeiten</button>
+                      <button className="btn btn-danger mr-2" onClick={() => confirmDelete(feedback.variousFdbckID)}>
+                        Löschen
+                      </button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))
@@ -87435,7 +88181,7 @@ const UserFeedback = () => {
             <input
               type="date"
               className="form-control"
-              value={received}
+              value={received}  // Datum im richtigen Format für <input type="date">
               onChange={(e) => setReceived(e.target.value)}
             />
           </div>
@@ -87449,19 +88195,310 @@ const UserFeedback = () => {
 
 export default UserFeedback;
 
+***UserReceived.js:
+import React, { useState, useEffect, useContext } from 'react';
+import axios from 'axios';
+import { AuthContext } from './AuthContext';
+
+const UserReceived = () => {
+  const { user } = useContext(AuthContext);
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [viewingFeedback, setViewingFeedback] = useState(null);
+
+  useEffect(() => {
+    const fetchFeedbacks = async () => {
+      const token = localStorage.getItem('token');
+      if (token && user && user.id) {
+        try {
+          const response = await axios.get(`/api/customerFeedback/userReceived/${user.id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setFeedbacks(response.data || []);
+        } catch (error) {
+          console.error('Fehler beim Abrufen der erhaltenen Feedbacks:', error);
+          setFeedbacks([]);
+        }
+      }
+    };
+
+    fetchFeedbacks();
+  }, [user]);
+
+  const handleViewFeedback = (feedback) => {
+    setViewingFeedback(feedback);
+  };
+
+  const getRatingIcon = (rating) => {
+    if (rating >= 2) {
+      return <img className="page-icon" src="/Content/themes/base/images/VeryPositive.png" alt="Very Positive" />;
+    } else if (rating === 1) {
+      return <img className="page-icon" src="/Content/themes/base/images/Positive.png" alt="Positive" />;
+    } else if (rating === 0) {
+      return <img className="page-icon" src="/Content/themes/base/images/Unknown.png" alt="Unknown" />;
+    } else if (rating === -1) {
+      return <img className="page-icon" src="/Content/themes/base/images/Negative.png" alt="Negative" />;
+    } else if (rating <= -2) {
+      return <img className="page-icon" src="/Content/themes/base/images/VeryNegative.png" alt="Very Negative" />;
+    }
+  };
+
+  return (
+    <div className="mb-5">
+      <h3>Erhaltene Feedbacks</h3>
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Erhalten am</th>
+            <th>Kunden Firma</th>
+            <th>Ansprechperson</th>
+            <th>E-Mail</th>
+            <th>Bewertung</th>
+            <th>Aktionen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.isArray(feedbacks) && feedbacks.length > 0 ? (
+            feedbacks.map((feedback) => (
+              <tr key={feedback.customerFdbckID}>
+                <td>{new Date(feedback.customerFdbckReceived).toLocaleDateString()}</td>
+                <td>{feedback.customerCompany}</td>
+                <td>{feedback.customerName}</td>
+                <td>{feedback.customerMailaddr}</td>
+                <td>{getRatingIcon(feedback.rating)}</td>
+                <td>
+                  <button className="btn btn-primary" onClick={() => handleViewFeedback(feedback)}>
+                    Anzeigen
+                  </button>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="6">Keine erhaltenen Feedbacks gefunden.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+
+      {viewingFeedback && (
+        <div className="mt-5">
+          <h3>Feedback anzeigen</h3>
+          <p style={{ fontSize: '1.5rem' }}><strong>Feedback:</strong> {viewingFeedback.customerFdbckText}</p>
+          <button className="btn btn-secondary" onClick={() => setViewingFeedback(null)}>Schließen</button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default UserReceived;
+
+***UserRequest.js:
+import React, { useState, useEffect, useContext } from 'react';
+import axios from 'axios';
+import { AuthContext } from './AuthContext';
+
+const UserRequest = () => {
+  const { user } = useContext(AuthContext);
+  const [requests, setRequests] = useState([]);
+  const [editingRequest, setEditingRequest] = useState(null);
+  const [company, setCompany] = useState('');
+  const [contactPerson, setContactPerson] = useState('');
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [deletingRequestId, setDeletingRequestId] = useState(null); // Zustandsvariable für die Löschbestätigung
+
+  useEffect(() => {
+    const fetchRequests = async () => {
+      const token = localStorage.getItem('token');
+      if (token && user && user.id) {
+        try {
+          const response = await axios.get(`/api/customerFeedback/user/${user.id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setRequests(response.data || []);
+        } catch (error) {
+          console.error('Fehler beim Abrufen der Feedback-Anfragen:', error);
+          setRequests([]);
+        }
+      }
+    };
+
+    fetchRequests();
+  }, [user]);
+
+  const handleEdit = (request) => {
+    setEditingRequest(request);
+    setCompany(request.customerCompany);
+    setContactPerson(request.customerName);
+    setEmail(request.customerMailaddr);
+  };
+
+  const handleSaveRequest = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      await axios.put(`/api/customerFeedback/${editingRequest.customerFdbckID}`, {
+        customerCompany: company,
+        customerName: contactPerson,
+        customerMailaddr: email,
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setRequests(requests.map(req =>
+        req.customerFdbckID === editingRequest.customerFdbckID ? { ...req, customerCompany: company, customerName: contactPerson, customerMailaddr: email } : req
+      ));
+      setEditingRequest(null);
+      setMessage('Feedback-Anfrage erfolgreich aktualisiert!');
+    } catch (error) {
+      console.error('Fehler beim Speichern der Feedback-Anfrage:', error);
+    }
+  };
+
+  const handleDeleteRequest = async (requestID) => {
+    const token = localStorage.getItem('token');
+    try {
+      await axios.delete(`/api/customerFeedback/${requestID}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setRequests(requests.filter(req => req.customerFdbckID !== requestID));
+      setDeletingRequestId(null); // Zurücksetzen der Löschbestätigung
+    } catch (error) {
+      console.error('Fehler beim Löschen der Feedback-Anfrage:', error);
+    }
+  };
+
+  const confirmDelete = (requestID) => {
+    setDeletingRequestId(requestID); // Setze die zu löschende Anfrage
+  };
+
+  const cancelDelete = () => {
+    setDeletingRequestId(null); // Setze das Löschbestätigungs-Flag zurück
+  };
+
+  const handleRemind = (request) => {
+    const sendDate = new Date(request.customerFdbckSend).toLocaleDateString();
+    const mailtoLink = `mailto:${request.customerMailaddr}?subject=Erinnerung%20an%20Feedback%20vom%20${sendDate}&body=Sehr%20geehrter%20Herr%20${request.customerName},%0A%0A${request.customerFdbckUrl}%0A%0AFreundliche%20Grüsse%0A${user.firstName}%20${user.lastName}`;
+    window.location.href = mailtoLink;
+  };
+
+  return (
+    <div className="mb-5">
+      <h3>Offene Feedback-Anfragen</h3>
+      {message && <p>{message}</p>}
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Gesendet am</th>
+            <th>Kunden Firma</th>
+            <th>Ansprechperson</th>
+            <th>E-Mail</th>
+            <th>Feedback URL</th>
+            <th>Aktionen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.isArray(requests) && requests.length > 0 ? (
+            requests.map((request) => (
+              <tr key={request.customerFdbckID}>
+                <td>{new Date(request.customerFdbckSend).toLocaleDateString()}</td>
+                <td>{request.customerCompany}</td>
+                <td>{request.customerName}</td>
+                <td>{request.customerMailaddr}</td>
+                <td>
+                  <a href={request.customerFdbckUrl} download className="btn btn-link">
+                    Feedback öffnen
+                  </a>
+                </td>
+                <td>
+                  {deletingRequestId === request.customerFdbckID ? (
+                    <>
+                      <button className="btn btn-danger mr-2" onClick={() => handleDeleteRequest(request.customerFdbckID)}>
+                        Wirklich löschen?
+                      </button>
+                      <button className="btn btn-secondary" onClick={cancelDelete}>
+                        Abbrechen
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button className="btn btn-primary mr-2" onClick={() => handleEdit(request)}>Bearbeiten</button>
+                      <button className="btn btn-danger mr-2" onClick={() => confirmDelete(request.customerFdbckID)}>
+                        Löschen
+                      </button>
+                      <button className="btn btn-warning" onClick={() => handleRemind(request)}>Erinnern</button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="6">Keine Feedback-Anfragen gefunden.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+
+      {editingRequest && (
+        <div className="mt-5">
+          <h3>Feedback-Anfrage bearbeiten</h3>
+          <div className="form-group">
+            <label>Kunden Firma</label>
+            <input
+              type="text"
+              className="form-control"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+            />
+          </div>
+          <div className="form-group">
+            <label>Ansprechperson</label>
+            <input
+              type="text"
+              className="form-control"
+              value={contactPerson}
+              onChange={(e) => setContactPerson(e.target.value)}
+            />
+          </div>
+          <div className="form-group">
+            <label>E-Mail</label>
+            <input
+              type="email"
+              className="form-control"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <button className="btn btn-primary" onClick={handleSaveRequest}>Speichern</button>
+          <button className="btn btn-secondary ml-2" onClick={() => setEditingRequest(null)}>Abbrechen</button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default UserRequest;
+
 ***variousFeedback.js:
-import React, { useState, useEffect } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { AuthContext } from './AuthContext'; // Assuming you're using AuthContext for the logged-in user
+import LinkGenerator from './linkGenerator'; // Use the LinkGenerator for generating the link
+import { animateButton } from './buttonAnimations'; // Import the button animation function
+import './buttonAnimations.scss'; // Import the SCSS for the animations
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css'; // Import the datepicker styles
 
 const VariousFeedback = () => {
+  const { user } = useContext(AuthContext); // Assuming you're using AuthContext to get the logged-in user
   const [customer, setCustomer] = useState('');
   const [description, setDescription] = useState('');
   const [received, setReceived] = useState(new Date());
   const [file, setFile] = useState(null);
-  const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false); // State to handle form submission
+  const [hideCancel, setHideCancel] = useState(false); // State to hide the "Abbrechen" button
   const navigate = useNavigate();
 
   const handleFileChange = (e) => {
@@ -87470,6 +88507,11 @@ const VariousFeedback = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const submitButton = e.target.querySelector('button[type="submit"]'); // Get the submit button
+
+    setIsSubmitting(true); // Disable the button while submitting
+    setHideCancel(true); // Hide the "Abbrechen" button
 
     const formData = new FormData();
     formData.append('variousFdbckCustomer', customer);
@@ -87488,18 +88530,25 @@ const VariousFeedback = () => {
       });
 
       if (response.status === 201) {
-        setMessage('Feedback erfolgreich hinzugefügt!');
+        // Trigger the success animation only for the submit button
+        animateButton(submitButton, 'success');
+
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate('/user');
         }, 3000);
       }
     } catch (error) {
-      setMessage('Ein Fehler ist aufgetreten. Bitte versuche es erneut.');
+      console.error('Ein Fehler ist aufgetreten:', error.response?.data || error.message);
+      animateButton(submitButton, 'error');
+      alert(error.response?.data || 'Fehler beim Hochladen der Datei. Erlaubte Formate: PNG, JPEG, PDF.');
+    } finally {
+      setIsSubmitting(false); // Re-enable the button after the submission
     }
   };
 
+
   return (
-    <div className="container-fluid mt-5"> {/* Banner is full width */}
+    <div className="container-fluid mt-5">
       <section className="featured">
         <div className="content-wrapper banner">
           <div className="float-right">
@@ -87510,7 +88559,7 @@ const VariousFeedback = () => {
           </hgroup>
         </div>
       </section>
-      <div className="container mt-5"> {/* This keeps the form centered */}
+      <div className="container mt-5">
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Kunde</label>
@@ -87520,6 +88569,7 @@ const VariousFeedback = () => {
               value={customer}
               onChange={(e) => setCustomer(e.target.value)}
               placeholder="Kundenname"
+              required
             />
           </div>
           <div className="form-group">
@@ -87529,6 +88579,7 @@ const VariousFeedback = () => {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Feedback-Beschreibung"
+              required
             />
           </div>
           <div className="form-group">
@@ -87544,16 +88595,22 @@ const VariousFeedback = () => {
             <label>Datei hochladen (Bilder, PDFs, E-Mails)</label>
             <input type="file" className="form-control" onChange={handleFileChange} />
           </div>
-          {message && <p>{message}</p>}
-          <button type="submit" className="btn btn-primary">Feedback hinzufügen</button>
-          <button type="button" className="btn btn-secondary ml-3" onClick={() => navigate('/dashboard')}>
-            Abbrechen
+          <button
+            type="submit"
+            className="btn btn-primary button"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Absenden...' : 'Feedback hinzufügen'}
           </button>
+          {!hideCancel && (
+            <button type="button" className="btn btn-secondary ml-3" onClick={() => navigate('/user')}>
+              Abbrechen
+            </button>
+          )}
         </form>
       </div>
     </div>
   );
-
 };
 
 export default VariousFeedback;

@@ -3,24 +3,44 @@ import axios from 'axios';
 
 const AdminUser = () => {
   const [users, setUsers] = useState([]);
+  const [roles, setRoles] = useState([]); // Zustand für Rollenliste
   const [editingUser, setEditingUser] = useState(null);
+  const [deletingUserId, setDeletingUserId] = useState(null); // Neuer Zustand für die Bestätigung
 
-  // Lade alle Benutzer
   useEffect(() => {
     const fetchUsers = async () => {
       const response = await axios.get('/api/admin/users');
       setUsers(response.data);
     };
+
+    const fetchRoles = async () => {
+      const response = await axios.get('/api/admin/roles');
+      setRoles(response.data); // Lade Rollenliste
+    };
+
     fetchUsers();
+    fetchRoles(); // Lade Rollenliste beim Mounten der Komponente
   }, []);
 
-  // Benutzer löschen
+  const getRoleName = (roleId) => {
+    const role = roles.find(role => role.rolesID === roleId);
+    return role ? role.rolesName : 'Unbekannt';
+  };
+
+  const confirmDelete = (userId) => {
+    setDeletingUserId(userId); // Setzt das zu löschende User ID
+  };
+
+  const cancelDelete = () => {
+    setDeletingUserId(null); // Löschen abbrechen
+  };
+
   const handleDeleteUser = async (userId) => {
     await axios.delete(`/api/admin/users/${userId}`);
     setUsers(users.filter((user) => user.usersID !== userId));
+    setDeletingUserId(null); // Reset delete confirmation state
   };
 
-  // Benutzer speichern
   const handleSaveUser = async () => {
     const { usersID, usersEmail, usersVorname, usersNachname, rolesFK } = editingUser;
     await axios.put(`/api/admin/users/${usersID}`, {
@@ -41,23 +61,30 @@ const AdminUser = () => {
       <table className="table">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Email</th>
             <th>Vorname</th>
             <th>Nachname</th>
-            <th>Aktionen</th>
+            <th>E-Mail</th>
+            <th>Rolle</th>
+            <th>Aktionen</th> {/* User ID wurde entfernt */}
           </tr>
         </thead>
         <tbody>
           {users.map((user) => (
             <tr key={user.usersID}>
-              <td>{user.usersID}</td>
-              <td>{user.usersEmail}</td>
               <td>{user.usersVorname}</td>
               <td>{user.usersNachname}</td>
+              <td>{user.usersEmail}</td>
+              <td>{getRoleName(user.rolesFK)}</td> {/* Rollenauswahl nach Namen */}
               <td>
-                <button onClick={() => setEditingUser(user)}>Bearbeiten</button>
-                <button onClick={() => handleDeleteUser(user.usersID)}>Löschen</button>
+                <button className="btn btn-primary" onClick={() => setEditingUser(user)}>Bearbeiten</button> {/* Blaues Styling hinzugefügt */}
+                {deletingUserId === user.usersID ? (
+                  <>
+                    <button className="btn btn-danger mr-2" onClick={() => handleDeleteUser(user.usersID)}>Wirklich löschen?</button>
+                    <button className="btn btn-secondary" onClick={cancelDelete}>Abbrechen</button>
+                  </>
+                ) : (
+                  <button className="btn btn-danger" onClick={() => confirmDelete(user.usersID)}>Löschen</button>
+                )}
               </td>
             </tr>
           ))}
@@ -69,7 +96,7 @@ const AdminUser = () => {
           <h3>Benutzer bearbeiten</h3>
           <form onSubmit={handleSaveUser}>
             <div className="form-group">
-              <label>Email</label>
+              <label>E-Mail</label>
               <input
                 type="email"
                 className="form-control"
@@ -96,13 +123,18 @@ const AdminUser = () => {
               />
             </div>
             <div className="form-group">
-              <label>Rolle (rolesFK)</label>
-              <input
-                type="number"
+              <label>Rolle</label>
+              <select
                 className="form-control"
                 value={editingUser.rolesFK}
                 onChange={(e) => setEditingUser({ ...editingUser, rolesFK: e.target.value })}
-              />
+              >
+                {roles.map(role => (
+                  <option key={role.rolesID} value={role.rolesID}>
+                    {role.rolesName}
+                  </option>
+                ))}
+              </select>
             </div>
             <button type="button" className="btn btn-primary" onClick={handleSaveUser}>Speichern</button>
             <button type="button" className="btn btn-secondary ml-2" onClick={() => setEditingUser(null)}>Abbrechen</button>

@@ -12,22 +12,22 @@ const Register = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
+  
     if (password !== confirmPassword) {
       setMessage('Passwörter stimmen nicht überein');
       setError(true);
       return;
     }
-
+  
     try {
-      const response = await fetch('/register', {
+      const response = await fetch('/api/register', {  // Pfad angepasst
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ vorname, nachname, email, password }),
       });
-
+  
       if (response.ok) {
         setMessage('Erfolgreich registriert');
         setError(false);
@@ -41,7 +41,7 @@ const Register = () => {
       setError(true);
     }
   };
-
+  
   return (
     <div className="container mt-5">
       <div className="row justify-content-center">

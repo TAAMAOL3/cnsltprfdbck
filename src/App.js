@@ -9,8 +9,9 @@ import Dashboard from './Dashboard';
 import VariousFeedback from './variousFeedback';
 import Admin from './Admin';
 import TextMining from './TextMining'; 
-import User from './User'; // Importiere die UserFeedback-Komponente
-import CustomerFeedback from './customerFeedback'; // Importiere die CustomerFeedback-Komponente
+import User from './User'; 
+import CustomerFeedback from './customerFeedback'; 
+import Feedback from './feedback'; // Importing the new Feedback component
 
 // ProtectedRoute component to restrict access to authenticated users
 const ProtectedRoute = ({ children }) => {
@@ -48,7 +49,10 @@ function App() {
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/textmining" element={<ProtectedRoute><TextMining /></ProtectedRoute>} />
             <Route path="/User" element={<ProtectedRoute><User /></ProtectedRoute>} />
-            <Route path="/customerFeedback" element={<ProtectedRoute><CustomerFeedback /></ProtectedRoute>} /> {/* Neue Route */}
+            <Route path="/customerFeedback" element={<ProtectedRoute><CustomerFeedback /></ProtectedRoute>} /> 
+
+            {/* New route for feedback */}
+            <Route path="/feedback" element={<Feedback />} /> 
           </Routes>
         </div>
       </AuthProvider>

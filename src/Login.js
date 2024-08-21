@@ -1,35 +1,29 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AuthContext } from './AuthContext'; // Verwende den AuthContext
+import { AuthContext } from './AuthContext';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const { user, login, loading } = useContext(AuthContext); // Ladezustand und login-Funktion verwenden
+  const { user, login, loading } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const redirectPath = await login(email, password); // Login aufrufen
+    const redirectPath = await login(email, password);
 
     if (redirectPath) {
-      setSuccess('Login erfolgreich!');
       setError('');
-      setTimeout(() => {
-        window.location.reload(); // Refresh the page after login
-      }, 1);
+      navigate(redirectPath);
     } else {
       setError('Login fehlgeschlagen. Bitte überprüfe deine Anmeldedaten.');
-      setSuccess('');
     }
   };
 
   useEffect(() => {
-    // Benutzer weiterleiten, wenn er bereits eingeloggt ist und die Benutzerdaten geladen sind
     if (user && !loading) {
-      navigate('/dashboard');
+      navigate('/user');
     }
   }, [user, loading, navigate]);
 
@@ -39,9 +33,8 @@ const Login = () => {
         <div className="col-md-6">
           <div className="card">
             <div className="card-body">
-              <h1 className="card-title">Login</h1> {/* Geändert zu H1 */}
+              <h1 className="card-title">Login</h1>
               {error && <div className="alert alert-danger">{error}</div>}
-              {success && <div className="alert alert-success">{success}</div>}
               <form onSubmit={handleSubmit}>
                 <div className="form-group">
                   <label htmlFor="email">E-mail Adresse</label>
