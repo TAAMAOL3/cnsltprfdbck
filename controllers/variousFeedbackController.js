@@ -2,6 +2,8 @@ const db = require('../config/db');
 const multer = require('multer');
 const path = require('path');
 const sharp = require('sharp');
+const fs = require('fs');
+
 
 // Dateitypen, die erlaubt sind (z.B. PNG, JPEG, PDF)
 const ALLOWED_FILE_TYPES = ['image/png', 'image/jpeg', 'application/pdf'];

@@ -37,7 +37,12 @@ function Navigation() {
                 <li><Link to="/customerFeedback">Feedback einholen</Link></li>
                 <li><Link to="/variousFeedback">Feedback Erfassen</Link></li>
                 <li><Link to="/User">Meine Feedbacks</Link></li>
-                <li><Link to="/teamleader">Alle Feedbacks</Link></li>
+                
+                {/* Show "Alle Feedbacks" only if the user has role 2 or 3 */}
+                {(user.role === 2 || user.role === 3) && (
+                  <li><Link to="/team">Alle Feedbacks</Link></li>
+                )}
+                
                 {user.role === 3 && (
                   <li><Link to="/admin">Admin</Link></li>
                 )}

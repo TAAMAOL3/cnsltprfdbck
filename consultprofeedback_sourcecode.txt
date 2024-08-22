@@ -15,6 +15,7 @@ consultprofeedback/
 │   ├── customerFeedbackController.js
 │   ├── passwordResetController.js
 │   ├── registerController.js
+│   ├── teamFeedbackController.js
 │   ├── textMiningController.js
 │   ├── variousFeedbackController.js
 ├── middleware/
@@ -87,6 +88,7 @@ consultprofeedback/
 │   ├── customerFeedbackRoutes.js
 │   ├── passwordResetRoutes.js
 │   ├── registerRoutes.js
+│   ├── teamFeedbackRoutes.js
 │   ├── textMiningRoutes.js
 │   ├── variousFeedbackRoutes.js
 ├── src/
@@ -111,6 +113,10 @@ consultprofeedback/
 │   ├── Register.js
 │   ├── reportWebVitals.js
 │   ├── setupTests.js
+│   ├── Team.js
+│   ├── TeamFeedback.js
+│   ├── TeamReceived.js
+│   ├── TeamRequest.js
 │   ├── TextMining.js
 │   ├── User.js
 │   ├── UserFeedback.js
@@ -126,7 +132,7 @@ DB_USER=dba
 DB_PASSWORD=Geheim4711
 DB_NAME=consultprofeedbackdb
 JWT_SECRET=hepzABvYQP3D4pjehdwjO9KBx2F9JzT8H4q2qytc0gVXE7g254baKR67RYLOfgBW
-UPLOAD_PATH='../public/uploads'
+UPLOAD_PATH='./public/uploads'
 
 
 
@@ -21025,10 +21031,11 @@ const { body, validationResult } = require("express-validator");
 const db = require("./config/db");
 const registerRoutes = require("./routes/registerRoutes");
 const passwordResetRoutes = require("./routes/passwordResetRoutes");
-const variousFeedbackRoutes = require('./routes/variousFeedbackRoutes'); // Import the new routes
+const variousFeedbackRoutes = require('./routes/variousFeedbackRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const textMiningRoutes = require('./routes/textMiningRoutes');
 const customerFeedbackRoutes = require('./routes/customerFeedbackRoutes');
+const teamFeedbackRoutes = require('./routes/teamFeedbackRoutes'); // Import teamFeedbackRoutes
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -21045,11 +21052,14 @@ app.use(rateLimit({
 
 app.use('/api/register', registerRoutes);
 app.use('/api/password-reset', passwordResetRoutes);
-app.use('/api/feedback', variousFeedbackRoutes); // Add the new feedback routes
+app.use('/api/feedback', variousFeedbackRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', textMiningRoutes);
 app.use('/api/customerFeedback', customerFeedbackRoutes);
+app.use('/api/team', teamFeedbackRoutes); // Use team feedback routes
 
+// Serve the uploads directory as static files
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 // New /api/user endpoint to get user information based on token
 app.get("/api/user", (req, res) => {
@@ -21075,7 +21085,8 @@ app.get("/api/user", (req, res) => {
         email: user.usersEmail, 
         role: user.rolesFK, 
         vorname: user.usersVorname, 
-        nachname: user.usersNachname 
+        nachname: user.usersNachname, 
+        teamId: user.teamFK
       }});
     });
   });
@@ -21515,6 +21526,184 @@ exports.registerUser = async (req, res) => {
     });
 };
 
+***teamFeedbackController.js:
+const db = require('../config/db');
+const LinkGenerator = require('../src/linkGenerator');
+
+
+
+
+// Function to get feedback by URL ID
+exports.getFeedbackById = (req, res) => {
+  const { id } = req.params;
+
+  const query = `
+    SELECT * FROM t_customerfdbck
+    WHERE customerFdbckUrlID = ?
+  `;
+
+  db.query(query, [id], (err, results) => {
+    if (err) {
+      console.error('Error fetching feedback by ID:', err);
+      return res.status(500).send('Error fetching feedback');
+    }
+
+    if (results.length > 0) {
+      res.status(200).json(results[0]);
+    } else {
+      res.status(404).send('Feedback not found');
+    }
+  });
+};
+
+// Function to update the team feedback text, status, and rating
+exports.updateTeamFeedbackText = (req, res) => {
+  const { id } = req.params;
+  const { customerFdbckText, customerFdbckReceived, customerFdbckAnswered, rating } = req.body;
+
+  const query = `
+    UPDATE t_customerfdbck
+    SET customerFdbckText = ?, customerFdbckReceived = ?, customerFdbckAnswered = ?, rating = ?
+    WHERE customerFdbckUrlID = ?
+  `;
+
+  db.query(query, [customerFdbckText, customerFdbckReceived, customerFdbckAnswered, rating, id], (err, result) => {
+    if (err) {
+      console.error('Error updating team feedback text:', err);
+      return res.status(500).send('Error updating feedback');
+    }
+
+    res.status(200).send('Team feedback text and rating updated successfully');
+  });
+};
+
+// Function to update team feedback (generic)
+exports.updateTeamFeedback = (req, res) => {
+  const { customerCompany, customerName, customerMailaddr } = req.body;
+  const feedbackId = req.params.id;
+
+  const query = `
+    UPDATE t_customerfdbck
+    SET customerCompany = ?, customerName = ?, customerMailaddr = ?
+    WHERE customerFdbckID = ?
+  `;
+
+  db.query(query, [customerCompany, customerName, customerMailaddr, feedbackId], (err, result) => {
+    if (err) {
+      console.error('Error updating team feedback:', err);
+      return res.status(500).send('Error updating feedback');
+    }
+    res.status(200).send('Team feedback successfully updated');
+  });
+};
+
+// Function to delete team feedback
+exports.deleteTeamFeedback = (req, res) => {
+  const feedbackId = req.params.id;
+
+  const query = `
+    DELETE FROM t_customerfdbck
+    WHERE customerFdbckID = ?
+  `;
+
+  db.query(query, [feedbackId], (err, result) => {
+    if (err) {
+      console.error('Error deleting team feedback:', err);
+      return res.status(500).send('Error deleting feedback');
+    }
+    res.status(200).send('Team feedback successfully deleted');
+  });
+};
+
+// Function to create a new team feedback request (still using t_customerfdbck)
+exports.createTeamFeedback = (req, res) => {
+  const { customerCompany, customerName, customerMailaddr, customerFdbckSend, customerFdbckUrl, customerFdbckUrlID, usersFK } = req.body;
+  const query = `
+    INSERT INTO t_customerfdbck (customerCompany, customerName, customerMailaddr, customerFdbckSend, customerFdbckText, customerFdbckReceived, customerFdbckUrl, customerFdbckUrlID, customerFdbckAnswered, usersFK)
+    VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, 0, ?)
+  `;
+  const values = [customerCompany, customerName, customerMailaddr, customerFdbckSend, customerFdbckUrl, customerFdbckUrlID, usersFK];
+
+  console.log("Executing SQL Query:", query);
+  console.log("With Values:", values);
+
+  db.query(query, values, (err, result) => {
+    if (err) {
+      console.error('Error inserting team feedback:', err);
+      return res.status(500).send('Error creating team feedback');
+    }
+    res.status(201).send('Team feedback successfully created');
+  });
+};
+
+// Function to get feedback requests for a specific team
+exports.getTeamFeedbackRequests = (req, res) => {
+  const { teamId } = req.params; // Ensure teamId is properly extracted
+
+  if (!teamId) {
+    return res.status(400).send('teamId is required');
+  }
+
+  const query = `
+    SELECT *
+    FROM t_customerfdbck
+    WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?) AND customerFdbckAnswered = 0
+  `;
+
+  console.log("Executing SQL Query:", query);
+  console.log("With teamId:", teamId);
+
+  db.query(query, [teamId], (err, results) => {
+    if (err) {
+      console.error('Error fetching received feedback for team:', err);
+      return res.status(500).send('Error fetching feedback');
+    }
+    res.status(200).json(results);
+  });
+};
+
+exports.getTeamReceivedFeedbacks = (req, res) => {
+  const { teamId } = req.params; // Ensure teamId is properly extracted
+
+  if (!teamId) {
+    return res.status(400).send('teamId is required');
+  }
+
+  const query = `
+    SELECT customerFdbckID, customerFdbckReceived, customerCompany, customerName, customerMailaddr, customerFdbckText, rating
+    FROM t_customerfdbck
+    WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?) AND customerFdbckAnswered = 1
+  `;
+
+  console.log("Executing SQL Query:", query);
+  console.log("With teamId:", teamId);
+
+  db.query(query, [teamId], (err, results) => {
+    if (err) {
+      console.error('Error fetching received feedback for team:', err);
+      return res.status(500).send('Error fetching feedback');
+    }
+    res.status(200).json(results);
+  });
+};
+
+exports.getFeedbackByTeam = (req, res) => {
+  const { teamId } = req.params; // Ensure teamId is properly extracted
+
+  const query = `
+    SELECT variousFdbckID, variousFdbckReceived, variousFdbckCustomer, variousFdbckDescription, uploadUrl 
+    FROM t_variousFdbck WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?)
+  `;
+  db.query(query, [teamId], (err, results) => {
+    if (err) {
+      console.error('Fehler beim Abrufen der Feedbacks:', err);
+      return res.status(500).send('Fehler beim Abrufen der Feedbacks');
+    }
+    res.json(results);
+  });
+};
+
+
 ***textMiningController.js:
 const fs = require('fs');
 const path = require('path');
@@ -21599,6 +21788,8 @@ const db = require('../config/db');
 const multer = require('multer');
 const path = require('path');
 const sharp = require('sharp');
+const fs = require('fs');
+
 
 // Dateitypen, die erlaubt sind (z.B. PNG, JPEG, PDF)
 const ALLOWED_FILE_TYPES = ['image/png', 'image/jpeg', 'application/pdf'];
@@ -23720,6 +23911,20 @@ a.ui-button:active,
 .ui-widget-shadow {
 	-webkit-box-shadow: 0px 0px 5px #666666;
 	box-shadow: 0px 0px 5px #666666;
+}
+
+/* Einheitliche Breite für alle "Aktionen"-Spalten */
+table td:last-child, 
+table th:last-child {
+  width: 150px; /* Anpassen je nach gewünschter Breite */
+}
+
+/* Buttons in der Spalte rechtsbündig ausrichten */
+table td:last-child {
+  text-align: right;
+  display: flex;
+  /* justify-content: flex-end; */
+  gap: 1px; /* Abstand zwischen den Buttons */
 }
 
 ***jquery-ui.min.css:
@@ -86487,6 +86692,35 @@ router.post('/', registerUser);
 
 module.exports = router;
 
+***teamFeedbackRoutes.js:
+const express = require('express');
+const router = express.Router();
+const teamFeedbackController = require('../controllers/teamFeedbackController');
+const authenticateToken = require('../middleware/authenticateToken');
+
+// Route for creating team feedback
+router.post('/', authenticateToken, teamFeedbackController.createTeamFeedback);
+
+// Route for fetching team-specific feedback requests (Added :teamId)
+router.get('/requests/:teamId', authenticateToken, teamFeedbackController.getTeamFeedbackRequests);
+
+// Route for fetching feedback by URL ID
+router.get('/team/:teamId', authenticateToken, teamFeedbackController.getFeedbackByTeam);
+
+// Route for updating team feedback text, status, and rating
+router.put('/text/:id', authenticateToken, teamFeedbackController.updateTeamFeedbackText);
+
+// Route for updating general team feedback
+router.put('/:id', authenticateToken, teamFeedbackController.updateTeamFeedback);
+
+// Route for deleting team feedback
+router.delete('/:id', authenticateToken, teamFeedbackController.deleteTeamFeedback);
+
+// Route for fetching all received feedback for the team
+router.get('/received/:teamId', authenticateToken, teamFeedbackController.getTeamReceivedFeedbacks);
+
+module.exports = router;
+
 ***textMiningRoutes.js:
 const express = require('express');
 const router = express.Router();
@@ -87000,10 +87234,11 @@ import PasswordReset from './PasswordReset';
 import Dashboard from './Dashboard';
 import VariousFeedback from './variousFeedback';
 import Admin from './Admin';
-import TextMining from './TextMining'; 
-import User from './User'; 
-import CustomerFeedback from './customerFeedback'; 
-import Feedback from './feedback'; // Importing the new Feedback component
+import TextMining from './TextMining';
+import User from './User';
+import CustomerFeedback from './customerFeedback';
+import Feedback from './feedback';
+import Team from './Team'; // Importing the Team component
 
 // ProtectedRoute component to restrict access to authenticated users
 const ProtectedRoute = ({ children }) => {
@@ -87018,10 +87253,10 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
-  const { loading } = useContext(AuthContext); 
+  const { loading } = useContext(AuthContext);
 
   if (loading) {
-    return <div>Lade Benutzerdaten...</div>; 
+    return <div>Loading user data...</div>;
   }
 
   return (
@@ -87040,11 +87275,12 @@ function App() {
             <Route path="/variousFeedback" element={<ProtectedRoute><VariousFeedback /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/textmining" element={<ProtectedRoute><TextMining /></ProtectedRoute>} />
-            <Route path="/User" element={<ProtectedRoute><User /></ProtectedRoute>} />
-            <Route path="/customerFeedback" element={<ProtectedRoute><CustomerFeedback /></ProtectedRoute>} /> 
+            <Route path="/user" element={<ProtectedRoute><User /></ProtectedRoute>} />
+            <Route path="/customerFeedback" element={<ProtectedRoute><CustomerFeedback /></ProtectedRoute>} />
+            <Route path="/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} />
 
-            {/* New route for feedback */}
-            <Route path="/feedback" element={<Feedback />} /> 
+            {/* New route for Team Leader dashboard */}
+            <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
           </Routes>
         </div>
       </AuthProvider>
@@ -87663,7 +87899,12 @@ function Navigation() {
                 <li><Link to="/customerFeedback">Feedback einholen</Link></li>
                 <li><Link to="/variousFeedback">Feedback Erfassen</Link></li>
                 <li><Link to="/User">Meine Feedbacks</Link></li>
-                <li><Link to="/teamleader">Alle Feedbacks</Link></li>
+                
+                {/* Show "Alle Feedbacks" only if the user has role 2 or 3 */}
+                {(user.role === 2 || user.role === 3) && (
+                  <li><Link to="/team">Alle Feedbacks</Link></li>
+                )}
+                
                 {user.role === 3 && (
                   <li><Link to="/admin">Admin</Link></li>
                 )}
@@ -87882,6 +88123,519 @@ export default reportWebVitals;
 // expect(element).toHaveTextContent(/react/i)
 // learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
+
+***Team.js:
+import React, { useContext, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AuthContext } from './AuthContext';
+import TeamFeedback from './TeamFeedback';
+import TeamRequest from './TeamRequest';
+import TeamReceived from './TeamReceived'; // Import the TeamReceived component
+
+const Team = () => {
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user || user.role !== 2) {
+      navigate('/login'); // Redirect non-team leaders to the login page
+    }
+  }, [user, navigate]);
+
+  return (
+    <div className="container-fluid mt-5">
+      <section className="featured">
+        <div className="content-wrapper banner">
+          <div className="float-right">
+            <img className="page-icon" src="/Content/themes/base/images/team_BOLD.svg" alt="Team icon" />
+          </div>
+          <hgroup className="title">
+            <h1>Team Leader Dashboard</h1>
+          </hgroup>
+        </div>
+      </section>
+      <div className="container mt-5">
+        {/* Team Received Feedbacks */}
+        <TeamReceived /> 
+
+        {/* Team Feedbacks */}
+        <TeamFeedback />
+
+        {/* Team Feedback Requests */}
+        <TeamRequest />
+      </div>
+    </div>
+  );
+};
+
+export default Team;
+
+***TeamFeedback.js:
+import React, { useState, useEffect, useContext } from 'react';
+import axios from 'axios';
+import { AuthContext } from './AuthContext';
+
+const TeamFeedback = () => {
+  const { user } = useContext(AuthContext);
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [editingFeedback, setEditingFeedback] = useState(null);
+  const [customer, setCustomer] = useState('');
+  const [description, setDescription] = useState('');
+  const [received, setReceived] = useState('');
+  const [message, setMessage] = useState('');
+  const [deletingFeedbackId, setDeletingFeedbackId] = useState(null);
+
+  useEffect(() => {
+    const fetchTeamFeedbacks = async () => {
+      const token = localStorage.getItem('token');
+      if (token && user && user.teamId) {
+        try {
+          // Fetch feedback data based on teamId
+          const response = await axios.get(`/api/team/team/${user.teamId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setFeedbacks(response.data || []);
+        } catch (error) {
+          console.error('Error fetching team feedback:', error);
+          setFeedbacks([]);
+        }
+      }
+    };
+
+    fetchTeamFeedbacks();
+  }, [user]);
+
+  const handleEdit = (feedback) => {
+    setEditingFeedback(feedback);
+    setCustomer(feedback.variousFdbckCustomer);  // Correct field
+    setDescription(feedback.variousFdbckDescription);  // Correct field
+    setReceived(feedback.variousFdbckReceived);  // Correct field
+  };
+
+  const handleSaveFeedback = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const formattedDate = received.split('/').reverse().join('-'); // Format dd/MM/yyyy to yyyy-MM-dd
+
+      await axios.put(`/api/teamFeedback/${editingFeedback.variousFdbckID}`, {
+        customerCompany: customer,
+        customerFdbckText: description,
+        customerFdbckReceived: formattedDate,
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setFeedbacks(feedbacks.map(fb =>
+        fb.variousFdbckID === editingFeedback.variousFdbckID ? { ...fb, variousFdbckCustomer: customer, variousFdbckDescription: description, variousFdbckReceived: formattedDate } : fb
+      ));
+      setEditingFeedback(null);
+      setMessage('Team feedback updated successfully!');
+    } catch (error) {
+      console.error('Error saving feedback:', error.message || error);
+    }
+  };
+
+  const handleDeleteFeedback = async (feedbackID) => {
+    const token = localStorage.getItem('token');
+    try {
+      await axios.delete(`/api/teamFeedback/${feedbackID}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setFeedbacks(feedbacks.filter(fb => fb.variousFdbckID !== feedbackID));  // Correct field
+      setDeletingFeedbackId(null);
+    } catch (error) {
+      console.error('Error deleting feedback:', error);
+    }
+  };
+
+  const confirmDelete = (feedbackID) => {
+    setDeletingFeedbackId(feedbackID);
+  };
+
+  const cancelDelete = () => {
+    setDeletingFeedbackId(null);
+  };
+
+  return (
+    <div className="mb-5">
+      <h3>Team Feedback</h3>
+      {message && <p>{message}</p>}
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Feedback Received</th>
+            <th>Customer</th>
+            <th>Description</th>
+            <th>File</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.isArray(feedbacks) && feedbacks.length > 0 ? (
+            feedbacks.map((feedback) => (
+              <tr key={feedback.variousFdbckID}>  
+                <td>{new Date(feedback.variousFdbckReceived).toLocaleDateString()}</td>  
+                <td>{feedback.variousFdbckCustomer}</td>  
+                <td>{feedback.variousFdbckDescription}</td>  
+                <td>
+                  <a href={feedback.uploadUrl} download className="btn btn-link">
+                    Download File
+                  </a>
+                </td>
+                <td>
+                  {deletingFeedbackId === feedback.variousFdbckID ? (  
+                    <>
+                      <button className="btn btn-danger mr-2" onClick={() => handleDeleteFeedback(feedback.variousFdbckID)}> 
+                        Confirm Delete?
+                      </button>
+                      <button className="btn btn-secondary" onClick={cancelDelete}>
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button className="btn btn-primary mr-2" onClick={() => handleEdit(feedback)}>Edit</button>
+                      <button className="btn btn-danger mr-2" onClick={() => confirmDelete(feedback.variousFdbckID)}> 
+                        Delete
+                      </button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="5">No feedback found.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+
+      {editingFeedback && (
+        <div className="mt-5">
+          <h3>Edit Feedback</h3>
+          <div className="form-group">
+            <label>Customer</label>
+            <input
+              type="text"
+              className="form-control"
+              value={customer}
+              onChange={(e) => setCustomer(e.target.value)}
+            />
+          </div>
+          <div className="form-group">
+            <label>Description</label>
+            <input
+              type="text"
+              className="form-control"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+          <div className="form-group">
+            <label>Received On</label>
+            <input
+              type="date"
+              className="form-control"
+              value={received}
+              onChange={(e) => setReceived(e.target.value)}
+            />
+          </div>
+          <button className="btn btn-primary" onClick={handleSaveFeedback}>Save</button>
+          <button className="btn btn-secondary ml-2" onClick={() => setEditingFeedback(null)}>Cancel</button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default TeamFeedback;
+***TeamReceived.js:
+import React, { useState, useEffect, useContext } from 'react';
+import axios from 'axios';
+import { AuthContext } from './AuthContext';
+
+const TeamReceived = () => {
+  const { user } = useContext(AuthContext);
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [viewingFeedback, setViewingFeedback] = useState(null);
+
+  useEffect(() => {
+    const fetchTeamFeedbacks = async () => {
+      const token = localStorage.getItem('token');
+      if (token && user && user.teamId) { // Use user.teamId
+        try {
+          // Include teamId in the request
+          const response = await axios.get(`/api/team/received/${user.teamId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setFeedbacks(response.data || []);
+        } catch (error) {
+          console.error('Error fetching team feedbacks:', error);
+          setFeedbacks([]);
+        }
+      }
+    };
+
+    fetchTeamFeedbacks();
+  }, [user]);
+
+  const handleViewFeedback = (feedback) => {
+    setViewingFeedback(feedback);
+  };
+
+  const getRatingIcon = (rating) => {
+    if (rating >= 2) {
+      return <img className="page-icon" src="/Content/themes/base/images/VeryPositive.png" alt="Very Positive" />;
+    } else if (rating === 1) {
+      return <img className="page-icon" src="/Content/themes/base/images/Positive.png" alt="Positive" />;
+    } else if (rating === 0) {
+      return <img className="page-icon" src="/Content/themes/base/images/Unknown.png" alt="Unknown" />;
+    } else if (rating === -1) {
+      return <img className="page-icon" src="/Content/themes/base/images/Negative.png" alt="Negative" />;
+    } else if (rating <= -2) {
+      return <img className="page-icon" src="/Content/themes/base/images/VeryNegative.png" alt="Very Negative" />;
+    }
+  };
+
+  return (
+    <div className="mb-5">
+      <h3>Team Received Feedback</h3>
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Received On</th>
+            <th>Customer Company</th>
+            <th>Contact Person</th>
+            <th>Email</th>
+            <th>Rating</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.isArray(feedbacks) && feedbacks.length > 0 ? (
+            feedbacks.map((feedback) => (
+              <tr key={feedback.customerFdbckID}>
+                <td>{new Date(feedback.customerFdbckReceived).toLocaleDateString()}</td>
+                <td>{feedback.customerCompany}</td>
+                <td>{feedback.customerName}</td>
+                <td>{feedback.customerMailaddr}</td>
+                <td>{getRatingIcon(feedback.rating)}</td>
+                <td>
+                  <button className="btn btn-primary" onClick={() => handleViewFeedback(feedback)}>
+                    View
+                  </button>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="6">No feedback found.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+
+      {viewingFeedback && (
+        <div className="mt-5">
+          <h3>View Feedback</h3>
+          <p style={{ fontSize: '1.5rem' }}><strong>Feedback:</strong> {viewingFeedback.customerFdbckText}</p>
+          <button className="btn btn-secondary" onClick={() => setViewingFeedback(null)}>Close</button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default TeamReceived;
+
+***TeamRequest.js:
+import React, { useState, useEffect, useContext } from 'react';
+import axios from 'axios';
+import { AuthContext } from './AuthContext';
+
+const TeamRequest = () => {
+  const { user } = useContext(AuthContext);
+  const [requests, setRequests] = useState([]);
+  const [editingRequest, setEditingRequest] = useState(null);
+  const [company, setCompany] = useState('');
+  const [contactPerson, setContactPerson] = useState('');
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [deletingRequestId, setDeletingRequestId] = useState(null);
+
+  useEffect(() => {
+    const fetchTeamRequests = async () => {
+      const token = localStorage.getItem('token');
+      if (token && user && user.teamId) { // Use user.teamId
+        try {
+          // Include teamId in the request
+          const response = await axios.get(`/api/team/requests/${user.teamId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setRequests(response.data || []);
+        } catch (error) {
+          console.error('Error fetching team requests:', error);
+          setRequests([]);
+        }
+      }
+    };
+
+    fetchTeamRequests();
+  }, [user]);
+
+  const handleEdit = (request) => {
+    setEditingRequest(request);
+    setCompany(request.customerCompany);
+    setContactPerson(request.customerName);
+    setEmail(request.customerMailaddr);
+  };
+
+  const handleSaveRequest = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      await axios.put(`/api/teamFeedback/${editingRequest.customerFdbckID}`, {
+        customerCompany: company,
+        customerName: contactPerson,
+        customerMailaddr: email,
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setRequests(requests.map(req =>
+        req.customerFdbckID === editingRequest.customerFdbckID ? { ...req, customerCompany: company, customerName: contactPerson, customerMailaddr: email } : req
+      ));
+      setEditingRequest(null);
+      setMessage('Team feedback request updated successfully!');
+    } catch (error) {
+      console.error('Error saving feedback request:', error);
+    }
+  };
+
+  const handleDeleteRequest = async (requestID) => {
+    const token = localStorage.getItem('token');
+    try {
+      await axios.delete(`/api/teamFeedback/${requestID}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setRequests(requests.filter(req => req.customerFdbckID !== requestID));
+      setDeletingRequestId(null);
+    } catch (error) {
+      console.error('Error deleting feedback request:', error);
+    }
+  };
+
+  const confirmDelete = (requestID) => {
+    setDeletingRequestId(requestID);
+  };
+
+  const cancelDelete = () => {
+    setDeletingRequestId(null);
+  };
+
+  const handleRemind = (request) => {
+    const sendDate = new Date(request.customerFdbckSend).toLocaleDateString();
+    const mailtoLink = `mailto:${request.customerMailaddr}?subject=Reminder%20for%20Feedback%20sent%20on%20${sendDate}&body=Dear%20${request.customerName},%0A%0A${request.customerFdbckUrl}%0A%0ABest%20regards,%0A${user.firstName}%20${user.lastName}`;
+    window.location.href = mailtoLink;
+  };
+
+  return (
+    <div className="mb-5">
+      <h3>Team Feedback Requests</h3>
+      {message && <p>{message}</p>}
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Sent On</th>
+            <th>Customer Company</th>
+            <th>Contact Person</th>
+            <th>Email</th>
+            <th>Feedback URL</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.isArray(requests) && requests.length > 0 ? (
+            requests.map((request) => (
+              <tr key={request.customerFdbckID}>
+                <td>{new Date(request.customerFdbckSend).toLocaleDateString()}</td>
+                <td>{request.customerCompany}</td>
+                <td>{request.customerName}</td>
+                <td>{request.customerMailaddr}</td>
+                <td>
+                  <a href={request.customerFdbckUrl} download className="btn btn-link">
+                    Open Feedback
+                  </a>
+                </td>
+                <td>
+                  {deletingRequestId === request.customerFdbckID ? (
+                    <>
+                      <button className="btn btn-danger mr-2" onClick={() => handleDeleteRequest(request.customerFdbckID)}>
+                        Confirm Delete?
+                      </button>
+                      <button className="btn btn-secondary" onClick={cancelDelete}>
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button className="btn btn-primary mr-2" onClick={() => handleEdit(request)}>Edit</button>
+                      <button className="btn btn-danger mr-2" onClick={() => confirmDelete(request.customerFdbckID)}>
+                        Delete
+                      </button>
+                      <button className="btn btn-warning" onClick={() => handleRemind(request)}>Remind</button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="6">No feedback requests found.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+
+      {editingRequest && (
+        <div className="mt-5">
+          <h3>Edit Feedback Request</h3>
+          <div className="form-group">
+            <label>Customer Company</label>
+            <input
+              type="text"
+              className="form-control"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+            />
+          </div>
+          <div className="form-group">
+            <label>Contact Person</label>
+            <input
+              type="text"
+              className="form-control"
+              value={contactPerson}
+              onChange={(e) => setContactPerson(e.target.value)}
+            />
+          </div>
+          <div className="form-group">
+            <label>Email</label>
+            <input
+              type="email"
+              className="form-control"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <button className="btn btn-primary" onClick={handleSaveRequest}>Save</button>
+          <button className="btn btn-secondary ml-2" onClick={() => setEditingRequest(null)}>Cancel</button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default TeamRequest;
 
 ***TextMining.js:
 import React, { useState } from 'react';

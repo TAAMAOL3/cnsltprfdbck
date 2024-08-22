@@ -11,10 +11,11 @@ const { body, validationResult } = require("express-validator");
 const db = require("./config/db");
 const registerRoutes = require("./routes/registerRoutes");
 const passwordResetRoutes = require("./routes/passwordResetRoutes");
-const variousFeedbackRoutes = require('./routes/variousFeedbackRoutes'); // Import the new routes
+const variousFeedbackRoutes = require('./routes/variousFeedbackRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const textMiningRoutes = require('./routes/textMiningRoutes');
 const customerFeedbackRoutes = require('./routes/customerFeedbackRoutes');
+const teamFeedbackRoutes = require('./routes/teamFeedbackRoutes'); // Import teamFeedbackRoutes
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -31,11 +32,14 @@ app.use(rateLimit({
 
 app.use('/api/register', registerRoutes);
 app.use('/api/password-reset', passwordResetRoutes);
-app.use('/api/feedback', variousFeedbackRoutes); // Add the new feedback routes
+app.use('/api/feedback', variousFeedbackRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', textMiningRoutes);
 app.use('/api/customerFeedback', customerFeedbackRoutes);
+app.use('/api/team', teamFeedbackRoutes); // Use team feedback routes
 
+// Serve the uploads directory as static files
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 // New /api/user endpoint to get user information based on token
 app.get("/api/user", (req, res) => {
@@ -61,7 +65,8 @@ app.get("/api/user", (req, res) => {
         email: user.usersEmail, 
         role: user.rolesFK, 
         vorname: user.usersVorname, 
-        nachname: user.usersNachname 
+        nachname: user.usersNachname, 
+        teamId: user.teamFK
       }});
     });
   });

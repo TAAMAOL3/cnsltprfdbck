@@ -8,10 +8,11 @@ import PasswordReset from './PasswordReset';
 import Dashboard from './Dashboard';
 import VariousFeedback from './variousFeedback';
 import Admin from './Admin';
-import TextMining from './TextMining'; 
-import User from './User'; 
-import CustomerFeedback from './customerFeedback'; 
-import Feedback from './feedback'; // Importing the new Feedback component
+import TextMining from './TextMining';
+import User from './User';
+import CustomerFeedback from './customerFeedback';
+import Feedback from './feedback';
+import Team from './Team'; // Importing the Team component
 
 // ProtectedRoute component to restrict access to authenticated users
 const ProtectedRoute = ({ children }) => {
@@ -26,10 +27,10 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
-  const { loading } = useContext(AuthContext); 
+  const { loading } = useContext(AuthContext);
 
   if (loading) {
-    return <div>Lade Benutzerdaten...</div>; 
+    return <div>Loading user data...</div>;
   }
 
   return (
@@ -48,11 +49,12 @@ function App() {
             <Route path="/variousFeedback" element={<ProtectedRoute><VariousFeedback /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/textmining" element={<ProtectedRoute><TextMining /></ProtectedRoute>} />
-            <Route path="/User" element={<ProtectedRoute><User /></ProtectedRoute>} />
-            <Route path="/customerFeedback" element={<ProtectedRoute><CustomerFeedback /></ProtectedRoute>} /> 
+            <Route path="/user" element={<ProtectedRoute><User /></ProtectedRoute>} />
+            <Route path="/customerFeedback" element={<ProtectedRoute><CustomerFeedback /></ProtectedRoute>} />
+            <Route path="/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} />
 
-            {/* New route for feedback */}
-            <Route path="/feedback" element={<Feedback />} /> 
+            {/* New route for Team Leader dashboard */}
+            <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
           </Routes>
         </div>
       </AuthProvider>
