@@ -117,6 +117,7 @@ consultprofeedback/
 │   ├── TeamFeedback.js
 │   ├── TeamReceived.js
 │   ├── TeamRequest.js
+│   ├── TeamSelector.js
 │   ├── TextMining.js
 │   ├── User.js
 │   ├── UserFeedback.js
@@ -21036,6 +21037,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const textMiningRoutes = require('./routes/textMiningRoutes');
 const customerFeedbackRoutes = require('./routes/customerFeedbackRoutes');
 const teamFeedbackRoutes = require('./routes/teamFeedbackRoutes'); // Import teamFeedbackRoutes
+const authenticateToken = require('./middleware/authenticateToken'); // Token authentication middleware
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -21046,10 +21048,11 @@ app.use(helmet());
 app.use(express.json());
 app.use(morgan('combined'));
 app.use(rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 Minuten
-  max: 100 // Limit jeder IP auf 100 Requests pro 15 Minuten
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // Limit each IP to 100 requests per windowMs
 }));
 
+// Route imports
 app.use('/api/register', registerRoutes);
 app.use('/api/password-reset', passwordResetRoutes);
 app.use('/api/feedback', variousFeedbackRoutes);
@@ -21061,8 +21064,8 @@ app.use('/api/team', teamFeedbackRoutes); // Use team feedback routes
 // Serve the uploads directory as static files
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
-// New /api/user endpoint to get user information based on token
-app.get("/api/user", (req, res) => {
+// User info route to get logged-in user's details
+app.get("/api/user", authenticateToken, (req, res) => {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -21080,19 +21083,44 @@ app.get("/api/user", (req, res) => {
       }
 
       const user = results[0];
-      res.json({ user: { 
-        id: user.usersID, 
-        email: user.usersEmail, 
-        role: user.rolesFK, 
-        vorname: user.usersVorname, 
-        nachname: user.usersNachname, 
-        teamId: user.teamFK
-      }});
+      res.json({
+        user: {
+          id: user.usersID,
+          email: user.usersEmail,
+          role: user.rolesFK,
+          vorname: user.usersVorname,
+          nachname: user.usersNachname,
+          teamId: user.teamFK
+        }
+      });
     });
   });
 });
 
-// Login endpoint
+// API route to fetch teams
+app.get('/api/teams', authenticateToken, (req, res) => {
+  const query = 'SELECT teamID, teamName FROM t_team';
+  db.query(query, (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Error fetching teams' });
+    }
+    res.status(200).json(results);
+  });
+});
+
+// API route to fetch users by team
+app.get("/api/users/team/:teamId", authenticateToken, (req, res) => {
+  const { teamId } = req.params;
+  const query = 'SELECT usersID, CONCAT(usersVorname, " ", usersNachname) AS fullName FROM t_users WHERE teamFK = ?';
+  db.query(query, [teamId], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Error fetching users' });
+    }
+    res.status(200).json(results);
+  });
+});
+
+// Login route
 app.post("/api/login", [body("email").isEmail(), body("password").exists()], (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -21124,6 +21152,7 @@ app.post("/api/login", [body("email").isEmail(), body("password").exists()], (re
   });
 });
 
+// Serve React app from the build folder
 app.use(express.static(path.join(__dirname, "build")));
 
 app.get("*", (req, res) => {
@@ -21136,6 +21165,7 @@ app.use((err, req, res, next) => {
   res.status(500).send('Something broke!');
 });
 
+// Set content security policy
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
@@ -21144,7 +21174,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Logout endpoint
+// Logout route
 app.post('/api/logout', (req, res) => {
   res.json({ message: 'Successfully logged out' });
 });
@@ -21527,36 +21557,84 @@ exports.registerUser = async (req, res) => {
 };
 
 ***teamFeedbackController.js:
-const db = require('../config/db');
-const LinkGenerator = require('../src/linkGenerator');
+const db = require('../config/db'); // Import der Datenbankkonfiguration
 
+// Funktion zum Abrufen des erhaltenen Feedbacks für ein Team und optional für einen Benutzer
+exports.getTeamReceivedFeedbacks = (req, res) => {
+  const { teamId, userId } = req.params;
 
-
-
-// Function to get feedback by URL ID
-exports.getFeedbackById = (req, res) => {
-  const { id } = req.params;
-
-  const query = `
-    SELECT * FROM t_customerfdbck
-    WHERE customerFdbckUrlID = ?
+  let query = `
+    SELECT customerFdbckID, customerFdbckReceived, customerCompany, customerName, customerMailaddr, customerFdbckText, rating
+    FROM t_customerfdbck
+    WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?) AND customerFdbckAnswered = 1
   `;
 
-  db.query(query, [id], (err, results) => {
-    if (err) {
-      console.error('Error fetching feedback by ID:', err);
-      return res.status(500).send('Error fetching feedback');
-    }
+  if (userId && userId !== 'all') {
+    query += ' AND usersFK = ?';
+  }
 
-    if (results.length > 0) {
-      res.status(200).json(results[0]);
-    } else {
-      res.status(404).send('Feedback not found');
+  query += ' ORDER BY customerFdbckReceived desc';
+
+  const params = userId && userId !== 'all' ? [teamId, userId] : [teamId];
+
+  db.query(query, params, (err, results) => {
+    if (err) {
+      console.error('Fehler beim Abrufen des erhaltenen Feedbacks:', err);
+      return res.status(500).send('Fehler beim Abrufen des erhaltenen Feedbacks');
     }
+    res.status(200).json(results);
   });
 };
 
-// Function to update the team feedback text, status, and rating
+// Funktion zum Abrufen des erstellten Feedbacks aus der Tabelle t_variousfdbck
+exports.getTeamFeedback = (req, res) => {
+  const { teamId, userId } = req.params;
+
+  let query = `
+    SELECT variousFdbckID, variousFdbckCustomer, variousFdbckDescription, variousFdbckReceived, uploadUrl, usersFK, concat(t_users.usersVorname, ' ', t_users.usersNachname) as usersName
+    FROM t_variousfdbck
+    LEFT JOIN t_users on t_variousfdbck.usersFK = t_users.usersID
+    WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?)
+  `;
+
+  if (userId && userId !== 'all') {
+    query += ' AND usersFK = ?';
+  }
+
+  query += ' ORDER BY variousFdbckReceived desc';
+
+  const params = userId && userId !== 'all' ? [teamId, userId] : [teamId];
+
+  db.query(query, params, (err, results) => {
+    if (err) {
+      console.error('Fehler beim Abrufen des erstellten Feedbacks:', err);
+      return res.status(500).send('Fehler beim Abrufen des erstellten Feedbacks');
+    }
+    res.status(200).json(results);
+  });
+};
+
+// Funktion zum Erstellen eines neuen Team-Feedbacks
+exports.createTeamFeedback = (req, res) => {
+  const { customerCompany, customerName, customerMailaddr, customerFdbckSend, customerFdbckUrl, customerFdbckUrlID, usersFK } = req.body;
+
+  const query = `
+    INSERT INTO t_customerfdbck (customerCompany, customerName, customerMailaddr, customerFdbckSend, customerFdbckText, customerFdbckReceived, customerFdbckUrl, customerFdbckUrlID, customerFdbckAnswered, usersFK)
+    VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, 0, ?)
+  `;
+  
+  const values = [customerCompany, customerName, customerMailaddr, customerFdbckSend, customerFdbckUrl, customerFdbckUrlID, usersFK];
+
+  db.query(query, values, (err, result) => {
+    if (err) {
+      console.error('Fehler beim Erstellen des Team-Feedbacks:', err);
+      return res.status(500).send('Fehler beim Erstellen des Feedbacks');
+    }
+    res.status(201).send('Feedback erfolgreich erstellt');
+  });
+};
+
+// Funktion zum Aktualisieren des Feedbacktexts, Status und Bewertung
 exports.updateTeamFeedbackText = (req, res) => {
   const { id } = req.params;
   const { customerFdbckText, customerFdbckReceived, customerFdbckAnswered, rating } = req.body;
@@ -21569,15 +21647,15 @@ exports.updateTeamFeedbackText = (req, res) => {
 
   db.query(query, [customerFdbckText, customerFdbckReceived, customerFdbckAnswered, rating, id], (err, result) => {
     if (err) {
-      console.error('Error updating team feedback text:', err);
-      return res.status(500).send('Error updating feedback');
+      console.error('Fehler beim Aktualisieren des Team-Feedbacks:', err);
+      return res.status(500).send('Fehler beim Aktualisieren des Feedbacks');
     }
 
-    res.status(200).send('Team feedback text and rating updated successfully');
+    res.status(200).send('Feedback erfolgreich aktualisiert');
   });
 };
 
-// Function to update team feedback (generic)
+// Funktion zum allgemeinen Aktualisieren des Feedbacks (Kundendetails)
 exports.updateTeamFeedback = (req, res) => {
   const { customerCompany, customerName, customerMailaddr } = req.body;
   const feedbackId = req.params.id;
@@ -21590,14 +21668,14 @@ exports.updateTeamFeedback = (req, res) => {
 
   db.query(query, [customerCompany, customerName, customerMailaddr, feedbackId], (err, result) => {
     if (err) {
-      console.error('Error updating team feedback:', err);
-      return res.status(500).send('Error updating feedback');
+      console.error('Fehler beim Aktualisieren der Feedback-Kundendetails:', err);
+      return res.status(500).send('Fehler beim Aktualisieren der Kundendetails');
     }
-    res.status(200).send('Team feedback successfully updated');
+    res.status(200).send('Feedback erfolgreich aktualisiert');
   });
 };
 
-// Function to delete team feedback
+// Funktion zum Löschen eines Feedbacks
 exports.deleteTeamFeedback = (req, res) => {
   const feedbackId = req.params.id;
 
@@ -21608,102 +21686,55 @@ exports.deleteTeamFeedback = (req, res) => {
 
   db.query(query, [feedbackId], (err, result) => {
     if (err) {
-      console.error('Error deleting team feedback:', err);
-      return res.status(500).send('Error deleting feedback');
+      console.error('Fehler beim Löschen des Feedbacks:', err);
+      return res.status(500).send('Fehler beim Löschen des Feedbacks');
     }
-    res.status(200).send('Team feedback successfully deleted');
+    res.status(200).send('Feedback erfolgreich gelöscht');
   });
 };
 
-// Function to create a new team feedback request (still using t_customerfdbck)
-exports.createTeamFeedback = (req, res) => {
-  const { customerCompany, customerName, customerMailaddr, customerFdbckSend, customerFdbckUrl, customerFdbckUrlID, usersFK } = req.body;
-  const query = `
-    INSERT INTO t_customerfdbck (customerCompany, customerName, customerMailaddr, customerFdbckSend, customerFdbckText, customerFdbckReceived, customerFdbckUrl, customerFdbckUrlID, customerFdbckAnswered, usersFK)
-    VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, 0, ?)
-  `;
-  const values = [customerCompany, customerName, customerMailaddr, customerFdbckSend, customerFdbckUrl, customerFdbckUrlID, usersFK];
-
-  console.log("Executing SQL Query:", query);
-  console.log("With Values:", values);
-
-  db.query(query, values, (err, result) => {
-    if (err) {
-      console.error('Error inserting team feedback:', err);
-      return res.status(500).send('Error creating team feedback');
-    }
-    res.status(201).send('Team feedback successfully created');
-  });
-};
-
-// Function to get feedback requests for a specific team
+// Funktion zum Abrufen der Feedback-Anfragen für ein Team
 exports.getTeamFeedbackRequests = (req, res) => {
-  const { teamId } = req.params; // Ensure teamId is properly extracted
+//   const { teamId } = req.params;
 
-  if (!teamId) {
-    return res.status(400).send('teamId is required');
+//   const query = `
+//     SELECT customerFdbckID, customerFdbckReceived, customerCompany, customerName, customerMailaddr, customerFdbckText
+//     FROM t_customerfdbck
+//     WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?) AND customerFdbckAnswered = 0
+//   `;
+
+//   db.query([teamId], (err, results) => {
+//     if (err) {
+//       console.error('Fehler beim Abrufen der Feedback-Anfragen:', err);
+//       return res.status(500).send('Fehler beim Abrufen der Feedback-Anfragen');
+//     }
+//     res.status(200).json(results);
+//   });
+// };
+const { teamId, userId } = req.params;
+
+let query = `
+  SELECT customerFdbckID, customerFdbckSend, customerCompany, customerName, customerMailaddr, customerFdbckText, rating
+  FROM t_customerfdbck
+  WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?) AND customerFdbckAnswered = 0
+`;
+
+if (userId && userId !== 'all') {
+  query += ' AND usersFK = ?';
+}
+
+query += ' ORDER BY customerFdbckSend desc';
+
+const params = userId && userId !== 'all' ? [teamId, userId] : [teamId];
+
+db.query(query, params, (err, results) => {
+  if (err) {
+    console.error('Fehler beim Abrufen des erhaltenen Feedbacks:', err);
+    return res.status(500).send('Fehler beim Abrufen des erhaltenen Feedbacks');
   }
-
-  const query = `
-    SELECT *
-    FROM t_customerfdbck
-    WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?) AND customerFdbckAnswered = 0
-  `;
-
-  console.log("Executing SQL Query:", query);
-  console.log("With teamId:", teamId);
-
-  db.query(query, [teamId], (err, results) => {
-    if (err) {
-      console.error('Error fetching received feedback for team:', err);
-      return res.status(500).send('Error fetching feedback');
-    }
-    res.status(200).json(results);
-  });
+  res.status(200).json(results);
+});
 };
-
-exports.getTeamReceivedFeedbacks = (req, res) => {
-  const { teamId } = req.params; // Ensure teamId is properly extracted
-
-  if (!teamId) {
-    return res.status(400).send('teamId is required');
-  }
-
-  const query = `
-    SELECT customerFdbckID, customerFdbckReceived, customerCompany, customerName, customerMailaddr, customerFdbckText, rating
-    FROM t_customerfdbck
-    WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?) AND customerFdbckAnswered = 1
-  `;
-
-  console.log("Executing SQL Query:", query);
-  console.log("With teamId:", teamId);
-
-  db.query(query, [teamId], (err, results) => {
-    if (err) {
-      console.error('Error fetching received feedback for team:', err);
-      return res.status(500).send('Error fetching feedback');
-    }
-    res.status(200).json(results);
-  });
-};
-
-exports.getFeedbackByTeam = (req, res) => {
-  const { teamId } = req.params; // Ensure teamId is properly extracted
-
-  const query = `
-    SELECT variousFdbckID, variousFdbckReceived, variousFdbckCustomer, variousFdbckDescription, uploadUrl 
-    FROM t_variousFdbck WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?)
-  `;
-  db.query(query, [teamId], (err, results) => {
-    if (err) {
-      console.error('Fehler beim Abrufen der Feedbacks:', err);
-      return res.status(500).send('Fehler beim Abrufen der Feedbacks');
-    }
-    res.json(results);
-  });
-};
-
-
 ***textMiningController.js:
 const fs = require('fs');
 const path = require('path');
@@ -86695,29 +86726,31 @@ module.exports = router;
 ***teamFeedbackRoutes.js:
 const express = require('express');
 const router = express.Router();
-const teamFeedbackController = require('../controllers/teamFeedbackController');
-const authenticateToken = require('../middleware/authenticateToken');
+const teamFeedbackController = require('../controllers/teamFeedbackController'); // Stelle sicher, dass der Controller korrekt importiert wird
+const authenticateToken = require('../middleware/authenticateToken'); // Authentifizierungs-Middleware
 
-// Route for creating team feedback
+// Route zum Abrufen der Feedback-Anfragen für ein spezifisches Team
+router.get('/requests/:teamId/:userId?', authenticateToken, teamFeedbackController.getTeamFeedbackRequests);
+
+// Route zum Abrufen des erhaltenen Feedbacks für ein spezifisches Team
+router.get('/received/:teamId/:userId?', authenticateToken, teamFeedbackController.getTeamReceivedFeedbacks);
+
+// Route zum Abrufen des erstellten Feedbacks für ein spezifisches Team
+router.get('/feedback/:teamId/:userId?', authenticateToken, teamFeedbackController.getTeamFeedback);
+
+// Route zum Erstellen eines neuen Team-Feedbacks
 router.post('/', authenticateToken, teamFeedbackController.createTeamFeedback);
 
-// Route for fetching team-specific feedback requests (Added :teamId)
-router.get('/requests/:teamId', authenticateToken, teamFeedbackController.getTeamFeedbackRequests);
-
-// Route for fetching feedback by URL ID
-router.get('/team/:teamId', authenticateToken, teamFeedbackController.getFeedbackByTeam);
-
-// Route for updating team feedback text, status, and rating
+// Route zum Aktualisieren von Team-Feedback (Text, Status und Bewertung)
 router.put('/text/:id', authenticateToken, teamFeedbackController.updateTeamFeedbackText);
 
-// Route for updating general team feedback
+// Route zum allgemeinen Aktualisieren von Team-Feedback (Kundendetails)
 router.put('/:id', authenticateToken, teamFeedbackController.updateTeamFeedback);
 
-// Route for deleting team feedback
+// Route zum Löschen eines Team-Feedbacks
 router.delete('/:id', authenticateToken, teamFeedbackController.deleteTeamFeedback);
 
-// Route for fetching all received feedback for the team
-router.get('/received/:teamId', authenticateToken, teamFeedbackController.getTeamReceivedFeedbacks);
+
 
 module.exports = router;
 
@@ -88125,44 +88158,67 @@ export default reportWebVitals;
 import '@testing-library/jest-dom';
 
 ***Team.js:
-import React, { useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AuthContext } from './AuthContext';
-import TeamFeedback from './TeamFeedback';
-import TeamRequest from './TeamRequest';
-import TeamReceived from './TeamReceived'; // Import the TeamReceived component
+import React, { useContext, useEffect, useState } from 'react'; 
+import { useNavigate } from 'react-router-dom'; 
+import { AuthContext } from './AuthContext'; 
+import TeamFeedback from './TeamFeedback'; 
+import TeamRequest from './TeamRequest'; 
+import TeamReceived from './TeamReceived'; 
+import TeamSelector from './TeamSelector'; 
 
 const Team = () => {
-  const { user } = useContext(AuthContext);
-  const navigate = useNavigate();
+  const { user } = useContext(AuthContext); // Aktueller Benutzer
+  const navigate = useNavigate(); // Navigation für Weiterleitung
+  const [selectedTeam, setSelectedTeam] = useState(user.teamId); // Ausgewähltes Team
+  const [selectedUser, setSelectedUser] = useState('all'); // Ausgewählter Benutzer
 
+  // Effekt zur Überprüfung, ob der Benutzer zugriffsberechtigt ist
   useEffect(() => {
-    if (!user || user.role !== 2) {
-      navigate('/login'); // Redirect non-team leaders to the login page
+    if (!user || user.role !== 2) { 
+      navigate('/login'); // Weiterleitung zu Login, wenn Benutzer nicht Teamleiter ist
     }
   }, [user, navigate]);
 
+    // Effekt, um Standardabfragen beim Laden der Seite auszuführen
+    useEffect(() => {
+      // Standardmäßige Team- und Benutzerfilter setzen
+      if (user && user.teamId) {
+        setSelectedTeam(user.teamId); // Setzt das Team des Benutzers standardmäßig
+        setSelectedUser('all'); // Alle Benutzer standardmäßig
+      }
+    }, [user]);
+
+  // Funktion, um Filteränderungen von TeamSelector zu handhaben
+  const handleFilterChange = (teamId, userId) => {
+    setSelectedTeam(teamId); // Team setzen
+    setSelectedUser(userId); // Benutzer setzen
+  };
+
   return (
-    <div className="container-fluid mt-5">
-      <section className="featured">
-        <div className="content-wrapper banner">
+    <div className="container-fluid mt-5"> 
+      <section className="featured"> 
+        <div className="content-wrapper banner"> 
           <div className="float-right">
-            <img className="page-icon" src="/Content/themes/base/images/team_BOLD.svg" alt="Team icon" />
+            <img className="page-icon" src="/Content/themes/base/images/Chain.png" alt="Team icon" /> 
           </div>
-          <hgroup className="title">
-            <h1>Team Leader Dashboard</h1>
+          <hgroup className="title"> 
+            <h1>Teamleiter-Dashboard</h1> 
           </hgroup>
         </div>
       </section>
-      <div className="container mt-5">
-        {/* Team Received Feedbacks */}
-        <TeamReceived /> 
 
-        {/* Team Feedbacks */}
-        <TeamFeedback />
+      <div className="container mt-5"> 
+        {/* Auswahl von Team und Benutzer */}
+        <TeamSelector onFilterChange={handleFilterChange} /> 
+        
+        {/* Tabelle für erhaltene Team-Feedbacks */}
+        <TeamReceived selectedTeam={selectedTeam} selectedUser={selectedUser} /> 
 
-        {/* Team Feedback Requests */}
-        <TeamRequest />
+        {/* Tabelle für Team-Feedback, das das Team erstellt hat */}
+        <TeamFeedback selectedTeam={selectedTeam} selectedUser={selectedUser} /> 
+        
+        {/* Tabelle für Feedback-Anfragen */}
+        <TeamRequest selectedTeam={selectedTeam} selectedUser={selectedUser} /> 
       </div>
     </div>
   );
@@ -88175,174 +88231,120 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from './AuthContext';
 
-const TeamFeedback = () => {
-  const { user } = useContext(AuthContext);
-  const [feedbacks, setFeedbacks] = useState([]);
-  const [editingFeedback, setEditingFeedback] = useState(null);
-  const [customer, setCustomer] = useState('');
-  const [description, setDescription] = useState('');
-  const [received, setReceived] = useState('');
-  const [message, setMessage] = useState('');
-  const [deletingFeedbackId, setDeletingFeedbackId] = useState(null);
 
+
+const TeamFeedback = ({ selectedTeam, selectedUser }) => {
+  const { user } = useContext(AuthContext); // Zugriff auf den aktuellen Benutzer
+  const [feedbacks, setFeedbacks] = useState([]); // Liste der erstellten Feedbacks
+  const [viewingFeedback, setViewingFeedback] = useState(null); // Detailansicht eines Feedbacks
+
+
+  // Formatierung des Datums für die Anzeige im Format dd/MM/yyyy
+  const formatDateForDisplay = (dateString) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // Formatierung des Datums für das <input type="date">-Feld (yyyy-MM-dd)
+  const formatDateForInput = (dateString) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${year}-${month}-${day}`;
+  };
+  // Effekt zum Laden der erstellten Feedback-Daten für das Team
   useEffect(() => {
-    const fetchTeamFeedbacks = async () => {
-      const token = localStorage.getItem('token');
-      if (token && user && user.teamId) {
+    const fetchTeamFeedback = async () => {
+      const token = localStorage.getItem('token'); // Token für API-Anfragen
+      if (selectedTeam && selectedTeam !== 'all') {
         try {
-          // Fetch feedback data based on teamId
-          const response = await axios.get(`/api/team/team/${user.teamId}`, {
-            headers: { Authorization: `Bearer ${token}` }
+          // API-URL zum Abrufen des erstellten Feedbacks für das Team und optional den Benutzer
+          const url = selectedUser && selectedUser !== 'all'
+            ? `/api/team/feedback/${selectedTeam}/${selectedUser}`
+            : `/api/team/feedback/${selectedTeam}`;
+          const response = await axios.get(url, {
+            headers: { Authorization: `Bearer ${token}` } // Autorisierung
           });
-          setFeedbacks(response.data || []);
+
+          // Überprüfe, ob die Antwort ein Array ist, wenn nicht, setze es auf ein leeres Array
+          setFeedbacks(Array.isArray(response.data) ? response.data : []); // Feedbacks setzen
         } catch (error) {
-          console.error('Error fetching team feedback:', error);
-          setFeedbacks([]);
+          console.error('Fehler beim Abrufen des Team-Feedbacks:', error);
+          setFeedbacks([]); // Bei Fehler leere Liste setzen
         }
       }
     };
 
-    fetchTeamFeedbacks();
-  }, [user]);
+    fetchTeamFeedback(); // Feedback-Daten laden, wenn sich Team oder Benutzer ändern
+  }, [selectedTeam, selectedUser]);
 
-  const handleEdit = (feedback) => {
-    setEditingFeedback(feedback);
-    setCustomer(feedback.variousFdbckCustomer);  // Correct field
-    setDescription(feedback.variousFdbckDescription);  // Correct field
-    setReceived(feedback.variousFdbckReceived);  // Correct field
-  };
-
-  const handleSaveFeedback = async () => {
-    const token = localStorage.getItem('token');
-    try {
-      const formattedDate = received.split('/').reverse().join('-'); // Format dd/MM/yyyy to yyyy-MM-dd
-
-      await axios.put(`/api/teamFeedback/${editingFeedback.variousFdbckID}`, {
-        customerCompany: customer,
-        customerFdbckText: description,
-        customerFdbckReceived: formattedDate,
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      setFeedbacks(feedbacks.map(fb =>
-        fb.variousFdbckID === editingFeedback.variousFdbckID ? { ...fb, variousFdbckCustomer: customer, variousFdbckDescription: description, variousFdbckReceived: formattedDate } : fb
-      ));
-      setEditingFeedback(null);
-      setMessage('Team feedback updated successfully!');
-    } catch (error) {
-      console.error('Error saving feedback:', error.message || error);
-    }
-  };
-
-  const handleDeleteFeedback = async (feedbackID) => {
-    const token = localStorage.getItem('token');
-    try {
-      await axios.delete(`/api/teamFeedback/${feedbackID}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setFeedbacks(feedbacks.filter(fb => fb.variousFdbckID !== feedbackID));  // Correct field
-      setDeletingFeedbackId(null);
-    } catch (error) {
-      console.error('Error deleting feedback:', error);
-    }
-  };
-
-  const confirmDelete = (feedbackID) => {
-    setDeletingFeedbackId(feedbackID);
-  };
-
-  const cancelDelete = () => {
-    setDeletingFeedbackId(null);
+  // Funktion zum Anzeigen der Details eines Feedbacks
+  const handleViewFeedback = (feedback) => {
+    setViewingFeedback(feedback); // Detailansicht des Feedbacks setzen
   };
 
   return (
     <div className="mb-5">
       <h3>Team Feedback</h3>
-      {message && <p>{message}</p>}
       <table className="table">
         <thead>
           <tr>
-            <th>Feedback Received</th>
-            <th>Customer</th>
-            <th>Description</th>
-            <th>File</th>
-            <th>Actions</th>
+            <th>Feedback Erhalten</th>
+            <th>Empfänger</th>
+            <th>Kunde</th>
+            <th>Beschreibung</th>
+            <th>Aktionen</th>
           </tr>
         </thead>
         <tbody>
-          {Array.isArray(feedbacks) && feedbacks.length > 0 ? (
+          {feedbacks.length > 0 ? (
             feedbacks.map((feedback) => (
-              <tr key={feedback.variousFdbckID}>  
-                <td>{new Date(feedback.variousFdbckReceived).toLocaleDateString()}</td>  
-                <td>{feedback.variousFdbckCustomer}</td>  
-                <td>{feedback.variousFdbckDescription}</td>  
-                <td>
-                  <a href={feedback.uploadUrl} download className="btn btn-link">
-                    Download File
+              <tr key={feedback.variousFdbckID}>
+                <td>{formatDateForDisplay(feedback.variousFdbckReceived)}</td> {/* Datum korrekt formatieren */}
+                <td>{feedback.usersName}</td>
+                <td>{feedback.variousFdbckCustomer}</td>
+                <td>{feedback.variousFdbckDescription}</td>
+                {/* <td>
+                  <a href={feedback.uploadUrl} download className="btn btn-link" onClick={() => console.log(feedback.uploadUrl)}>
+                  <button className="btn btn-primary">Datei herunterladen</button>
                   </a>
-                </td>
+                </td> */}
                 <td>
-                  {deletingFeedbackId === feedback.variousFdbckID ? (  
-                    <>
-                      <button className="btn btn-danger mr-2" onClick={() => handleDeleteFeedback(feedback.variousFdbckID)}> 
-                        Confirm Delete?
-                      </button>
-                      <button className="btn btn-secondary" onClick={cancelDelete}>
-                        Cancel
-                      </button>
-                    </>
+                  {feedback.uploadUrl ? (
+                    <button className="btn btn-primary" onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = feedback.uploadUrl;
+                      link.setAttribute('download', '');
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}>
+                      Datei herunterladen
+                    </button>
                   ) : (
-                    <>
-                      <button className="btn btn-primary mr-2" onClick={() => handleEdit(feedback)}>Edit</button>
-                      <button className="btn btn-danger mr-2" onClick={() => confirmDelete(feedback.variousFdbckID)}> 
-                        Delete
-                      </button>
-                    </>
+                    'Keine Datei'
                   )}
                 </td>
+
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="5">No feedback found.</td>
+              <td colSpan="6">Keine Feedbacks gefunden.</td>
             </tr>
           )}
         </tbody>
       </table>
 
-      {editingFeedback && (
+      {viewingFeedback && (
         <div className="mt-5">
-          <h3>Edit Feedback</h3>
-          <div className="form-group">
-            <label>Customer</label>
-            <input
-              type="text"
-              className="form-control"
-              value={customer}
-              onChange={(e) => setCustomer(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label>Description</label>
-            <input
-              type="text"
-              className="form-control"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label>Received On</label>
-            <input
-              type="date"
-              className="form-control"
-              value={received}
-              onChange={(e) => setReceived(e.target.value)}
-            />
-          </div>
-          <button className="btn btn-primary" onClick={handleSaveFeedback}>Save</button>
-          <button className="btn btn-secondary ml-2" onClick={() => setEditingFeedback(null)}>Cancel</button>
+          <h3>Feedback anzeigen</h3>
+          <p style={{ fontSize: '1.5rem' }}><strong>Feedback:</strong> {viewingFeedback.customerFdbckText}</p>
+          <button className="btn btn-secondary" onClick={() => setViewingFeedback(null)}>Schließen</button>
         </div>
       )}
     </div>
@@ -88350,70 +88352,77 @@ const TeamFeedback = () => {
 };
 
 export default TeamFeedback;
+
 ***TeamReceived.js:
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from './AuthContext';
 
-const TeamReceived = () => {
-  const { user } = useContext(AuthContext);
-  const [feedbacks, setFeedbacks] = useState([]);
-  const [viewingFeedback, setViewingFeedback] = useState(null);
+const TeamReceived = ({ selectedTeam, selectedUser }) => {
+  const { user } = useContext(AuthContext); // Zugriff auf den aktuellen Benutzer
+  const [feedbacks, setFeedbacks] = useState([]); // Liste der erhaltenen Feedbacks
+  const [viewingFeedback, setViewingFeedback] = useState(null); // Angezeigtes Feedback-Detail
 
+  // Effekt, um die Feedback-Daten basierend auf dem ausgewählten Team und Benutzer zu laden
   useEffect(() => {
-    const fetchTeamFeedbacks = async () => {
-      const token = localStorage.getItem('token');
-      if (token && user && user.teamId) { // Use user.teamId
+    const fetchFilteredFeedbacks = async () => {
+      const token = localStorage.getItem('token'); // Token für API-Anfragen
+      if (selectedTeam && selectedTeam !== 'all') { 
         try {
-          // Include teamId in the request
-          const response = await axios.get(`/api/team/received/${user.teamId}`, {
-            headers: { Authorization: `Bearer ${token}` }
+          // URL für das Abrufen der Feedbacks für das ausgewählte Team und Benutzer
+          const url = selectedUser && selectedUser !== 'all'
+            ? `/api/team/received/${selectedTeam}/${selectedUser}`
+            : `/api/team/received/${selectedTeam}`;
+          const response = await axios.get(url, {
+            headers: { Authorization: `Bearer ${token}` } // Token zur Autorisierung
           });
-          setFeedbacks(response.data || []);
+          setFeedbacks(response.data || []); // Feedbacks setzen
         } catch (error) {
-          console.error('Error fetching team feedbacks:', error);
-          setFeedbacks([]);
+          console.error('Fehler beim Abrufen der erhaltenen Team-Feedbacks:', error);
+          setFeedbacks([]); // Bei Fehler leere Liste setzen
         }
       }
     };
 
-    fetchTeamFeedbacks();
-  }, [user]);
+    fetchFilteredFeedbacks(); // Abruf, wenn sich Team oder Benutzer ändern
+  }, [selectedTeam, selectedUser]);
 
+  // Funktion zum Anzeigen der Details eines spezifischen Feedbacks
   const handleViewFeedback = (feedback) => {
-    setViewingFeedback(feedback);
+    setViewingFeedback(feedback); // Angezeigtes Feedback setzen
   };
 
+  // Funktion, um das passende Icon basierend auf der Bewertung zu erhalten
   const getRatingIcon = (rating) => {
     if (rating >= 2) {
-      return <img className="page-icon" src="/Content/themes/base/images/VeryPositive.png" alt="Very Positive" />;
+      return <img className="page-icon" src="/Content/themes/base/images/VeryPositive.png" alt="Sehr positiv" />;
     } else if (rating === 1) {
-      return <img className="page-icon" src="/Content/themes/base/images/Positive.png" alt="Positive" />;
+      return <img className="page-icon" src="/Content/themes/base/images/Positive.png" alt="Positiv" />;
     } else if (rating === 0) {
-      return <img className="page-icon" src="/Content/themes/base/images/Unknown.png" alt="Unknown" />;
+      return <img className="page-icon" src="/Content/themes/base/images/Unknown.png" alt="Unbekannt" />;
     } else if (rating === -1) {
-      return <img className="page-icon" src="/Content/themes/base/images/Negative.png" alt="Negative" />;
+      return <img className="page-icon" src="/Content/themes/base/images/Negative.png" alt="Negativ" />;
     } else if (rating <= -2) {
-      return <img className="page-icon" src="/Content/themes/base/images/VeryNegative.png" alt="Very Negative" />;
+      return <img className="page-icon" src="/Content/themes/base/images/VeryNegative.png" alt="Sehr negativ" />;
     }
   };
 
   return (
     <div className="mb-5">
-      <h3>Team Received Feedback</h3>
+      <h3>Erhaltene Team-Feedbacks</h3>
       <table className="table">
         <thead>
           <tr>
-            <th>Received On</th>
-            <th>Customer Company</th>
-            <th>Contact Person</th>
-            <th>Email</th>
-            <th>Rating</th>
-            <th>Actions</th>
+            <th>Empfangen am</th>
+            <th>Kundenunternehmen</th>
+            <th>Kontaktperson</th>
+            <th>E-Mail</th>
+            <th>Bewertung</th>
+            <th>Aktionen</th>
           </tr>
         </thead>
         <tbody>
-          {Array.isArray(feedbacks) && feedbacks.length > 0 ? (
+          {feedbacks.length > 0 ? ( 
             feedbacks.map((feedback) => (
               <tr key={feedback.customerFdbckID}>
                 <td>{new Date(feedback.customerFdbckReceived).toLocaleDateString()}</td>
@@ -88423,14 +88432,14 @@ const TeamReceived = () => {
                 <td>{getRatingIcon(feedback.rating)}</td>
                 <td>
                   <button className="btn btn-primary" onClick={() => handleViewFeedback(feedback)}>
-                    View
+                    Anzeigen
                   </button>
                 </td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="6">No feedback found.</td>
+              <td colSpan="6">Keine Feedbacks gefunden.</td> 
             </tr>
           )}
         </tbody>
@@ -88438,9 +88447,9 @@ const TeamReceived = () => {
 
       {viewingFeedback && (
         <div className="mt-5">
-          <h3>View Feedback</h3>
+          <h3>Feedback anzeigen</h3>
           <p style={{ fontSize: '1.5rem' }}><strong>Feedback:</strong> {viewingFeedback.customerFdbckText}</p>
-          <button className="btn btn-secondary" onClick={() => setViewingFeedback(null)}>Close</button>
+          <button className="btn btn-secondary" onClick={() => setViewingFeedback(null)}>Schließen</button>
         </div>
       )}
     </div>
@@ -88454,188 +88463,178 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from './AuthContext';
 
-const TeamRequest = () => {
-  const { user } = useContext(AuthContext);
-  const [requests, setRequests] = useState([]);
-  const [editingRequest, setEditingRequest] = useState(null);
-  const [company, setCompany] = useState('');
-  const [contactPerson, setContactPerson] = useState('');
-  const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
-  const [deletingRequestId, setDeletingRequestId] = useState(null);
+const TeamRequest = ({ selectedTeam, selectedUser }) => {
+  const { user } = useContext(AuthContext); // Zugriff auf den aktuellen Benutzer
+  const [requests, setRequests] = useState([]); // Liste der Feedback-Anfragen
 
+  // Effekt, um die Feedback-Anfragen für das ausgewählte Team zu laden
   useEffect(() => {
     const fetchTeamRequests = async () => {
-      const token = localStorage.getItem('token');
-      if (token && user && user.teamId) { // Use user.teamId
+      const token = localStorage.getItem('token'); // Token für API-Anfragen
+      if (selectedTeam && selectedTeam !== 'all') {
         try {
-          // Include teamId in the request
-          const response = await axios.get(`/api/team/requests/${user.teamId}`, {
-            headers: { Authorization: `Bearer ${token}` }
+          // API-URL zum Abrufen der Feedback-Anfragen für das ausgewählte Team
+          const url = selectedUser && selectedUser !== 'all'
+            ? `/api/team/requests/${selectedTeam}/${selectedUser}`
+            : `/api/team/requests/${selectedTeam}`;
+          const response = await axios.get(url, {
+            headers: { Authorization: `Bearer ${token}` } // Token für die Autorisierung
           });
-          setRequests(response.data || []);
+          setRequests(response.data || []); // Feedback-Anfragen setzen
         } catch (error) {
-          console.error('Error fetching team requests:', error);
-          setRequests([]);
+          console.error('Fehler beim Abrufen der Feedback-Anfragen:', error);
+          setRequests([]); // Bei Fehler leere Liste setzen
         }
       }
     };
 
-    fetchTeamRequests();
-  }, [user]);
-
-  const handleEdit = (request) => {
-    setEditingRequest(request);
-    setCompany(request.customerCompany);
-    setContactPerson(request.customerName);
-    setEmail(request.customerMailaddr);
-  };
-
-  const handleSaveRequest = async () => {
-    const token = localStorage.getItem('token');
-    try {
-      await axios.put(`/api/teamFeedback/${editingRequest.customerFdbckID}`, {
-        customerCompany: company,
-        customerName: contactPerson,
-        customerMailaddr: email,
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      setRequests(requests.map(req =>
-        req.customerFdbckID === editingRequest.customerFdbckID ? { ...req, customerCompany: company, customerName: contactPerson, customerMailaddr: email } : req
-      ));
-      setEditingRequest(null);
-      setMessage('Team feedback request updated successfully!');
-    } catch (error) {
-      console.error('Error saving feedback request:', error);
-    }
-  };
-
-  const handleDeleteRequest = async (requestID) => {
-    const token = localStorage.getItem('token');
-    try {
-      await axios.delete(`/api/teamFeedback/${requestID}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setRequests(requests.filter(req => req.customerFdbckID !== requestID));
-      setDeletingRequestId(null);
-    } catch (error) {
-      console.error('Error deleting feedback request:', error);
-    }
-  };
-
-  const confirmDelete = (requestID) => {
-    setDeletingRequestId(requestID);
-  };
-
-  const cancelDelete = () => {
-    setDeletingRequestId(null);
-  };
-
-  const handleRemind = (request) => {
-    const sendDate = new Date(request.customerFdbckSend).toLocaleDateString();
-    const mailtoLink = `mailto:${request.customerMailaddr}?subject=Reminder%20for%20Feedback%20sent%20on%20${sendDate}&body=Dear%20${request.customerName},%0A%0A${request.customerFdbckUrl}%0A%0ABest%20regards,%0A${user.firstName}%20${user.lastName}`;
-    window.location.href = mailtoLink;
-  };
+    fetchTeamRequests(); // Feedback-Anfragen laden, wenn sich das Team ändert
+  }, [selectedTeam, selectedUser]);
 
   return (
     <div className="mb-5">
       <h3>Team Feedback Requests</h3>
-      {message && <p>{message}</p>}
       <table className="table">
         <thead>
           <tr>
-            <th>Sent On</th>
-            <th>Customer Company</th>
-            <th>Contact Person</th>
-            <th>Email</th>
-            <th>Feedback URL</th>
-            <th>Actions</th>
+            <th>Gesendet am</th>
+            <th>Kundenunternehmen</th>
+            <th>Kontaktperson</th>
+            <th>E-Mail</th>
+            <th>Aktionen</th>
           </tr>
         </thead>
         <tbody>
-          {Array.isArray(requests) && requests.length > 0 ? (
+          {requests.length > 0 ? (
             requests.map((request) => (
               <tr key={request.customerFdbckID}>
-                <td>{new Date(request.customerFdbckSend).toLocaleDateString()}</td>
+                <td>{new Date(request.customerFdbckSend).toLocaleDateString('de-DE')}</td>
                 <td>{request.customerCompany}</td>
                 <td>{request.customerName}</td>
                 <td>{request.customerMailaddr}</td>
                 <td>
-                  <a href={request.customerFdbckUrl} download className="btn btn-link">
-                    Open Feedback
-                  </a>
-                </td>
-                <td>
-                  {deletingRequestId === request.customerFdbckID ? (
-                    <>
-                      <button className="btn btn-danger mr-2" onClick={() => handleDeleteRequest(request.customerFdbckID)}>
-                        Confirm Delete?
-                      </button>
-                      <button className="btn btn-secondary" onClick={cancelDelete}>
-                        Cancel
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button className="btn btn-primary mr-2" onClick={() => handleEdit(request)}>Edit</button>
-                      <button className="btn btn-danger mr-2" onClick={() => confirmDelete(request.customerFdbckID)}>
-                        Delete
-                      </button>
-                      <button className="btn btn-warning" onClick={() => handleRemind(request)}>Remind</button>
-                    </>
-                  )}
+                  <button className="btn btn-primary">Erinnerung senden</button>
                 </td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="6">No feedback requests found.</td>
+              <td colSpan="5">Keine Feedback-Anfragen gefunden.</td>
             </tr>
           )}
         </tbody>
       </table>
-
-      {editingRequest && (
-        <div className="mt-5">
-          <h3>Edit Feedback Request</h3>
-          <div className="form-group">
-            <label>Customer Company</label>
-            <input
-              type="text"
-              className="form-control"
-              value={company}
-              onChange={(e) => setCompany(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label>Contact Person</label>
-            <input
-              type="text"
-              className="form-control"
-              value={contactPerson}
-              onChange={(e) => setContactPerson(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label>Email</label>
-            <input
-              type="email"
-              className="form-control"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <button className="btn btn-primary" onClick={handleSaveRequest}>Save</button>
-          <button className="btn btn-secondary ml-2" onClick={() => setEditingRequest(null)}>Cancel</button>
-        </div>
-      )}
     </div>
   );
 };
 
 export default TeamRequest;
+
+***TeamSelector.js:
+import React, { useState, useEffect, useContext } from 'react'; 
+import axios from 'axios'; 
+import { AuthContext } from './AuthContext'; 
+
+const TeamSelector = ({ onFilterChange }) => { 
+  const { user } = useContext(AuthContext); // Zugriff auf den aktuellen Benutzer
+  const [teams, setTeams] = useState([]); // Liste der Teams
+  const [selectedTeam, setSelectedTeam] = useState(user.teamId || 'all'); // Ausgewähltes Team
+  const [users, setUsers] = useState([]); // Liste der Benutzer
+  const [selectedUser, setSelectedUser] = useState('all'); // Ausgewählter Benutzer
+
+  // Effekt zum Abrufen der Teams basierend auf der Benutzerrolle
+  useEffect(() => { 
+    const fetchTeams = async () => {
+      const token = localStorage.getItem('token'); // Token aus dem localStorage
+      try {
+        const response = await axios.get('/api/teams', {
+          headers: { Authorization: `Bearer ${token}` } // Autorisierung für die Abfrage
+        });
+        if (user.role === 2) { 
+          const userTeam = response.data.filter((team) => team.teamID === user.teamId); // Nur Team des Teamleiters
+          setTeams(userTeam);
+        } else if (user.role === 3) { 
+          setTeams([{ teamID: 'all', teamName: 'Alle Teams' }, ...response.data]); // Admin: Alle Teams
+        }
+      } catch (error) {
+        console.error('Fehler beim Abrufen der Teams:', error);
+      }
+    };
+
+    fetchTeams(); // Teams abrufen
+  }, [user]);
+
+  // Effekt zum Abrufen der Benutzer basierend auf dem ausgewählten Team
+  useEffect(() => { 
+    const fetchUsers = async () => {
+      const token = localStorage.getItem('token');
+      if (selectedTeam !== 'all') {
+        try {
+          const response = await axios.get(`/api/users/team/${selectedTeam}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setUsers([{ usersID: 'all', fullName: 'Alle Benutzer' }, ...response.data]); // Liste der Benutzer
+        } catch (error) {
+          console.error('Fehler beim Abrufen der Benutzer:', error);
+        }
+      } else {
+        setUsers([{ usersID: 'all', fullName: 'Alle Benutzer' }]); // Alle Benutzer
+      }
+    };
+
+    fetchUsers(); // Benutzer abrufen, wenn Team geändert wird
+  }, [selectedTeam]);
+
+  // Handler, wenn das Team geändert wird
+  const handleTeamChange = (event) => {
+    const selectedTeamValue = event.target.value; 
+    setSelectedTeam(selectedTeamValue); // Team setzen
+    setSelectedUser('all'); // Benutzer zurücksetzen
+    onFilterChange(selectedTeamValue, 'all'); // Filter-Callback auslösen
+  };
+
+  // Handler, wenn der Benutzer geändert wird
+  const handleUserChange = (event) => {
+    const selectedUserValue = event.target.value;
+    setSelectedUser(selectedUserValue); // Benutzer setzen
+    onFilterChange(selectedTeam, selectedUserValue); // Filter-Callback auslösen
+  };
+
+  return (
+    <div className="team-selector mb-3"> 
+      <label htmlFor="teamSelect">Team auswählen:</label>
+      <select
+        id="teamSelect"
+        className="form-control"
+        value={selectedTeam}
+        onChange={handleTeamChange}
+      >
+        {teams.map((team) => (
+          <option key={team.teamID} value={team.teamID}> 
+            {team.teamName}
+          </option>
+        ))}
+      </select>
+
+      <label htmlFor="userSelect" className="mt-3">Benutzer auswählen:</label>
+      <select
+        id="userSelect"
+        className="form-control"
+        value={selectedUser}
+        onChange={handleUserChange}
+        disabled={selectedTeam === 'all'} 
+      >
+        {users.map((user) => (
+          <option key={user.usersID} value={user.usersID}>
+            {user.fullName}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+};
+
+export default TeamSelector;
 
 ***TextMining.js:
 import React, { useState } from 'react';

@@ -1,33 +1,81 @@
-const db = require('../config/db');
-const LinkGenerator = require('../src/linkGenerator');
+const db = require('../config/db'); // Import der Datenbankkonfiguration
 
+// Funktion zum Abrufen des erhaltenen Feedbacks für ein Team und optional für einen Benutzer
+exports.getTeamReceivedFeedbacks = (req, res) => {
+  const { teamId, userId } = req.params;
 
-
-
-// Function to get feedback by URL ID
-exports.getFeedbackById = (req, res) => {
-  const { id } = req.params;
-
-  const query = `
-    SELECT * FROM t_customerfdbck
-    WHERE customerFdbckUrlID = ?
+  let query = `
+    SELECT customerFdbckID, customerFdbckReceived, customerCompany, customerName, customerMailaddr, customerFdbckText, rating
+    FROM t_customerfdbck
+    WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?) AND customerFdbckAnswered = 1
   `;
 
-  db.query(query, [id], (err, results) => {
-    if (err) {
-      console.error('Error fetching feedback by ID:', err);
-      return res.status(500).send('Error fetching feedback');
-    }
+  if (userId && userId !== 'all') {
+    query += ' AND usersFK = ?';
+  }
 
-    if (results.length > 0) {
-      res.status(200).json(results[0]);
-    } else {
-      res.status(404).send('Feedback not found');
+  query += ' ORDER BY customerFdbckReceived desc';
+
+  const params = userId && userId !== 'all' ? [teamId, userId] : [teamId];
+
+  db.query(query, params, (err, results) => {
+    if (err) {
+      console.error('Fehler beim Abrufen des erhaltenen Feedbacks:', err);
+      return res.status(500).send('Fehler beim Abrufen des erhaltenen Feedbacks');
     }
+    res.status(200).json(results);
   });
 };
 
-// Function to update the team feedback text, status, and rating
+// Funktion zum Abrufen des erstellten Feedbacks aus der Tabelle t_variousfdbck
+exports.getTeamFeedback = (req, res) => {
+  const { teamId, userId } = req.params;
+
+  let query = `
+    SELECT variousFdbckID, variousFdbckCustomer, variousFdbckDescription, variousFdbckReceived, uploadUrl, usersFK, concat(t_users.usersVorname, ' ', t_users.usersNachname) as usersName
+    FROM t_variousfdbck
+    LEFT JOIN t_users on t_variousfdbck.usersFK = t_users.usersID
+    WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?)
+  `;
+
+  if (userId && userId !== 'all') {
+    query += ' AND usersFK = ?';
+  }
+
+  query += ' ORDER BY variousFdbckReceived desc';
+
+  const params = userId && userId !== 'all' ? [teamId, userId] : [teamId];
+
+  db.query(query, params, (err, results) => {
+    if (err) {
+      console.error('Fehler beim Abrufen des erstellten Feedbacks:', err);
+      return res.status(500).send('Fehler beim Abrufen des erstellten Feedbacks');
+    }
+    res.status(200).json(results);
+  });
+};
+
+// Funktion zum Erstellen eines neuen Team-Feedbacks
+exports.createTeamFeedback = (req, res) => {
+  const { customerCompany, customerName, customerMailaddr, customerFdbckSend, customerFdbckUrl, customerFdbckUrlID, usersFK } = req.body;
+
+  const query = `
+    INSERT INTO t_customerfdbck (customerCompany, customerName, customerMailaddr, customerFdbckSend, customerFdbckText, customerFdbckReceived, customerFdbckUrl, customerFdbckUrlID, customerFdbckAnswered, usersFK)
+    VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, 0, ?)
+  `;
+  
+  const values = [customerCompany, customerName, customerMailaddr, customerFdbckSend, customerFdbckUrl, customerFdbckUrlID, usersFK];
+
+  db.query(query, values, (err, result) => {
+    if (err) {
+      console.error('Fehler beim Erstellen des Team-Feedbacks:', err);
+      return res.status(500).send('Fehler beim Erstellen des Feedbacks');
+    }
+    res.status(201).send('Feedback erfolgreich erstellt');
+  });
+};
+
+// Funktion zum Aktualisieren des Feedbacktexts, Status und Bewertung
 exports.updateTeamFeedbackText = (req, res) => {
   const { id } = req.params;
   const { customerFdbckText, customerFdbckReceived, customerFdbckAnswered, rating } = req.body;
@@ -40,15 +88,15 @@ exports.updateTeamFeedbackText = (req, res) => {
 
   db.query(query, [customerFdbckText, customerFdbckReceived, customerFdbckAnswered, rating, id], (err, result) => {
     if (err) {
-      console.error('Error updating team feedback text:', err);
-      return res.status(500).send('Error updating feedback');
+      console.error('Fehler beim Aktualisieren des Team-Feedbacks:', err);
+      return res.status(500).send('Fehler beim Aktualisieren des Feedbacks');
     }
 
-    res.status(200).send('Team feedback text and rating updated successfully');
+    res.status(200).send('Feedback erfolgreich aktualisiert');
   });
 };
 
-// Function to update team feedback (generic)
+// Funktion zum allgemeinen Aktualisieren des Feedbacks (Kundendetails)
 exports.updateTeamFeedback = (req, res) => {
   const { customerCompany, customerName, customerMailaddr } = req.body;
   const feedbackId = req.params.id;
@@ -61,14 +109,14 @@ exports.updateTeamFeedback = (req, res) => {
 
   db.query(query, [customerCompany, customerName, customerMailaddr, feedbackId], (err, result) => {
     if (err) {
-      console.error('Error updating team feedback:', err);
-      return res.status(500).send('Error updating feedback');
+      console.error('Fehler beim Aktualisieren der Feedback-Kundendetails:', err);
+      return res.status(500).send('Fehler beim Aktualisieren der Kundendetails');
     }
-    res.status(200).send('Team feedback successfully updated');
+    res.status(200).send('Feedback erfolgreich aktualisiert');
   });
 };
 
-// Function to delete team feedback
+// Funktion zum Löschen eines Feedbacks
 exports.deleteTeamFeedback = (req, res) => {
   const feedbackId = req.params.id;
 
@@ -79,98 +127,52 @@ exports.deleteTeamFeedback = (req, res) => {
 
   db.query(query, [feedbackId], (err, result) => {
     if (err) {
-      console.error('Error deleting team feedback:', err);
-      return res.status(500).send('Error deleting feedback');
+      console.error('Fehler beim Löschen des Feedbacks:', err);
+      return res.status(500).send('Fehler beim Löschen des Feedbacks');
     }
-    res.status(200).send('Team feedback successfully deleted');
+    res.status(200).send('Feedback erfolgreich gelöscht');
   });
 };
 
-// Function to create a new team feedback request (still using t_customerfdbck)
-exports.createTeamFeedback = (req, res) => {
-  const { customerCompany, customerName, customerMailaddr, customerFdbckSend, customerFdbckUrl, customerFdbckUrlID, usersFK } = req.body;
-  const query = `
-    INSERT INTO t_customerfdbck (customerCompany, customerName, customerMailaddr, customerFdbckSend, customerFdbckText, customerFdbckReceived, customerFdbckUrl, customerFdbckUrlID, customerFdbckAnswered, usersFK)
-    VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, 0, ?)
-  `;
-  const values = [customerCompany, customerName, customerMailaddr, customerFdbckSend, customerFdbckUrl, customerFdbckUrlID, usersFK];
-
-  console.log("Executing SQL Query:", query);
-  console.log("With Values:", values);
-
-  db.query(query, values, (err, result) => {
-    if (err) {
-      console.error('Error inserting team feedback:', err);
-      return res.status(500).send('Error creating team feedback');
-    }
-    res.status(201).send('Team feedback successfully created');
-  });
-};
-
-// Function to get feedback requests for a specific team
+// Funktion zum Abrufen der Feedback-Anfragen für ein Team
 exports.getTeamFeedbackRequests = (req, res) => {
-  const { teamId } = req.params; // Ensure teamId is properly extracted
+//   const { teamId } = req.params;
 
-  if (!teamId) {
-    return res.status(400).send('teamId is required');
+//   const query = `
+//     SELECT customerFdbckID, customerFdbckReceived, customerCompany, customerName, customerMailaddr, customerFdbckText
+//     FROM t_customerfdbck
+//     WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?) AND customerFdbckAnswered = 0
+//   `;
+
+//   db.query([teamId], (err, results) => {
+//     if (err) {
+//       console.error('Fehler beim Abrufen der Feedback-Anfragen:', err);
+//       return res.status(500).send('Fehler beim Abrufen der Feedback-Anfragen');
+//     }
+//     res.status(200).json(results);
+//   });
+// };
+const { teamId, userId } = req.params;
+
+let query = `
+  SELECT customerFdbckID, customerFdbckSend, customerCompany, customerName, customerMailaddr, customerFdbckText, rating
+  FROM t_customerfdbck
+  WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?) AND customerFdbckAnswered = 0
+`;
+
+if (userId && userId !== 'all') {
+  query += ' AND usersFK = ?';
+}
+
+query += ' ORDER BY customerFdbckSend desc';
+
+const params = userId && userId !== 'all' ? [teamId, userId] : [teamId];
+
+db.query(query, params, (err, results) => {
+  if (err) {
+    console.error('Fehler beim Abrufen des erhaltenen Feedbacks:', err);
+    return res.status(500).send('Fehler beim Abrufen des erhaltenen Feedbacks');
   }
-
-  const query = `
-    SELECT *
-    FROM t_customerfdbck
-    WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?) AND customerFdbckAnswered = 0
-  `;
-
-  console.log("Executing SQL Query:", query);
-  console.log("With teamId:", teamId);
-
-  db.query(query, [teamId], (err, results) => {
-    if (err) {
-      console.error('Error fetching received feedback for team:', err);
-      return res.status(500).send('Error fetching feedback');
-    }
-    res.status(200).json(results);
-  });
+  res.status(200).json(results);
+});
 };
-
-exports.getTeamReceivedFeedbacks = (req, res) => {
-  const { teamId } = req.params; // Ensure teamId is properly extracted
-
-  if (!teamId) {
-    return res.status(400).send('teamId is required');
-  }
-
-  const query = `
-    SELECT customerFdbckID, customerFdbckReceived, customerCompany, customerName, customerMailaddr, customerFdbckText, rating
-    FROM t_customerfdbck
-    WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?) AND customerFdbckAnswered = 1
-  `;
-
-  console.log("Executing SQL Query:", query);
-  console.log("With teamId:", teamId);
-
-  db.query(query, [teamId], (err, results) => {
-    if (err) {
-      console.error('Error fetching received feedback for team:', err);
-      return res.status(500).send('Error fetching feedback');
-    }
-    res.status(200).json(results);
-  });
-};
-
-exports.getFeedbackByTeam = (req, res) => {
-  const { teamId } = req.params; // Ensure teamId is properly extracted
-
-  const query = `
-    SELECT variousFdbckID, variousFdbckReceived, variousFdbckCustomer, variousFdbckDescription, uploadUrl 
-    FROM t_variousFdbck WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?)
-  `;
-  db.query(query, [teamId], (err, results) => {
-    if (err) {
-      console.error('Fehler beim Abrufen der Feedbacks:', err);
-      return res.status(500).send('Fehler beim Abrufen der Feedbacks');
-    }
-    res.json(results);
-  });
-};
-

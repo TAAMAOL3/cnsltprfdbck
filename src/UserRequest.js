@@ -81,7 +81,7 @@ const UserRequest = () => {
   };
 
   const handleRemind = (request) => {
-    const sendDate = new Date(request.customerFdbckSend).toLocaleDateString();
+    const sendDate = new Date(request.customerFdbckSend).toLocaleDateString('de-DE');
     const mailtoLink = `mailto:${request.customerMailaddr}?subject=Erinnerung%20an%20Feedback%20vom%20${sendDate}&body=Sehr%20geehrter%20Herr%20${request.customerName},%0A%0A${request.customerFdbckUrl}%0A%0AFreundliche%20Grüsse%0A${user.firstName}%20${user.lastName}`;
     window.location.href = mailtoLink;
   };
@@ -105,7 +105,7 @@ const UserRequest = () => {
           {Array.isArray(requests) && requests.length > 0 ? (
             requests.map((request) => (
               <tr key={request.customerFdbckID}>
-                <td>{new Date(request.customerFdbckSend).toLocaleDateString()}</td>
+                <td>{new Date(request.customerFdbckSend).toLocaleDateString('de-DE')}</td>
                 <td>{request.customerCompany}</td>
                 <td>{request.customerName}</td>
                 <td>{request.customerMailaddr}</td>

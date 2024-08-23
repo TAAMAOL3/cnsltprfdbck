@@ -62,7 +62,7 @@ const UserReceived = () => {
           {Array.isArray(feedbacks) && feedbacks.length > 0 ? (
             feedbacks.map((feedback) => (
               <tr key={feedback.customerFdbckID}>
-                <td>{new Date(feedback.customerFdbckReceived).toLocaleDateString()}</td>
+                <td>{new Date(feedback.customerFdbckReceived).toLocaleDateString('de-DE')}</td>
                 <td>{feedback.customerCompany}</td>
                 <td>{feedback.customerName}</td>
                 <td>{feedback.customerMailaddr}</td>

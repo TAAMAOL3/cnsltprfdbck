@@ -2,82 +2,88 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from './AuthContext';
 
-const TeamReceived = () => {
-  const { user } = useContext(AuthContext);
-  const [feedbacks, setFeedbacks] = useState([]);
-  const [viewingFeedback, setViewingFeedback] = useState(null);
+const TeamReceived = ({ selectedTeam, selectedUser }) => {
+  const { user } = useContext(AuthContext); // Zugriff auf den aktuellen Benutzer
+  const [feedbacks, setFeedbacks] = useState([]); // Liste der erhaltenen Feedbacks
+  const [viewingFeedback, setViewingFeedback] = useState(null); // Angezeigtes Feedback-Detail
 
+  // Effekt, um die Feedback-Daten basierend auf dem ausgewählten Team und Benutzer zu laden
   useEffect(() => {
-    const fetchTeamFeedbacks = async () => {
-      const token = localStorage.getItem('token');
-      if (token && user && user.teamId) { // Use user.teamId
+    const fetchFilteredFeedbacks = async () => {
+      const token = localStorage.getItem('token'); // Token für API-Anfragen
+      if (selectedTeam && selectedTeam !== 'all') { 
         try {
-          // Include teamId in the request
-          const response = await axios.get(`/api/team/received/${user.teamId}`, {
-            headers: { Authorization: `Bearer ${token}` }
+          // URL für das Abrufen der Feedbacks für das ausgewählte Team und Benutzer
+          const url = selectedUser && selectedUser !== 'all'
+            ? `/api/team/received/${selectedTeam}/${selectedUser}`
+            : `/api/team/received/${selectedTeam}`;
+          const response = await axios.get(url, {
+            headers: { Authorization: `Bearer ${token}` } // Token zur Autorisierung
           });
-          setFeedbacks(response.data || []);
+          setFeedbacks(response.data || []); // Feedbacks setzen
         } catch (error) {
-          console.error('Error fetching team feedbacks:', error);
-          setFeedbacks([]);
+          console.error('Fehler beim Abrufen der erhaltenen Team-Feedbacks:', error);
+          setFeedbacks([]); // Bei Fehler leere Liste setzen
         }
       }
     };
 
-    fetchTeamFeedbacks();
-  }, [user]);
+    fetchFilteredFeedbacks(); // Abruf, wenn sich Team oder Benutzer ändern
+  }, [selectedTeam, selectedUser]);
 
+  // Funktion zum Anzeigen der Details eines spezifischen Feedbacks
   const handleViewFeedback = (feedback) => {
-    setViewingFeedback(feedback);
+    setViewingFeedback(feedback); // Angezeigtes Feedback setzen
   };
 
+  // Funktion, um das passende Icon basierend auf der Bewertung zu erhalten
   const getRatingIcon = (rating) => {
     if (rating >= 2) {
-      return <img className="page-icon" src="/Content/themes/base/images/VeryPositive.png" alt="Very Positive" />;
+      return <img className="page-icon" src="/Content/themes/base/images/VeryPositive.png" alt="Sehr positiv" />;
     } else if (rating === 1) {
-      return <img className="page-icon" src="/Content/themes/base/images/Positive.png" alt="Positive" />;
+      return <img className="page-icon" src="/Content/themes/base/images/Positive.png" alt="Positiv" />;
     } else if (rating === 0) {
-      return <img className="page-icon" src="/Content/themes/base/images/Unknown.png" alt="Unknown" />;
+      return <img className="page-icon" src="/Content/themes/base/images/Unknown.png" alt="Unbekannt" />;
     } else if (rating === -1) {
-      return <img className="page-icon" src="/Content/themes/base/images/Negative.png" alt="Negative" />;
+      return <img className="page-icon" src="/Content/themes/base/images/Negative.png" alt="Negativ" />;
     } else if (rating <= -2) {
-      return <img className="page-icon" src="/Content/themes/base/images/VeryNegative.png" alt="Very Negative" />;
+      return <img className="page-icon" src="/Content/themes/base/images/VeryNegative.png" alt="Sehr negativ" />;
     }
   };
 
   return (
     <div className="mb-5">
-      <h3>Team Received Feedback</h3>
+      <h3>Erhaltene Team-Feedbacks</h3>
       <table className="table">
         <thead>
           <tr>
-            <th>Received On</th>
-            <th>Customer Company</th>
-            <th>Contact Person</th>
-            <th>Email</th>
-            <th>Rating</th>
-            <th>Actions</th>
+            <th>Empfangen am</th>
+            <th>Kundenunternehmen</th>
+            <th>Kontaktperson</th>
+            <th>E-Mail</th>
+            <th>Bewertung</th>
+            <th>Aktionen</th>
           </tr>
         </thead>
         <tbody>
-          {Array.isArray(feedbacks) && feedbacks.length > 0 ? (
+          {feedbacks.length > 0 ? ( 
             feedbacks.map((feedback) => (
               <tr key={feedback.customerFdbckID}>
-                <td>{new Date(feedback.customerFdbckReceived).toLocaleDateString()}</td>
+                <td>{new Date(feedback.customerFdbckReceived).toLocaleDateString('de-DE')}</td>
                 <td>{feedback.customerCompany}</td>
                 <td>{feedback.customerName}</td>
                 <td>{feedback.customerMailaddr}</td>
                 <td>{getRatingIcon(feedback.rating)}</td>
                 <td>
                   <button className="btn btn-primary" onClick={() => handleViewFeedback(feedback)}>
-                    View
+                    Anzeigen
                   </button>
                 </td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="6">No feedback found.</td>
+              <td colSpan="6">Keine Feedbacks gefunden.</td> 
             </tr>
           )}
         </tbody>
@@ -85,9 +91,9 @@ const TeamReceived = () => {
 
       {viewingFeedback && (
         <div className="mt-5">
-          <h3>View Feedback</h3>
+          <h3>Feedback anzeigen</h3>
           <p style={{ fontSize: '1.5rem' }}><strong>Feedback:</strong> {viewingFeedback.customerFdbckText}</p>
-          <button className="btn btn-secondary" onClick={() => setViewingFeedback(null)}>Close</button>
+          <button className="btn btn-secondary" onClick={() => setViewingFeedback(null)}>Schließen</button>
         </div>
       )}
     </div>

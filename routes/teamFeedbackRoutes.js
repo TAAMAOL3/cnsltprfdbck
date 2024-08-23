@@ -1,27 +1,29 @@
 const express = require('express');
 const router = express.Router();
-const teamFeedbackController = require('../controllers/teamFeedbackController');
-const authenticateToken = require('../middleware/authenticateToken');
+const teamFeedbackController = require('../controllers/teamFeedbackController'); // Stelle sicher, dass der Controller korrekt importiert wird
+const authenticateToken = require('../middleware/authenticateToken'); // Authentifizierungs-Middleware
 
-// Route for creating team feedback
+// Route zum Abrufen der Feedback-Anfragen für ein spezifisches Team
+router.get('/requests/:teamId/:userId?', authenticateToken, teamFeedbackController.getTeamFeedbackRequests);
+
+// Route zum Abrufen des erhaltenen Feedbacks für ein spezifisches Team
+router.get('/received/:teamId/:userId?', authenticateToken, teamFeedbackController.getTeamReceivedFeedbacks);
+
+// Route zum Abrufen des erstellten Feedbacks für ein spezifisches Team
+router.get('/feedback/:teamId/:userId?', authenticateToken, teamFeedbackController.getTeamFeedback);
+
+// Route zum Erstellen eines neuen Team-Feedbacks
 router.post('/', authenticateToken, teamFeedbackController.createTeamFeedback);
 
-// Route for fetching team-specific feedback requests (Added :teamId)
-router.get('/requests/:teamId', authenticateToken, teamFeedbackController.getTeamFeedbackRequests);
-
-// Route for fetching feedback by URL ID
-router.get('/team/:teamId', authenticateToken, teamFeedbackController.getFeedbackByTeam);
-
-// Route for updating team feedback text, status, and rating
+// Route zum Aktualisieren von Team-Feedback (Text, Status und Bewertung)
 router.put('/text/:id', authenticateToken, teamFeedbackController.updateTeamFeedbackText);
 
-// Route for updating general team feedback
+// Route zum allgemeinen Aktualisieren von Team-Feedback (Kundendetails)
 router.put('/:id', authenticateToken, teamFeedbackController.updateTeamFeedback);
 
-// Route for deleting team feedback
+// Route zum Löschen eines Team-Feedbacks
 router.delete('/:id', authenticateToken, teamFeedbackController.deleteTeamFeedback);
 
-// Route for fetching all received feedback for the team
-router.get('/received/:teamId', authenticateToken, teamFeedbackController.getTeamReceivedFeedbacks);
+
 
 module.exports = router;

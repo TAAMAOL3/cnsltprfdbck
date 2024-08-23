@@ -16,6 +16,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const textMiningRoutes = require('./routes/textMiningRoutes');
 const customerFeedbackRoutes = require('./routes/customerFeedbackRoutes');
 const teamFeedbackRoutes = require('./routes/teamFeedbackRoutes'); // Import teamFeedbackRoutes
+const authenticateToken = require('./middleware/authenticateToken'); // Token authentication middleware
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -26,10 +27,11 @@ app.use(helmet());
 app.use(express.json());
 app.use(morgan('combined'));
 app.use(rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 Minuten
-  max: 100 // Limit jeder IP auf 100 Requests pro 15 Minuten
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // Limit each IP to 100 requests per windowMs
 }));
 
+// Route imports
 app.use('/api/register', registerRoutes);
 app.use('/api/password-reset', passwordResetRoutes);
 app.use('/api/feedback', variousFeedbackRoutes);
@@ -41,8 +43,8 @@ app.use('/api/team', teamFeedbackRoutes); // Use team feedback routes
 // Serve the uploads directory as static files
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
-// New /api/user endpoint to get user information based on token
-app.get("/api/user", (req, res) => {
+// User info route to get logged-in user's details
+app.get("/api/user", authenticateToken, (req, res) => {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) {
     return res.status(401).json({ error: "Unauthorized" });
@@ -60,19 +62,44 @@ app.get("/api/user", (req, res) => {
       }
 
       const user = results[0];
-      res.json({ user: { 
-        id: user.usersID, 
-        email: user.usersEmail, 
-        role: user.rolesFK, 
-        vorname: user.usersVorname, 
-        nachname: user.usersNachname, 
-        teamId: user.teamFK
-      }});
+      res.json({
+        user: {
+          id: user.usersID,
+          email: user.usersEmail,
+          role: user.rolesFK,
+          vorname: user.usersVorname,
+          nachname: user.usersNachname,
+          teamId: user.teamFK
+        }
+      });
     });
   });
 });
 
-// Login endpoint
+// API route to fetch teams
+app.get('/api/teams', authenticateToken, (req, res) => {
+  const query = 'SELECT teamID, teamName FROM t_team';
+  db.query(query, (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Error fetching teams' });
+    }
+    res.status(200).json(results);
+  });
+});
+
+// API route to fetch users by team
+app.get("/api/users/team/:teamId", authenticateToken, (req, res) => {
+  const { teamId } = req.params;
+  const query = 'SELECT usersID, CONCAT(usersVorname, " ", usersNachname) AS fullName FROM t_users WHERE teamFK = ?';
+  db.query(query, [teamId], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Error fetching users' });
+    }
+    res.status(200).json(results);
+  });
+});
+
+// Login route
 app.post("/api/login", [body("email").isEmail(), body("password").exists()], (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -104,6 +131,7 @@ app.post("/api/login", [body("email").isEmail(), body("password").exists()], (re
   });
 });
 
+// Serve React app from the build folder
 app.use(express.static(path.join(__dirname, "build")));
 
 app.get("*", (req, res) => {
@@ -116,6 +144,7 @@ app.use((err, req, res, next) => {
   res.status(500).send('Something broke!');
 });
 
+// Set content security policy
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
@@ -124,7 +153,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Logout endpoint
+// Logout route
 app.post('/api/logout', (req, res) => {
   res.json({ message: 'Successfully logged out' });
 });

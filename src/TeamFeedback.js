@@ -2,174 +2,120 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from './AuthContext';
 
-const TeamFeedback = () => {
-  const { user } = useContext(AuthContext);
-  const [feedbacks, setFeedbacks] = useState([]);
-  const [editingFeedback, setEditingFeedback] = useState(null);
-  const [customer, setCustomer] = useState('');
-  const [description, setDescription] = useState('');
-  const [received, setReceived] = useState('');
-  const [message, setMessage] = useState('');
-  const [deletingFeedbackId, setDeletingFeedbackId] = useState(null);
 
+
+const TeamFeedback = ({ selectedTeam, selectedUser }) => {
+  const { user } = useContext(AuthContext); // Zugriff auf den aktuellen Benutzer
+  const [feedbacks, setFeedbacks] = useState([]); // Liste der erstellten Feedbacks
+  const [viewingFeedback, setViewingFeedback] = useState(null); // Detailansicht eines Feedbacks
+
+
+  // Formatierung des Datums für die Anzeige im Format dd/MM/yyyy
+  const formatDateForDisplay = (dateString) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  // Formatierung des Datums für das <input type="date">-Feld (yyyy-MM-dd)
+  const formatDateForInput = (dateString) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${year}-${month}-${day}`;
+  };
+  // Effekt zum Laden der erstellten Feedback-Daten für das Team
   useEffect(() => {
-    const fetchTeamFeedbacks = async () => {
-      const token = localStorage.getItem('token');
-      if (token && user && user.teamId) {
+    const fetchTeamFeedback = async () => {
+      const token = localStorage.getItem('token'); // Token für API-Anfragen
+      if (selectedTeam && selectedTeam !== 'all') {
         try {
-          // Fetch feedback data based on teamId
-          const response = await axios.get(`/api/team/team/${user.teamId}`, {
-            headers: { Authorization: `Bearer ${token}` }
+          // API-URL zum Abrufen des erstellten Feedbacks für das Team und optional den Benutzer
+          const url = selectedUser && selectedUser !== 'all'
+            ? `/api/team/feedback/${selectedTeam}/${selectedUser}`
+            : `/api/team/feedback/${selectedTeam}`;
+          const response = await axios.get(url, {
+            headers: { Authorization: `Bearer ${token}` } // Autorisierung
           });
-          setFeedbacks(response.data || []);
+
+          // Überprüfe, ob die Antwort ein Array ist, wenn nicht, setze es auf ein leeres Array
+          setFeedbacks(Array.isArray(response.data) ? response.data : []); // Feedbacks setzen
         } catch (error) {
-          console.error('Error fetching team feedback:', error);
-          setFeedbacks([]);
+          console.error('Fehler beim Abrufen des Team-Feedbacks:', error);
+          setFeedbacks([]); // Bei Fehler leere Liste setzen
         }
       }
     };
 
-    fetchTeamFeedbacks();
-  }, [user]);
+    fetchTeamFeedback(); // Feedback-Daten laden, wenn sich Team oder Benutzer ändern
+  }, [selectedTeam, selectedUser]);
 
-  const handleEdit = (feedback) => {
-    setEditingFeedback(feedback);
-    setCustomer(feedback.variousFdbckCustomer);  // Correct field
-    setDescription(feedback.variousFdbckDescription);  // Correct field
-    setReceived(feedback.variousFdbckReceived);  // Correct field
-  };
-
-  const handleSaveFeedback = async () => {
-    const token = localStorage.getItem('token');
-    try {
-      const formattedDate = received.split('/').reverse().join('-'); // Format dd/MM/yyyy to yyyy-MM-dd
-
-      await axios.put(`/api/teamFeedback/${editingFeedback.variousFdbckID}`, {
-        customerCompany: customer,
-        customerFdbckText: description,
-        customerFdbckReceived: formattedDate,
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      setFeedbacks(feedbacks.map(fb =>
-        fb.variousFdbckID === editingFeedback.variousFdbckID ? { ...fb, variousFdbckCustomer: customer, variousFdbckDescription: description, variousFdbckReceived: formattedDate } : fb
-      ));
-      setEditingFeedback(null);
-      setMessage('Team feedback updated successfully!');
-    } catch (error) {
-      console.error('Error saving feedback:', error.message || error);
-    }
-  };
-
-  const handleDeleteFeedback = async (feedbackID) => {
-    const token = localStorage.getItem('token');
-    try {
-      await axios.delete(`/api/teamFeedback/${feedbackID}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setFeedbacks(feedbacks.filter(fb => fb.variousFdbckID !== feedbackID));  // Correct field
-      setDeletingFeedbackId(null);
-    } catch (error) {
-      console.error('Error deleting feedback:', error);
-    }
-  };
-
-  const confirmDelete = (feedbackID) => {
-    setDeletingFeedbackId(feedbackID);
-  };
-
-  const cancelDelete = () => {
-    setDeletingFeedbackId(null);
+  // Funktion zum Anzeigen der Details eines Feedbacks
+  const handleViewFeedback = (feedback) => {
+    setViewingFeedback(feedback); // Detailansicht des Feedbacks setzen
   };
 
   return (
     <div className="mb-5">
       <h3>Team Feedback</h3>
-      {message && <p>{message}</p>}
       <table className="table">
         <thead>
           <tr>
-            <th>Feedback Received</th>
-            <th>Customer</th>
-            <th>Description</th>
-            <th>File</th>
-            <th>Actions</th>
+            <th>Feedback Erhalten</th>
+            <th>Empfänger</th>
+            <th>Kunde</th>
+            <th>Beschreibung</th>
+            <th>Aktionen</th>
           </tr>
         </thead>
         <tbody>
-          {Array.isArray(feedbacks) && feedbacks.length > 0 ? (
+          {feedbacks.length > 0 ? (
             feedbacks.map((feedback) => (
-              <tr key={feedback.variousFdbckID}>  
-                <td>{new Date(feedback.variousFdbckReceived).toLocaleDateString()}</td>  
-                <td>{feedback.variousFdbckCustomer}</td>  
-                <td>{feedback.variousFdbckDescription}</td>  
-                <td>
-                  <a href={feedback.uploadUrl} download className="btn btn-link">
-                    Download File
+              <tr key={feedback.variousFdbckID}>
+                <td>{formatDateForDisplay(feedback.variousFdbckReceived)}</td> {/* Datum korrekt formatieren */}
+                <td>{feedback.usersName}</td>
+                <td>{feedback.variousFdbckCustomer}</td>
+                <td>{feedback.variousFdbckDescription}</td>
+                {/* <td>
+                  <a href={feedback.uploadUrl} download className="btn btn-link" onClick={() => console.log(feedback.uploadUrl)}>
+                  <button className="btn btn-primary">Datei herunterladen</button>
                   </a>
-                </td>
+                </td> */}
                 <td>
-                  {deletingFeedbackId === feedback.variousFdbckID ? (  
-                    <>
-                      <button className="btn btn-danger mr-2" onClick={() => handleDeleteFeedback(feedback.variousFdbckID)}> 
-                        Confirm Delete?
-                      </button>
-                      <button className="btn btn-secondary" onClick={cancelDelete}>
-                        Cancel
-                      </button>
-                    </>
+                  {feedback.uploadUrl ? (
+                    <button className="btn btn-primary" onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = feedback.uploadUrl;
+                      link.setAttribute('download', '');
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}>
+                      Datei herunterladen
+                    </button>
                   ) : (
-                    <>
-                      <button className="btn btn-primary mr-2" onClick={() => handleEdit(feedback)}>Edit</button>
-                      <button className="btn btn-danger mr-2" onClick={() => confirmDelete(feedback.variousFdbckID)}> 
-                        Delete
-                      </button>
-                    </>
+                    'Keine Datei'
                   )}
                 </td>
+
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="5">No feedback found.</td>
+              <td colSpan="6">Keine Feedbacks gefunden.</td>
             </tr>
           )}
         </tbody>
       </table>
 
-      {editingFeedback && (
+      {viewingFeedback && (
         <div className="mt-5">
-          <h3>Edit Feedback</h3>
-          <div className="form-group">
-            <label>Customer</label>
-            <input
-              type="text"
-              className="form-control"
-              value={customer}
-              onChange={(e) => setCustomer(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label>Description</label>
-            <input
-              type="text"
-              className="form-control"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label>Received On</label>
-            <input
-              type="date"
-              className="form-control"
-              value={received}
-              onChange={(e) => setReceived(e.target.value)}
-            />
-          </div>
-          <button className="btn btn-primary" onClick={handleSaveFeedback}>Save</button>
-          <button className="btn btn-secondary ml-2" onClick={() => setEditingFeedback(null)}>Cancel</button>
+          <h3>Feedback anzeigen</h3>
+          <p style={{ fontSize: '1.5rem' }}><strong>Feedback:</strong> {viewingFeedback.customerFdbckText}</p>
+          <button className="btn btn-secondary" onClick={() => setViewingFeedback(null)}>Schließen</button>
         </div>
       )}
     </div>
