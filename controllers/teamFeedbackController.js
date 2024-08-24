@@ -5,8 +5,9 @@ exports.getTeamReceivedFeedbacks = (req, res) => {
   const { teamId, userId } = req.params;
 
   let query = `
-    SELECT customerFdbckID, customerFdbckReceived, customerCompany, customerName, customerMailaddr, customerFdbckText, rating
+    SELECT customerFdbckID, customerFdbckReceived, customerCompany, customerName, customerMailaddr, customerFdbckText, rating, concat(t_users.usersVorname, ' ', t_users.usersNachname) as usersName
     FROM t_customerfdbck
+    LEFT JOIN t_users on t_customerfdbck.usersFK = t_users.usersID
     WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?) AND customerFdbckAnswered = 1
   `;
 
@@ -136,27 +137,12 @@ exports.deleteTeamFeedback = (req, res) => {
 
 // Funktion zum Abrufen der Feedback-Anfragen für ein Team
 exports.getTeamFeedbackRequests = (req, res) => {
-//   const { teamId } = req.params;
-
-//   const query = `
-//     SELECT customerFdbckID, customerFdbckReceived, customerCompany, customerName, customerMailaddr, customerFdbckText
-//     FROM t_customerfdbck
-//     WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?) AND customerFdbckAnswered = 0
-//   `;
-
-//   db.query([teamId], (err, results) => {
-//     if (err) {
-//       console.error('Fehler beim Abrufen der Feedback-Anfragen:', err);
-//       return res.status(500).send('Fehler beim Abrufen der Feedback-Anfragen');
-//     }
-//     res.status(200).json(results);
-//   });
-// };
 const { teamId, userId } = req.params;
 
 let query = `
-  SELECT customerFdbckID, customerFdbckSend, customerCompany, customerName, customerMailaddr, customerFdbckText, rating
+  SELECT customerFdbckID, customerFdbckSend, customerCompany, customerName, customerMailaddr, customerFdbckText, rating, concat(t_users.usersVorname, ' ', t_users.usersNachname) as usersName
   FROM t_customerfdbck
+  LEFT JOIN t_users on t_customerfdbck.usersFK = t_users.usersID
   WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?) AND customerFdbckAnswered = 0
 `;
 

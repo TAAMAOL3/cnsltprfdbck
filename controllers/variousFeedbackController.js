@@ -28,7 +28,7 @@ exports.getFeedbackByUser = (req, res) => {
 
   const query = `
     SELECT variousFdbckID, variousFdbckReceived, variousFdbckCustomer, variousFdbckDescription, uploadUrl 
-    FROM t_variousFdbck WHERE usersFK = ?
+    FROM t_variousFdbck WHERE usersFK = ? ORDER BY variousFdbckReceived DESC
   `;
   db.query(query, [userId], (err, results) => {
     if (err) {

@@ -29,6 +29,7 @@ exports.getUserFeedbackRequests = (req, res) => {
   const query = `
     SELECT * FROM t_customerfdbck
     WHERE usersFK = ? AND customerFdbckAnswered = 0
+    ORDER BY customerFdbckSend desc
   `;
 
   db.query(query, [userId], (err, results) => {
@@ -132,7 +133,7 @@ exports.getUserReceivedFeedbacks = (req, res) => {
   const query = `
     SELECT customerFdbckID, customerFdbckReceived, customerCompany, customerName, customerMailaddr, customerFdbckText, rating
     FROM t_customerfdbck
-    WHERE usersFK = ? AND customerFdbckAnswered = 1
+    WHERE usersFK = ? AND customerFdbckAnswered = 1 ORDER BY customerFdbckReceived desc
   `;
 
   db.query(query, [userId], (err, results) => {

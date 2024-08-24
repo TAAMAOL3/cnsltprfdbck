@@ -42,7 +42,8 @@ const Team = () => {
             <img className="page-icon" src="/Content/themes/base/images/Chain.png" alt="Team icon" /> 
           </div>
           <hgroup className="title"> 
-            <h1>Teamleiter-Dashboard</h1> 
+          <h1>Team Feedbacks</h1>
+          <p>Überblick über erhaltene, offene und selbst erstellte Feedbacks des gesamten Teams</p>
           </hgroup>
         </div>
       </section>

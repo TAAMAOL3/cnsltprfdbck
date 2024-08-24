@@ -30,6 +30,13 @@ const TeamRequest = ({ selectedTeam, selectedUser }) => {
     fetchTeamRequests(); // Feedback-Anfragen laden, wenn sich das Team ändert
   }, [selectedTeam, selectedUser]);
 
+  // Funktion, um eine E-Mail-Erinnerung zu senden
+  const handleRemind = (request) => {
+    const sendDate = new Date(request.customerFdbckSend).toLocaleDateString();
+    const mailtoLink = `mailto:${request.customerMailaddr}?subject=Erinnerung%20an%20Feedback%20vom%20${sendDate}&body=Sehr%20geehrter%20Herr%20${request.customerName},%0A%0A${request.customerFdbckUrl}%0A%0AFreundliche%20Grüsse%0A${user.firstName}%20${user.lastName}`;
+    window.location.href = mailtoLink; // E-Mail-Link öffnen
+  };
+
   return (
     <div className="mb-5">
       <h3>Team Feedback Requests</h3>
@@ -37,9 +44,9 @@ const TeamRequest = ({ selectedTeam, selectedUser }) => {
         <thead>
           <tr>
             <th>Gesendet am</th>
-            <th>Kundenunternehmen</th>
+            <th>Ersteller</th>
+            <th>Kunde</th>
             <th>Kontaktperson</th>
-            <th>E-Mail</th>
             <th>Aktionen</th>
           </tr>
         </thead>
@@ -47,12 +54,14 @@ const TeamRequest = ({ selectedTeam, selectedUser }) => {
           {requests.length > 0 ? (
             requests.map((request) => (
               <tr key={request.customerFdbckID}>
-                <td>{new Date(request.customerFdbckSend).toLocaleDateString('de-DE')}</td>
+                <td>{new Date(request.customerFdbckSend).toLocaleDateString()}</td>
+                <td>{request.usersName}</td>
                 <td>{request.customerCompany}</td>
                 <td>{request.customerName}</td>
-                <td>{request.customerMailaddr}</td>
                 <td>
-                  <button className="btn btn-primary">Erinnerung senden</button>
+                  <button className="btn btn-primary" onClick={() => handleRemind(request)}>
+                    Erinnerung senden
+                  </button>
                 </td>
               </tr>
             ))

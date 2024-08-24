@@ -75,6 +75,7 @@ const TeamSelector = ({ onFilterChange }) => {
         className="form-control"
         value={selectedTeam}
         onChange={handleTeamChange}
+        disabled={user.role === 2} // Disable the dropdown if the user role is 2
       >
         {teams.map((team) => (
           <option key={team.teamID} value={team.teamID}> 

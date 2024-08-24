@@ -106,7 +106,7 @@ const Feedback = () => {
             required
           />
         </div>
-        <button type="submit" className="btn btn-primary">Absenden</button>
+        <button type="submit" className="btn btn-primary btn">Absenden</button>
       </form>
     </div>
   );

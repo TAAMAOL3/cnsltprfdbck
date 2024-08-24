@@ -6,6 +6,7 @@ const UserReceived = () => {
   const { user } = useContext(AuthContext);
   const [feedbacks, setFeedbacks] = useState([]);
   const [viewingFeedback, setViewingFeedback] = useState(null);
+  const [activeRow, setActiveRow] = useState(null); // Neuer Zustand für die aktive Zeile
 
   useEffect(() => {
     const fetchFeedbacks = async () => {
@@ -26,21 +27,27 @@ const UserReceived = () => {
     fetchFeedbacks();
   }, [user]);
 
-  const handleViewFeedback = (feedback) => {
+  const handleViewFeedback = (feedback, feedbackId) => {
     setViewingFeedback(feedback);
+    setActiveRow(feedbackId); // Setzt die aktive Zeile
+  };
+
+  const handleCloseFeedback = () => {
+    setViewingFeedback(null);
+    setActiveRow(null); // Entfernt die aktive Zeile
   };
 
   const getRatingIcon = (rating) => {
     if (rating >= 2) {
-      return <img className="page-icon" src="/Content/themes/base/images/VeryPositive.png" alt="Very Positive" />;
+      return <img className="evaluation-img" src="/Content/themes/base/images/VeryPositive.png" alt="Very Positive" />;
     } else if (rating === 1) {
-      return <img className="page-icon" src="/Content/themes/base/images/Positive.png" alt="Positive" />;
+      return <img className="evaluation-img" src="/Content/themes/base/images/Positive.png" alt="Positive" />;
     } else if (rating === 0) {
-      return <img className="page-icon" src="/Content/themes/base/images/Unknown.png" alt="Unknown" />;
+      return <img className="evaluation-img" src="/Content/themes/base/images/Unknown.png" alt="Unknown" />;
     } else if (rating === -1) {
-      return <img className="page-icon" src="/Content/themes/base/images/Negative.png" alt="Negative" />;
+      return <img className="evaluation-img" src="/Content/themes/base/images/Negative.png" alt="Negative" />;
     } else if (rating <= -2) {
-      return <img className="page-icon" src="/Content/themes/base/images/VeryNegative.png" alt="Very Negative" />;
+      return <img className="evaluation-img" src="/Content/themes/base/images/VeryNegative.png" alt="Very Negative" />;
     }
   };
 
@@ -51,7 +58,7 @@ const UserReceived = () => {
         <thead>
           <tr>
             <th>Erhalten am</th>
-            <th>Kunden Firma</th>
+            <th>Kunde</th>
             <th>Ansprechperson</th>
             <th>E-Mail</th>
             <th>Bewertung</th>
@@ -61,14 +68,17 @@ const UserReceived = () => {
         <tbody>
           {Array.isArray(feedbacks) && feedbacks.length > 0 ? (
             feedbacks.map((feedback) => (
-              <tr key={feedback.customerFdbckID}>
-                <td>{new Date(feedback.customerFdbckReceived).toLocaleDateString('de-DE')}</td>
+              <tr
+                key={feedback.customerFdbckID}
+                className={activeRow === feedback.customerFdbckID ? 'active' : ''} // Fügt die Klasse .active hinzu
+              >
+                <td>{new Date(feedback.customerFdbckReceived).toLocaleDateString()}</td>
                 <td>{feedback.customerCompany}</td>
                 <td>{feedback.customerName}</td>
                 <td>{feedback.customerMailaddr}</td>
                 <td>{getRatingIcon(feedback.rating)}</td>
                 <td>
-                  <button className="btn btn-primary" onClick={() => handleViewFeedback(feedback)}>
+                  <button className="btn btn-primary" onClick={() => handleViewFeedback(feedback, feedback.customerFdbckID)}>
                     Anzeigen
                   </button>
                 </td>
@@ -86,7 +96,7 @@ const UserReceived = () => {
         <div className="mt-5">
           <h3>Feedback anzeigen</h3>
           <p style={{ fontSize: '1.5rem' }}><strong>Feedback:</strong> {viewingFeedback.customerFdbckText}</p>
-          <button className="btn btn-secondary" onClick={() => setViewingFeedback(null)}>Schließen</button>
+          <button className="btn btn-secondary" onClick={handleCloseFeedback}>Schließen</button>
         </div>
       )}
     </div>

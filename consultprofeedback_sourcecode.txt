@@ -54,6 +54,7 @@ consultprofeedback/
 │   ├── dist/
 │   │   ├── css/
 │   │   │   ├── comstrap.css
+│   │   │   ├── extra.css
 │   │   ├── fonts/
 │   │   │   ├── sdx-icons.css
 │   │   │   ├── TheSansB_300_.css
@@ -21337,6 +21338,7 @@ exports.getUserFeedbackRequests = (req, res) => {
   const query = `
     SELECT * FROM t_customerfdbck
     WHERE usersFK = ? AND customerFdbckAnswered = 0
+    ORDER BY customerFdbckSend desc
   `;
 
   db.query(query, [userId], (err, results) => {
@@ -21440,7 +21442,7 @@ exports.getUserReceivedFeedbacks = (req, res) => {
   const query = `
     SELECT customerFdbckID, customerFdbckReceived, customerCompany, customerName, customerMailaddr, customerFdbckText, rating
     FROM t_customerfdbck
-    WHERE usersFK = ? AND customerFdbckAnswered = 1
+    WHERE usersFK = ? AND customerFdbckAnswered = 1 ORDER BY customerFdbckReceived desc
   `;
 
   db.query(query, [userId], (err, results) => {
@@ -21564,8 +21566,9 @@ exports.getTeamReceivedFeedbacks = (req, res) => {
   const { teamId, userId } = req.params;
 
   let query = `
-    SELECT customerFdbckID, customerFdbckReceived, customerCompany, customerName, customerMailaddr, customerFdbckText, rating
+    SELECT customerFdbckID, customerFdbckReceived, customerCompany, customerName, customerMailaddr, customerFdbckText, rating, concat(t_users.usersVorname, ' ', t_users.usersNachname) as usersName
     FROM t_customerfdbck
+    LEFT JOIN t_users on t_customerfdbck.usersFK = t_users.usersID
     WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?) AND customerFdbckAnswered = 1
   `;
 
@@ -21695,27 +21698,12 @@ exports.deleteTeamFeedback = (req, res) => {
 
 // Funktion zum Abrufen der Feedback-Anfragen für ein Team
 exports.getTeamFeedbackRequests = (req, res) => {
-//   const { teamId } = req.params;
-
-//   const query = `
-//     SELECT customerFdbckID, customerFdbckReceived, customerCompany, customerName, customerMailaddr, customerFdbckText
-//     FROM t_customerfdbck
-//     WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?) AND customerFdbckAnswered = 0
-//   `;
-
-//   db.query([teamId], (err, results) => {
-//     if (err) {
-//       console.error('Fehler beim Abrufen der Feedback-Anfragen:', err);
-//       return res.status(500).send('Fehler beim Abrufen der Feedback-Anfragen');
-//     }
-//     res.status(200).json(results);
-//   });
-// };
 const { teamId, userId } = req.params;
 
 let query = `
-  SELECT customerFdbckID, customerFdbckSend, customerCompany, customerName, customerMailaddr, customerFdbckText, rating
+  SELECT customerFdbckID, customerFdbckSend, customerCompany, customerName, customerMailaddr, customerFdbckText, rating, concat(t_users.usersVorname, ' ', t_users.usersNachname) as usersName
   FROM t_customerfdbck
+  LEFT JOIN t_users on t_customerfdbck.usersFK = t_users.usersID
   WHERE usersFK IN (SELECT usersID FROM t_users WHERE teamFK = ?) AND customerFdbckAnswered = 0
 `;
 
@@ -21845,7 +21833,7 @@ exports.getFeedbackByUser = (req, res) => {
 
   const query = `
     SELECT variousFdbckID, variousFdbckReceived, variousFdbckCustomer, variousFdbckDescription, uploadUrl 
-    FROM t_variousFdbck WHERE usersFK = ?
+    FROM t_variousFdbck WHERE usersFK = ? ORDER BY variousFdbckReceived DESC
   `;
   db.query(query, [userId], (err, results) => {
     if (err) {
@@ -22007,6 +21995,7 @@ module.exports = authenticateToken;
     <!-- CSS Stylesheets -->
     <link href="./Content/themes/base/jquery-ui.css" rel="stylesheet" type="text/css" />
     <link href="./dist/css/comstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="./dist/css/extra.css" rel="stylesheet" type="text/css" />
 
     <!-- JavaScript -->
     <script src="./Scripts/jquery-3.3.1.min.js"></script>
@@ -22642,6 +22631,7 @@ button.ui-button::-moz-focus-inner {
 .ui-helper-hidden {
 	display: none;
 }
+
 .ui-helper-hidden-accessible {
 	border: 0;
 	clip: rect(0 0 0 0);
@@ -22652,6 +22642,7 @@ button.ui-button::-moz-focus-inner {
 	position: absolute;
 	width: 1px;
 }
+
 .ui-helper-reset {
 	margin: 0;
 	padding: 0;
@@ -22662,15 +22653,18 @@ button.ui-button::-moz-focus-inner {
 	font-size: 100%;
 	list-style: none;
 }
+
 .ui-helper-clearfix:before,
 .ui-helper-clearfix:after {
 	content: "";
 	display: table;
 	border-collapse: collapse;
 }
+
 .ui-helper-clearfix:after {
 	clear: both;
 }
+
 .ui-helper-zfix {
 	width: 100%;
 	height: 100%;
@@ -22678,7 +22672,8 @@ button.ui-button::-moz-focus-inner {
 	left: 0;
 	position: absolute;
 	opacity: 0;
-	filter:Alpha(Opacity=0); /* support: IE8 */
+	filter: Alpha(Opacity=0);
+	/* support: IE8 */
 }
 
 .ui-front {
@@ -22723,6 +22718,7 @@ button.ui-button::-moz-focus-inner {
 	width: 100%;
 	height: 100%;
 }
+
 .ui-accordion .ui-accordion-header {
 	display: block;
 	cursor: pointer;
@@ -22731,17 +22727,20 @@ button.ui-button::-moz-focus-inner {
 	padding: .5em .5em .5em .7em;
 	font-size: 100%;
 }
+
 .ui-accordion .ui-accordion-content {
 	padding: 1em 2.2em;
 	border-top: 0;
 	overflow: auto;
 }
+
 .ui-autocomplete {
 	position: absolute;
 	top: 0;
 	left: 0;
 	cursor: default;
 }
+
 .ui-menu {
 	list-style: none;
 	padding: 0;
@@ -22749,19 +22748,23 @@ button.ui-button::-moz-focus-inner {
 	display: block;
 	outline: 0;
 }
+
 .ui-menu .ui-menu {
 	position: absolute;
 }
+
 .ui-menu .ui-menu-item {
 	margin: 0;
 	cursor: pointer;
 	/* support: IE10, see #8844 */
 	list-style-image: url("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7");
 }
+
 .ui-menu .ui-menu-item-wrapper {
 	position: relative;
 	padding: 3px 1em 3px .4em;
 }
+
 .ui-menu .ui-menu-divider {
 	margin: 5px 0;
 	height: 0;
@@ -22769,6 +22772,7 @@ button.ui-button::-moz-focus-inner {
 	line-height: 0;
 	border-width: 1px 0 0 0;
 }
+
 .ui-menu .ui-state-focus,
 .ui-menu .ui-state-active {
 	margin: -1px;
@@ -22778,6 +22782,7 @@ button.ui-button::-moz-focus-inner {
 .ui-menu-icons {
 	position: relative;
 }
+
 .ui-menu-icons .ui-menu-item-wrapper {
 	padding-left: 2em;
 }
@@ -22796,6 +22801,7 @@ button.ui-button::-moz-focus-inner {
 	left: auto;
 	right: 0;
 }
+
 .ui-button {
 	padding: .4em 1em;
 	display: inline-block;
@@ -22868,20 +22874,24 @@ button.ui-button::-moz-focus-inner {
 	border: 0;
 	padding: 0;
 }
+
 .ui-controlgroup {
 	vertical-align: middle;
 	display: inline-block;
 }
-.ui-controlgroup > .ui-controlgroup-item {
+
+.ui-controlgroup>.ui-controlgroup-item {
 	float: left;
 	margin-left: 0;
 	margin-right: 0;
 }
-.ui-controlgroup > .ui-controlgroup-item:focus,
-.ui-controlgroup > .ui-controlgroup-item.ui-visual-focus {
+
+.ui-controlgroup>.ui-controlgroup-item:focus,
+.ui-controlgroup>.ui-controlgroup-item.ui-visual-focus {
 	z-index: 9999;
 }
-.ui-controlgroup-vertical > .ui-controlgroup-item {
+
+.ui-controlgroup-vertical>.ui-controlgroup-item {
 	display: block;
 	float: none;
 	width: 100%;
@@ -22889,24 +22899,31 @@ button.ui-button::-moz-focus-inner {
 	margin-bottom: 0;
 	text-align: left;
 }
+
 .ui-controlgroup-vertical .ui-controlgroup-item {
 	box-sizing: border-box;
 }
+
 .ui-controlgroup .ui-controlgroup-label {
 	padding: .4em 1em;
 }
+
 .ui-controlgroup .ui-controlgroup-label span {
 	font-size: 80%;
 }
-.ui-controlgroup-horizontal .ui-controlgroup-label + .ui-controlgroup-item {
+
+.ui-controlgroup-horizontal .ui-controlgroup-label+.ui-controlgroup-item {
 	border-left: none;
 }
-.ui-controlgroup-vertical .ui-controlgroup-label + .ui-controlgroup-item {
+
+.ui-controlgroup-vertical .ui-controlgroup-label+.ui-controlgroup-item {
 	border-top: none;
 }
+
 .ui-controlgroup-horizontal .ui-controlgroup-label.ui-widget-content {
 	border-right: none;
 }
+
 .ui-controlgroup-vertical .ui-controlgroup-label.ui-widget-content {
 	border-bottom: none;
 }
@@ -22916,8 +22933,9 @@ button.ui-button::-moz-focus-inner {
 
 	/* Support: IE8 only, Android < 4.4 only */
 	width: 75%;
-	width: calc( 100% - 2.4em );
+	width: calc(100% - 2.4em);
 }
+
 .ui-controlgroup-vertical .ui-spinner .ui-spinner-up {
 	border-top-style: solid;
 }
@@ -22927,6 +22945,7 @@ button.ui-button::-moz-focus-inner {
 	border-radius: .12em;
 	border: none;
 }
+
 .ui-checkboxradio-radio-label .ui-icon-background {
 	width: 16px;
 	height: 16px;
@@ -22934,6 +22953,7 @@ button.ui-button::-moz-focus-inner {
 	overflow: visible;
 	border: none;
 }
+
 .ui-checkboxradio-radio-label.ui-checkboxradio-checked .ui-icon,
 .ui-checkboxradio-radio-label.ui-checkboxradio-checked:hover .ui-icon {
 	background-image: none;
@@ -22942,18 +22962,22 @@ button.ui-button::-moz-focus-inner {
 	border-width: 4px;
 	border-style: solid;
 }
+
 .ui-checkboxradio-disabled {
 	pointer-events: none;
 }
+
 .ui-datepicker {
 	width: 17em;
 	padding: .2em .2em 0;
 	display: none;
 }
+
 .ui-datepicker .ui-datepicker-header {
 	position: relative;
 	padding: .2em 0;
 }
+
 .ui-datepicker .ui-datepicker-prev,
 .ui-datepicker .ui-datepicker-next {
 	position: absolute;
@@ -22961,22 +22985,28 @@ button.ui-button::-moz-focus-inner {
 	width: 1.8em;
 	height: 1.8em;
 }
+
 .ui-datepicker .ui-datepicker-prev-hover,
 .ui-datepicker .ui-datepicker-next-hover {
 	top: 1px;
 }
+
 .ui-datepicker .ui-datepicker-prev {
 	left: 2px;
 }
+
 .ui-datepicker .ui-datepicker-next {
 	right: 2px;
 }
+
 .ui-datepicker .ui-datepicker-prev-hover {
 	left: 1px;
 }
+
 .ui-datepicker .ui-datepicker-next-hover {
 	right: 1px;
 }
+
 .ui-datepicker .ui-datepicker-prev span,
 .ui-datepicker .ui-datepicker-next span {
 	display: block;
@@ -22986,35 +23016,42 @@ button.ui-button::-moz-focus-inner {
 	top: 50%;
 	margin-top: -8px;
 }
+
 .ui-datepicker .ui-datepicker-title {
 	margin: 0 2.3em;
 	line-height: 1.8em;
 	text-align: center;
 }
+
 .ui-datepicker .ui-datepicker-title select {
 	font-size: 1em;
 	margin: 1px 0;
 }
+
 .ui-datepicker select.ui-datepicker-month,
 .ui-datepicker select.ui-datepicker-year {
 	width: 45%;
 }
+
 .ui-datepicker table {
 	width: 100%;
 	font-size: .9em;
 	border-collapse: collapse;
 	margin: 0 0 .4em;
 }
+
 .ui-datepicker th {
 	padding: .7em .3em;
 	text-align: center;
 	font-weight: bold;
 	border: 0;
 }
+
 .ui-datepicker td {
 	border: 0;
 	padding: 1px;
 }
+
 .ui-datepicker td span,
 .ui-datepicker td a {
 	display: block;
@@ -23022,6 +23059,7 @@ button.ui-button::-moz-focus-inner {
 	text-align: right;
 	text-decoration: none;
 }
+
 .ui-datepicker .ui-datepicker-buttonpane {
 	background-image: none;
 	margin: .7em 0 0 0;
@@ -23030,6 +23068,7 @@ button.ui-button::-moz-focus-inner {
 	border-right: 0;
 	border-bottom: 0;
 }
+
 .ui-datepicker .ui-datepicker-buttonpane button {
 	float: right;
 	margin: .5em .2em .4em;
@@ -23038,6 +23077,7 @@ button.ui-button::-moz-focus-inner {
 	width: auto;
 	overflow: visible;
 }
+
 .ui-datepicker .ui-datepicker-buttonpane button.ui-datepicker-current {
 	float: left;
 }
@@ -23046,29 +23086,37 @@ button.ui-button::-moz-focus-inner {
 .ui-datepicker.ui-datepicker-multi {
 	width: auto;
 }
+
 .ui-datepicker-multi .ui-datepicker-group {
 	float: left;
 }
+
 .ui-datepicker-multi .ui-datepicker-group table {
 	width: 95%;
 	margin: 0 auto .4em;
 }
+
 .ui-datepicker-multi-2 .ui-datepicker-group {
 	width: 50%;
 }
+
 .ui-datepicker-multi-3 .ui-datepicker-group {
 	width: 33.3%;
 }
+
 .ui-datepicker-multi-4 .ui-datepicker-group {
 	width: 25%;
 }
+
 .ui-datepicker-multi .ui-datepicker-group-last .ui-datepicker-header,
 .ui-datepicker-multi .ui-datepicker-group-middle .ui-datepicker-header {
 	border-left-width: 0;
 }
+
 .ui-datepicker-multi .ui-datepicker-buttonpane {
 	clear: left;
 }
+
 .ui-datepicker-row-break {
 	clear: both;
 	width: 100%;
@@ -23079,32 +23127,40 @@ button.ui-button::-moz-focus-inner {
 .ui-datepicker-rtl {
 	direction: rtl;
 }
+
 .ui-datepicker-rtl .ui-datepicker-prev {
 	right: 2px;
 	left: auto;
 }
+
 .ui-datepicker-rtl .ui-datepicker-next {
 	left: 2px;
 	right: auto;
 }
+
 .ui-datepicker-rtl .ui-datepicker-prev:hover {
 	right: 1px;
 	left: auto;
 }
+
 .ui-datepicker-rtl .ui-datepicker-next:hover {
 	left: 1px;
 	right: auto;
 }
+
 .ui-datepicker-rtl .ui-datepicker-buttonpane {
 	clear: right;
 }
+
 .ui-datepicker-rtl .ui-datepicker-buttonpane button {
 	float: left;
 }
+
 .ui-datepicker-rtl .ui-datepicker-buttonpane button.ui-datepicker-current,
 .ui-datepicker-rtl .ui-datepicker-group {
 	float: right;
 }
+
 .ui-datepicker-rtl .ui-datepicker-group-last .ui-datepicker-header,
 .ui-datepicker-rtl .ui-datepicker-group-middle .ui-datepicker-header {
 	border-right-width: 0;
@@ -23120,6 +23176,7 @@ button.ui-button::-moz-focus-inner {
 	left: .5em;
 	top: .3em;
 }
+
 .ui-dialog {
 	position: absolute;
 	top: 0;
@@ -23127,10 +23184,12 @@ button.ui-button::-moz-focus-inner {
 	padding: .2em;
 	outline: 0;
 }
+
 .ui-dialog .ui-dialog-titlebar {
 	padding: .4em 1em;
 	position: relative;
 }
+
 .ui-dialog .ui-dialog-title {
 	float: left;
 	margin: .1em 0;
@@ -23139,6 +23198,7 @@ button.ui-button::-moz-focus-inner {
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
+
 .ui-dialog .ui-dialog-titlebar-close {
 	position: absolute;
 	right: .3em;
@@ -23148,6 +23208,7 @@ button.ui-button::-moz-focus-inner {
 	padding: 1px;
 	height: 20px;
 }
+
 .ui-dialog .ui-dialog-content {
 	position: relative;
 	border: 0;
@@ -23155,6 +23216,7 @@ button.ui-button::-moz-focus-inner {
 	background: none;
 	overflow: auto;
 }
+
 .ui-dialog .ui-dialog-buttonpane {
 	text-align: left;
 	border-width: 1px 0 0 0;
@@ -23162,29 +23224,36 @@ button.ui-button::-moz-focus-inner {
 	margin-top: .5em;
 	padding: .3em 1em .5em .4em;
 }
+
 .ui-dialog .ui-dialog-buttonpane .ui-dialog-buttonset {
 	float: right;
 }
+
 .ui-dialog .ui-dialog-buttonpane button {
 	margin: .5em .4em .5em 0;
 	cursor: pointer;
 }
+
 .ui-dialog .ui-resizable-n {
 	height: 2px;
 	top: 0;
 }
+
 .ui-dialog .ui-resizable-e {
 	width: 2px;
 	right: 0;
 }
+
 .ui-dialog .ui-resizable-s {
 	height: 2px;
 	bottom: 0;
 }
+
 .ui-dialog .ui-resizable-w {
 	width: 2px;
 	left: 0;
 }
+
 .ui-dialog .ui-resizable-se,
 .ui-dialog .ui-resizable-sw,
 .ui-dialog .ui-resizable-ne,
@@ -23192,32 +23261,40 @@ button.ui-button::-moz-focus-inner {
 	width: 7px;
 	height: 7px;
 }
+
 .ui-dialog .ui-resizable-se {
 	right: 0;
 	bottom: 0;
 }
+
 .ui-dialog .ui-resizable-sw {
 	left: 0;
 	bottom: 0;
 }
+
 .ui-dialog .ui-resizable-ne {
 	right: 0;
 	top: 0;
 }
+
 .ui-dialog .ui-resizable-nw {
 	left: 0;
 	top: 0;
 }
+
 .ui-draggable .ui-dialog-titlebar {
 	cursor: move;
 }
+
 .ui-draggable-handle {
 	-ms-touch-action: none;
 	touch-action: none;
 }
+
 .ui-resizable {
 	position: relative;
 }
+
 .ui-resizable-handle {
 	position: absolute;
 	font-size: 0.1px;
@@ -23225,10 +23302,12 @@ button.ui-button::-moz-focus-inner {
 	-ms-touch-action: none;
 	touch-action: none;
 }
+
 .ui-resizable-disabled .ui-resizable-handle,
 .ui-resizable-autohide .ui-resizable-handle {
 	display: none;
 }
+
 .ui-resizable-n {
 	cursor: n-resize;
 	height: 7px;
@@ -23236,6 +23315,7 @@ button.ui-button::-moz-focus-inner {
 	top: -5px;
 	left: 0;
 }
+
 .ui-resizable-s {
 	cursor: s-resize;
 	height: 7px;
@@ -23243,6 +23323,7 @@ button.ui-button::-moz-focus-inner {
 	bottom: -5px;
 	left: 0;
 }
+
 .ui-resizable-e {
 	cursor: e-resize;
 	width: 7px;
@@ -23250,6 +23331,7 @@ button.ui-button::-moz-focus-inner {
 	top: 0;
 	height: 100%;
 }
+
 .ui-resizable-w {
 	cursor: w-resize;
 	width: 7px;
@@ -23257,6 +23339,7 @@ button.ui-button::-moz-focus-inner {
 	top: 0;
 	height: 100%;
 }
+
 .ui-resizable-se {
 	cursor: se-resize;
 	width: 12px;
@@ -23264,6 +23347,7 @@ button.ui-button::-moz-focus-inner {
 	right: 1px;
 	bottom: 1px;
 }
+
 .ui-resizable-sw {
 	cursor: sw-resize;
 	width: 9px;
@@ -23271,6 +23355,7 @@ button.ui-button::-moz-focus-inner {
 	left: -5px;
 	bottom: -5px;
 }
+
 .ui-resizable-nw {
 	cursor: nw-resize;
 	width: 9px;
@@ -23278,6 +23363,7 @@ button.ui-button::-moz-focus-inner {
 	left: -5px;
 	top: -5px;
 }
+
 .ui-resizable-ne {
 	cursor: ne-resize;
 	width: 9px;
@@ -23285,33 +23371,41 @@ button.ui-button::-moz-focus-inner {
 	right: -5px;
 	top: -5px;
 }
+
 .ui-progressbar {
 	height: 2em;
 	text-align: left;
 	overflow: hidden;
 }
+
 .ui-progressbar .ui-progressbar-value {
 	margin: -1px;
 	height: 100%;
 }
+
 .ui-progressbar .ui-progressbar-overlay {
 	background: url("data:image/gif;base64,R0lGODlhKAAoAIABAAAAAP///yH/C05FVFNDQVBFMi4wAwEAAAAh+QQJAQABACwAAAAAKAAoAAACkYwNqXrdC52DS06a7MFZI+4FHBCKoDeWKXqymPqGqxvJrXZbMx7Ttc+w9XgU2FB3lOyQRWET2IFGiU9m1frDVpxZZc6bfHwv4c1YXP6k1Vdy292Fb6UkuvFtXpvWSzA+HycXJHUXiGYIiMg2R6W459gnWGfHNdjIqDWVqemH2ekpObkpOlppWUqZiqr6edqqWQAAIfkECQEAAQAsAAAAACgAKAAAApSMgZnGfaqcg1E2uuzDmmHUBR8Qil95hiPKqWn3aqtLsS18y7G1SzNeowWBENtQd+T1JktP05nzPTdJZlR6vUxNWWjV+vUWhWNkWFwxl9VpZRedYcflIOLafaa28XdsH/ynlcc1uPVDZxQIR0K25+cICCmoqCe5mGhZOfeYSUh5yJcJyrkZWWpaR8doJ2o4NYq62lAAACH5BAkBAAEALAAAAAAoACgAAAKVDI4Yy22ZnINRNqosw0Bv7i1gyHUkFj7oSaWlu3ovC8GxNso5fluz3qLVhBVeT/Lz7ZTHyxL5dDalQWPVOsQWtRnuwXaFTj9jVVh8pma9JjZ4zYSj5ZOyma7uuolffh+IR5aW97cHuBUXKGKXlKjn+DiHWMcYJah4N0lYCMlJOXipGRr5qdgoSTrqWSq6WFl2ypoaUAAAIfkECQEAAQAsAAAAACgAKAAAApaEb6HLgd/iO7FNWtcFWe+ufODGjRfoiJ2akShbueb0wtI50zm02pbvwfWEMWBQ1zKGlLIhskiEPm9R6vRXxV4ZzWT2yHOGpWMyorblKlNp8HmHEb/lCXjcW7bmtXP8Xt229OVWR1fod2eWqNfHuMjXCPkIGNileOiImVmCOEmoSfn3yXlJWmoHGhqp6ilYuWYpmTqKUgAAIfkECQEAAQAsAAAAACgAKAAAApiEH6kb58biQ3FNWtMFWW3eNVcojuFGfqnZqSebuS06w5V80/X02pKe8zFwP6EFWOT1lDFk8rGERh1TTNOocQ61Hm4Xm2VexUHpzjymViHrFbiELsefVrn6XKfnt2Q9G/+Xdie499XHd2g4h7ioOGhXGJboGAnXSBnoBwKYyfioubZJ2Hn0RuRZaflZOil56Zp6iioKSXpUAAAh+QQJAQABACwAAAAAKAAoAAACkoQRqRvnxuI7kU1a1UU5bd5tnSeOZXhmn5lWK3qNTWvRdQxP8qvaC+/yaYQzXO7BMvaUEmJRd3TsiMAgswmNYrSgZdYrTX6tSHGZO73ezuAw2uxuQ+BbeZfMxsexY35+/Qe4J1inV0g4x3WHuMhIl2jXOKT2Q+VU5fgoSUI52VfZyfkJGkha6jmY+aaYdirq+lQAACH5BAkBAAEALAAAAAAoACgAAAKWBIKpYe0L3YNKToqswUlvznigd4wiR4KhZrKt9Upqip61i9E3vMvxRdHlbEFiEXfk9YARYxOZZD6VQ2pUunBmtRXo1Lf8hMVVcNl8JafV38aM2/Fu5V16Bn63r6xt97j09+MXSFi4BniGFae3hzbH9+hYBzkpuUh5aZmHuanZOZgIuvbGiNeomCnaxxap2upaCZsq+1kAACH5BAkBAAEALAAAAAAoACgAAAKXjI8By5zf4kOxTVrXNVlv1X0d8IGZGKLnNpYtm8Lr9cqVeuOSvfOW79D9aDHizNhDJidFZhNydEahOaDH6nomtJjp1tutKoNWkvA6JqfRVLHU/QUfau9l2x7G54d1fl995xcIGAdXqMfBNadoYrhH+Mg2KBlpVpbluCiXmMnZ2Sh4GBqJ+ckIOqqJ6LmKSllZmsoq6wpQAAAh+QQJAQABACwAAAAAKAAoAAAClYx/oLvoxuJDkU1a1YUZbJ59nSd2ZXhWqbRa2/gF8Gu2DY3iqs7yrq+xBYEkYvFSM8aSSObE+ZgRl1BHFZNr7pRCavZ5BW2142hY3AN/zWtsmf12p9XxxFl2lpLn1rseztfXZjdIWIf2s5dItwjYKBgo9yg5pHgzJXTEeGlZuenpyPmpGQoKOWkYmSpaSnqKileI2FAAACH5BAkBAAEALAAAAAAoACgAAAKVjB+gu+jG4kORTVrVhRlsnn2dJ3ZleFaptFrb+CXmO9OozeL5VfP99HvAWhpiUdcwkpBH3825AwYdU8xTqlLGhtCosArKMpvfa1mMRae9VvWZfeB2XfPkeLmm18lUcBj+p5dnN8jXZ3YIGEhYuOUn45aoCDkp16hl5IjYJvjWKcnoGQpqyPlpOhr3aElaqrq56Bq7VAAAOw==");
 	height: 100%;
-	filter: alpha(opacity=25); /* support: IE8 */
+	filter: alpha(opacity=25);
+	/* support: IE8 */
 	opacity: 0.25;
 }
+
 .ui-progressbar-indeterminate .ui-progressbar-value {
 	background-image: none;
 }
+
 .ui-selectable {
 	-ms-touch-action: none;
 	touch-action: none;
 }
+
 .ui-selectable-helper {
 	position: absolute;
 	z-index: 100;
 	border: 1px dotted black;
 }
+
 .ui-selectmenu-menu {
 	padding: 0;
 	margin: 0;
@@ -23320,11 +23414,13 @@ button.ui-button::-moz-focus-inner {
 	left: 0;
 	display: none;
 }
+
 .ui-selectmenu-menu .ui-menu {
 	overflow: auto;
 	overflow-x: hidden;
 	padding-bottom: 1px;
 }
+
 .ui-selectmenu-menu .ui-menu .ui-selectmenu-optgroup {
 	font-size: 1em;
 	font-weight: bold;
@@ -23334,28 +23430,34 @@ button.ui-button::-moz-focus-inner {
 	height: auto;
 	border: 0;
 }
+
 .ui-selectmenu-open {
 	display: block;
 }
+
 .ui-selectmenu-text {
 	display: block;
 	margin-right: 20px;
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
+
 .ui-selectmenu-button.ui-button {
 	text-align: left;
 	white-space: nowrap;
 	width: 14em;
 }
+
 .ui-selectmenu-icon.ui-icon {
 	float: right;
 	margin-top: 0;
 }
+
 .ui-slider {
 	position: relative;
 	text-align: left;
 }
+
 .ui-slider .ui-slider-handle {
 	position: absolute;
 	z-index: 2;
@@ -23365,6 +23467,7 @@ button.ui-button::-moz-focus-inner {
 	-ms-touch-action: none;
 	touch-action: none;
 }
+
 .ui-slider .ui-slider-range {
 	position: absolute;
 	z-index: 1;
@@ -23383,17 +23486,21 @@ button.ui-button::-moz-focus-inner {
 .ui-slider-horizontal {
 	height: .8em;
 }
+
 .ui-slider-horizontal .ui-slider-handle {
 	top: -.3em;
 	margin-left: -.6em;
 }
+
 .ui-slider-horizontal .ui-slider-range {
 	top: 0;
 	height: 100%;
 }
+
 .ui-slider-horizontal .ui-slider-range-min {
 	left: 0;
 }
+
 .ui-slider-horizontal .ui-slider-range-max {
 	right: 0;
 }
@@ -23402,25 +23509,31 @@ button.ui-button::-moz-focus-inner {
 	width: .8em;
 	height: 100px;
 }
+
 .ui-slider-vertical .ui-slider-handle {
 	left: -.3em;
 	margin-left: 0;
 	margin-bottom: -.6em;
 }
+
 .ui-slider-vertical .ui-slider-range {
 	left: 0;
 	width: 100%;
 }
+
 .ui-slider-vertical .ui-slider-range-min {
 	bottom: 0;
 }
+
 .ui-slider-vertical .ui-slider-range-max {
 	top: 0;
 }
+
 .ui-sortable-handle {
 	-ms-touch-action: none;
 	touch-action: none;
 }
+
 .ui-spinner {
 	position: relative;
 	display: inline-block;
@@ -23428,6 +23541,7 @@ button.ui-button::-moz-focus-inner {
 	padding: 0;
 	vertical-align: middle;
 }
+
 .ui-spinner-input {
 	border: none;
 	background: none;
@@ -23438,6 +23552,7 @@ button.ui-button::-moz-focus-inner {
 	margin-left: .4em;
 	margin-right: 2em;
 }
+
 .ui-spinner-button {
 	width: 1.6em;
 	height: 50%;
@@ -23451,26 +23566,33 @@ button.ui-button::-moz-focus-inner {
 	overflow: hidden;
 	right: 0;
 }
+
 /* more specificity required here to override default borders */
 .ui-spinner a.ui-spinner-button {
 	border-top-style: none;
 	border-bottom-style: none;
 	border-right-style: none;
 }
+
 .ui-spinner-up {
 	top: 0;
 }
+
 .ui-spinner-down {
 	bottom: 0;
 }
+
 .ui-tabs {
-	position: relative;/* position: relative prevents IE scroll bug (element with position: relative inside container with overflow: auto appear as "fixed") */
+	position: relative;
+	/* position: relative prevents IE scroll bug (element with position: relative inside container with overflow: auto appear as "fixed") */
 	padding: .2em;
 }
+
 .ui-tabs .ui-tabs-nav {
 	margin: 0;
 	padding: .2em .2em 0;
 }
+
 .ui-tabs .ui-tabs-nav li {
 	list-style: none;
 	float: left;
@@ -23481,71 +23603,86 @@ button.ui-button::-moz-focus-inner {
 	padding: 0;
 	white-space: nowrap;
 }
+
 .ui-tabs .ui-tabs-nav .ui-tabs-anchor {
 	float: left;
 	padding: .5em 1em;
 	text-decoration: none;
 }
+
 .ui-tabs .ui-tabs-nav li.ui-tabs-active {
 	margin-bottom: -1px;
 	padding-bottom: 1px;
 }
+
 .ui-tabs .ui-tabs-nav li.ui-tabs-active .ui-tabs-anchor,
 .ui-tabs .ui-tabs-nav li.ui-state-disabled .ui-tabs-anchor,
 .ui-tabs .ui-tabs-nav li.ui-tabs-loading .ui-tabs-anchor {
 	cursor: text;
 }
+
 .ui-tabs-collapsible .ui-tabs-nav li.ui-tabs-active .ui-tabs-anchor {
 	cursor: pointer;
 }
+
 .ui-tabs .ui-tabs-panel {
 	display: block;
 	border-width: 0;
 	padding: 1em 1.4em;
 	background: none;
 }
+
 .ui-tooltip {
 	padding: 8px;
 	position: absolute;
 	z-index: 9999;
 	max-width: 300px;
 }
+
 body .ui-tooltip {
 	border-width: 2px;
 }
+
 /* Component containers
 ----------------------------------*/
 .ui-widget {
-	font-family: Arial,Helvetica,sans-serif;
+	font-family: Arial, Helvetica, sans-serif;
 	font-size: 1em;
 }
+
 .ui-widget .ui-widget {
 	font-size: 1em;
 }
+
 .ui-widget input,
 .ui-widget select,
 .ui-widget textarea,
 .ui-widget button {
-	font-family: Arial,Helvetica,sans-serif;
+	font-family: Arial, Helvetica, sans-serif;
 	font-size: 1em;
 }
+
 .ui-widget.ui-widget-content {
 	border: 1px solid #c5c5c5;
 }
+
 .ui-widget-content {
 	border: 1px solid #dddddd;
 	background: #ffffff;
 	color: #333333;
 }
+
 .ui-widget-content a {
 	color: #333333;
 }
+
 .ui-widget-header {
 	border: 1px solid #dddddd;
 	background: #e9e9e9;
 	color: #333333;
 	font-weight: bold;
 }
+
 .ui-widget-header a {
 	color: #333333;
 }
@@ -23566,6 +23703,7 @@ html .ui-button.ui-state-disabled:active {
 	font-weight: normal;
 	color: #454545;
 }
+
 .ui-state-default a,
 .ui-state-default a:link,
 .ui-state-default a:visited,
@@ -23576,6 +23714,7 @@ a:visited.ui-button,
 	color: #454545;
 	text-decoration: none;
 }
+
 .ui-state-hover,
 .ui-widget-content .ui-state-hover,
 .ui-widget-header .ui-state-hover,
@@ -23589,6 +23728,7 @@ a:visited.ui-button,
 	font-weight: normal;
 	color: #2b2b2b;
 }
+
 .ui-state-hover a,
 .ui-state-hover a:hover,
 .ui-state-hover a:link,
@@ -23606,6 +23746,7 @@ a.ui-button:focus {
 .ui-visual-focus {
 	box-shadow: 0 0 3px 1px rgb(94, 158, 214);
 }
+
 .ui-state-active,
 .ui-widget-content .ui-state-active,
 .ui-widget-header .ui-state-active,
@@ -23617,11 +23758,13 @@ a.ui-button:active,
 	font-weight: normal;
 	color: #ffffff;
 }
+
 .ui-icon-background,
 .ui-state-active .ui-icon-background {
 	border: #003eff;
 	background-color: #ffffff;
 }
+
 .ui-state-active a,
 .ui-state-active a:link,
 .ui-state-active a:visited {
@@ -23638,15 +23781,18 @@ a.ui-button:active,
 	background: #fffa90;
 	color: #777620;
 }
+
 .ui-state-checked {
 	border: 1px solid #dad55e;
 	background: #fffa90;
 }
+
 .ui-state-highlight a,
 .ui-widget-content .ui-state-highlight a,
 .ui-widget-header .ui-state-highlight a {
 	color: #777620;
 }
+
 .ui-state-error,
 .ui-widget-content .ui-state-error,
 .ui-widget-header .ui-state-error {
@@ -23654,37 +23800,46 @@ a.ui-button:active,
 	background: #fddfdf;
 	color: #5f3f3f;
 }
+
 .ui-state-error a,
 .ui-widget-content .ui-state-error a,
 .ui-widget-header .ui-state-error a {
 	color: #5f3f3f;
 }
+
 .ui-state-error-text,
 .ui-widget-content .ui-state-error-text,
 .ui-widget-header .ui-state-error-text {
 	color: #5f3f3f;
 }
+
 .ui-priority-primary,
 .ui-widget-content .ui-priority-primary,
 .ui-widget-header .ui-priority-primary {
 	font-weight: bold;
 }
+
 .ui-priority-secondary,
 .ui-widget-content .ui-priority-secondary,
 .ui-widget-header .ui-priority-secondary {
 	opacity: .7;
-	filter:Alpha(Opacity=70); /* support: IE8 */
+	filter: Alpha(Opacity=70);
+	/* support: IE8 */
 	font-weight: normal;
 }
+
 .ui-state-disabled,
 .ui-widget-content .ui-state-disabled,
 .ui-widget-header .ui-state-disabled {
 	opacity: .35;
-	filter:Alpha(Opacity=35); /* support: IE8 */
+	filter: Alpha(Opacity=35);
+	/* support: IE8 */
 	background-image: none;
 }
+
 .ui-state-disabled .ui-icon {
-	filter:Alpha(Opacity=35); /* support: IE8 - See #6059 */
+	filter: Alpha(Opacity=35);
+	/* support: IE8 - See #6059 */
 }
 
 /* Icons
@@ -23695,16 +23850,20 @@ a.ui-button:active,
 	width: 16px;
 	height: 16px;
 }
+
 .ui-icon,
 .ui-widget-content .ui-icon {
 	background-image: url("images/ui-icons_444444_256x240.png");
 }
+
 .ui-widget-header .ui-icon {
 	background-image: url("images/ui-icons_444444_256x240.png");
 }
+
 .ui-button .ui-icon {
 	background-image: url("images/ui-icons_777777_256x240.png");
 }
+
 .ui-state-hover .ui-icon,
 .ui-state-focus .ui-icon,
 .ui-button:hover .ui-icon,
@@ -23712,196 +23871,723 @@ a.ui-button:active,
 .ui-state-default .ui-icon {
 	background-image: url("images/ui-icons_555555_256x240.png");
 }
+
 .ui-state-active .ui-icon,
 .ui-button:active .ui-icon {
 	background-image: url("images/ui-icons_ffffff_256x240.png");
 }
+
 .ui-state-highlight .ui-icon,
 .ui-button .ui-state-highlight.ui-icon {
 	background-image: url("images/ui-icons_777620_256x240.png");
 }
+
 .ui-state-error .ui-icon,
 .ui-state-error-text .ui-icon {
 	background-image: url("images/ui-icons_cc0000_256x240.png");
 }
 
 /* positioning */
-.ui-icon-blank { background-position: 16px 16px; }
-.ui-icon-caret-1-n { background-position: 0 0; }
-.ui-icon-caret-1-ne { background-position: -16px 0; }
-.ui-icon-caret-1-e { background-position: -32px 0; }
-.ui-icon-caret-1-se { background-position: -48px 0; }
-.ui-icon-caret-1-s { background-position: -65px 0; }
-.ui-icon-caret-1-sw { background-position: -80px 0; }
-.ui-icon-caret-1-w { background-position: -96px 0; }
-.ui-icon-caret-1-nw { background-position: -112px 0; }
-.ui-icon-caret-2-n-s { background-position: -128px 0; }
-.ui-icon-caret-2-e-w { background-position: -144px 0; }
-.ui-icon-triangle-1-n { background-position: 0 -16px; }
-.ui-icon-triangle-1-ne { background-position: -16px -16px; }
-.ui-icon-triangle-1-e { background-position: -32px -16px; }
-.ui-icon-triangle-1-se { background-position: -48px -16px; }
-.ui-icon-triangle-1-s { background-position: -65px -16px; }
-.ui-icon-triangle-1-sw { background-position: -80px -16px; }
-.ui-icon-triangle-1-w { background-position: -96px -16px; }
-.ui-icon-triangle-1-nw { background-position: -112px -16px; }
-.ui-icon-triangle-2-n-s { background-position: -128px -16px; }
-.ui-icon-triangle-2-e-w { background-position: -144px -16px; }
-.ui-icon-arrow-1-n { background-position: 0 -32px; }
-.ui-icon-arrow-1-ne { background-position: -16px -32px; }
-.ui-icon-arrow-1-e { background-position: -32px -32px; }
-.ui-icon-arrow-1-se { background-position: -48px -32px; }
-.ui-icon-arrow-1-s { background-position: -65px -32px; }
-.ui-icon-arrow-1-sw { background-position: -80px -32px; }
-.ui-icon-arrow-1-w { background-position: -96px -32px; }
-.ui-icon-arrow-1-nw { background-position: -112px -32px; }
-.ui-icon-arrow-2-n-s { background-position: -128px -32px; }
-.ui-icon-arrow-2-ne-sw { background-position: -144px -32px; }
-.ui-icon-arrow-2-e-w { background-position: -160px -32px; }
-.ui-icon-arrow-2-se-nw { background-position: -176px -32px; }
-.ui-icon-arrowstop-1-n { background-position: -192px -32px; }
-.ui-icon-arrowstop-1-e { background-position: -208px -32px; }
-.ui-icon-arrowstop-1-s { background-position: -224px -32px; }
-.ui-icon-arrowstop-1-w { background-position: -240px -32px; }
-.ui-icon-arrowthick-1-n { background-position: 1px -48px; }
-.ui-icon-arrowthick-1-ne { background-position: -16px -48px; }
-.ui-icon-arrowthick-1-e { background-position: -32px -48px; }
-.ui-icon-arrowthick-1-se { background-position: -48px -48px; }
-.ui-icon-arrowthick-1-s { background-position: -64px -48px; }
-.ui-icon-arrowthick-1-sw { background-position: -80px -48px; }
-.ui-icon-arrowthick-1-w { background-position: -96px -48px; }
-.ui-icon-arrowthick-1-nw { background-position: -112px -48px; }
-.ui-icon-arrowthick-2-n-s { background-position: -128px -48px; }
-.ui-icon-arrowthick-2-ne-sw { background-position: -144px -48px; }
-.ui-icon-arrowthick-2-e-w { background-position: -160px -48px; }
-.ui-icon-arrowthick-2-se-nw { background-position: -176px -48px; }
-.ui-icon-arrowthickstop-1-n { background-position: -192px -48px; }
-.ui-icon-arrowthickstop-1-e { background-position: -208px -48px; }
-.ui-icon-arrowthickstop-1-s { background-position: -224px -48px; }
-.ui-icon-arrowthickstop-1-w { background-position: -240px -48px; }
-.ui-icon-arrowreturnthick-1-w { background-position: 0 -64px; }
-.ui-icon-arrowreturnthick-1-n { background-position: -16px -64px; }
-.ui-icon-arrowreturnthick-1-e { background-position: -32px -64px; }
-.ui-icon-arrowreturnthick-1-s { background-position: -48px -64px; }
-.ui-icon-arrowreturn-1-w { background-position: -64px -64px; }
-.ui-icon-arrowreturn-1-n { background-position: -80px -64px; }
-.ui-icon-arrowreturn-1-e { background-position: -96px -64px; }
-.ui-icon-arrowreturn-1-s { background-position: -112px -64px; }
-.ui-icon-arrowrefresh-1-w { background-position: -128px -64px; }
-.ui-icon-arrowrefresh-1-n { background-position: -144px -64px; }
-.ui-icon-arrowrefresh-1-e { background-position: -160px -64px; }
-.ui-icon-arrowrefresh-1-s { background-position: -176px -64px; }
-.ui-icon-arrow-4 { background-position: 0 -80px; }
-.ui-icon-arrow-4-diag { background-position: -16px -80px; }
-.ui-icon-extlink { background-position: -32px -80px; }
-.ui-icon-newwin { background-position: -48px -80px; }
-.ui-icon-refresh { background-position: -64px -80px; }
-.ui-icon-shuffle { background-position: -80px -80px; }
-.ui-icon-transfer-e-w { background-position: -96px -80px; }
-.ui-icon-transferthick-e-w { background-position: -112px -80px; }
-.ui-icon-folder-collapsed { background-position: 0 -96px; }
-.ui-icon-folder-open { background-position: -16px -96px; }
-.ui-icon-document { background-position: -32px -96px; }
-.ui-icon-document-b { background-position: -48px -96px; }
-.ui-icon-note { background-position: -64px -96px; }
-.ui-icon-mail-closed { background-position: -80px -96px; }
-.ui-icon-mail-open { background-position: -96px -96px; }
-.ui-icon-suitcase { background-position: -112px -96px; }
-.ui-icon-comment { background-position: -128px -96px; }
-.ui-icon-person { background-position: -144px -96px; }
-.ui-icon-print { background-position: -160px -96px; }
-.ui-icon-trash { background-position: -176px -96px; }
-.ui-icon-locked { background-position: -192px -96px; }
-.ui-icon-unlocked { background-position: -208px -96px; }
-.ui-icon-bookmark { background-position: -224px -96px; }
-.ui-icon-tag { background-position: -240px -96px; }
-.ui-icon-home { background-position: 0 -112px; }
-.ui-icon-flag { background-position: -16px -112px; }
-.ui-icon-calendar { background-position: -32px -112px; }
-.ui-icon-cart { background-position: -48px -112px; }
-.ui-icon-pencil { background-position: -64px -112px; }
-.ui-icon-clock { background-position: -80px -112px; }
-.ui-icon-disk { background-position: -96px -112px; }
-.ui-icon-calculator { background-position: -112px -112px; }
-.ui-icon-zoomin { background-position: -128px -112px; }
-.ui-icon-zoomout { background-position: -144px -112px; }
-.ui-icon-search { background-position: -160px -112px; }
-.ui-icon-wrench { background-position: -176px -112px; }
-.ui-icon-gear { background-position: -192px -112px; }
-.ui-icon-heart { background-position: -208px -112px; }
-.ui-icon-star { background-position: -224px -112px; }
-.ui-icon-link { background-position: -240px -112px; }
-.ui-icon-cancel { background-position: 0 -128px; }
-.ui-icon-plus { background-position: -16px -128px; }
-.ui-icon-plusthick { background-position: -32px -128px; }
-.ui-icon-minus { background-position: -48px -128px; }
-.ui-icon-minusthick { background-position: -64px -128px; }
-.ui-icon-close { background-position: -80px -128px; }
-.ui-icon-closethick { background-position: -96px -128px; }
-.ui-icon-key { background-position: -112px -128px; }
-.ui-icon-lightbulb { background-position: -128px -128px; }
-.ui-icon-scissors { background-position: -144px -128px; }
-.ui-icon-clipboard { background-position: -160px -128px; }
-.ui-icon-copy { background-position: -176px -128px; }
-.ui-icon-contact { background-position: -192px -128px; }
-.ui-icon-image { background-position: -208px -128px; }
-.ui-icon-video { background-position: -224px -128px; }
-.ui-icon-script { background-position: -240px -128px; }
-.ui-icon-alert { background-position: 0 -144px; }
-.ui-icon-info { background-position: -16px -144px; }
-.ui-icon-notice { background-position: -32px -144px; }
-.ui-icon-help { background-position: -48px -144px; }
-.ui-icon-check { background-position: -64px -144px; }
-.ui-icon-bullet { background-position: -80px -144px; }
-.ui-icon-radio-on { background-position: -96px -144px; }
-.ui-icon-radio-off { background-position: -112px -144px; }
-.ui-icon-pin-w { background-position: -128px -144px; }
-.ui-icon-pin-s { background-position: -144px -144px; }
-.ui-icon-play { background-position: 0 -160px; }
-.ui-icon-pause { background-position: -16px -160px; }
-.ui-icon-seek-next { background-position: -32px -160px; }
-.ui-icon-seek-prev { background-position: -48px -160px; }
-.ui-icon-seek-end { background-position: -64px -160px; }
-.ui-icon-seek-start { background-position: -80px -160px; }
+.ui-icon-blank {
+	background-position: 16px 16px;
+}
+
+.ui-icon-caret-1-n {
+	background-position: 0 0;
+}
+
+.ui-icon-caret-1-ne {
+	background-position: -16px 0;
+}
+
+.ui-icon-caret-1-e {
+	background-position: -32px 0;
+}
+
+.ui-icon-caret-1-se {
+	background-position: -48px 0;
+}
+
+.ui-icon-caret-1-s {
+	background-position: -65px 0;
+}
+
+.ui-icon-caret-1-sw {
+	background-position: -80px 0;
+}
+
+.ui-icon-caret-1-w {
+	background-position: -96px 0;
+}
+
+.ui-icon-caret-1-nw {
+	background-position: -112px 0;
+}
+
+.ui-icon-caret-2-n-s {
+	background-position: -128px 0;
+}
+
+.ui-icon-caret-2-e-w {
+	background-position: -144px 0;
+}
+
+.ui-icon-triangle-1-n {
+	background-position: 0 -16px;
+}
+
+.ui-icon-triangle-1-ne {
+	background-position: -16px -16px;
+}
+
+.ui-icon-triangle-1-e {
+	background-position: -32px -16px;
+}
+
+.ui-icon-triangle-1-se {
+	background-position: -48px -16px;
+}
+
+.ui-icon-triangle-1-s {
+	background-position: -65px -16px;
+}
+
+.ui-icon-triangle-1-sw {
+	background-position: -80px -16px;
+}
+
+.ui-icon-triangle-1-w {
+	background-position: -96px -16px;
+}
+
+.ui-icon-triangle-1-nw {
+	background-position: -112px -16px;
+}
+
+.ui-icon-triangle-2-n-s {
+	background-position: -128px -16px;
+}
+
+.ui-icon-triangle-2-e-w {
+	background-position: -144px -16px;
+}
+
+.ui-icon-arrow-1-n {
+	background-position: 0 -32px;
+}
+
+.ui-icon-arrow-1-ne {
+	background-position: -16px -32px;
+}
+
+.ui-icon-arrow-1-e {
+	background-position: -32px -32px;
+}
+
+.ui-icon-arrow-1-se {
+	background-position: -48px -32px;
+}
+
+.ui-icon-arrow-1-s {
+	background-position: -65px -32px;
+}
+
+.ui-icon-arrow-1-sw {
+	background-position: -80px -32px;
+}
+
+.ui-icon-arrow-1-w {
+	background-position: -96px -32px;
+}
+
+.ui-icon-arrow-1-nw {
+	background-position: -112px -32px;
+}
+
+.ui-icon-arrow-2-n-s {
+	background-position: -128px -32px;
+}
+
+.ui-icon-arrow-2-ne-sw {
+	background-position: -144px -32px;
+}
+
+.ui-icon-arrow-2-e-w {
+	background-position: -160px -32px;
+}
+
+.ui-icon-arrow-2-se-nw {
+	background-position: -176px -32px;
+}
+
+.ui-icon-arrowstop-1-n {
+	background-position: -192px -32px;
+}
+
+.ui-icon-arrowstop-1-e {
+	background-position: -208px -32px;
+}
+
+.ui-icon-arrowstop-1-s {
+	background-position: -224px -32px;
+}
+
+.ui-icon-arrowstop-1-w {
+	background-position: -240px -32px;
+}
+
+.ui-icon-arrowthick-1-n {
+	background-position: 1px -48px;
+}
+
+.ui-icon-arrowthick-1-ne {
+	background-position: -16px -48px;
+}
+
+.ui-icon-arrowthick-1-e {
+	background-position: -32px -48px;
+}
+
+.ui-icon-arrowthick-1-se {
+	background-position: -48px -48px;
+}
+
+.ui-icon-arrowthick-1-s {
+	background-position: -64px -48px;
+}
+
+.ui-icon-arrowthick-1-sw {
+	background-position: -80px -48px;
+}
+
+.ui-icon-arrowthick-1-w {
+	background-position: -96px -48px;
+}
+
+.ui-icon-arrowthick-1-nw {
+	background-position: -112px -48px;
+}
+
+.ui-icon-arrowthick-2-n-s {
+	background-position: -128px -48px;
+}
+
+.ui-icon-arrowthick-2-ne-sw {
+	background-position: -144px -48px;
+}
+
+.ui-icon-arrowthick-2-e-w {
+	background-position: -160px -48px;
+}
+
+.ui-icon-arrowthick-2-se-nw {
+	background-position: -176px -48px;
+}
+
+.ui-icon-arrowthickstop-1-n {
+	background-position: -192px -48px;
+}
+
+.ui-icon-arrowthickstop-1-e {
+	background-position: -208px -48px;
+}
+
+.ui-icon-arrowthickstop-1-s {
+	background-position: -224px -48px;
+}
+
+.ui-icon-arrowthickstop-1-w {
+	background-position: -240px -48px;
+}
+
+.ui-icon-arrowreturnthick-1-w {
+	background-position: 0 -64px;
+}
+
+.ui-icon-arrowreturnthick-1-n {
+	background-position: -16px -64px;
+}
+
+.ui-icon-arrowreturnthick-1-e {
+	background-position: -32px -64px;
+}
+
+.ui-icon-arrowreturnthick-1-s {
+	background-position: -48px -64px;
+}
+
+.ui-icon-arrowreturn-1-w {
+	background-position: -64px -64px;
+}
+
+.ui-icon-arrowreturn-1-n {
+	background-position: -80px -64px;
+}
+
+.ui-icon-arrowreturn-1-e {
+	background-position: -96px -64px;
+}
+
+.ui-icon-arrowreturn-1-s {
+	background-position: -112px -64px;
+}
+
+.ui-icon-arrowrefresh-1-w {
+	background-position: -128px -64px;
+}
+
+.ui-icon-arrowrefresh-1-n {
+	background-position: -144px -64px;
+}
+
+.ui-icon-arrowrefresh-1-e {
+	background-position: -160px -64px;
+}
+
+.ui-icon-arrowrefresh-1-s {
+	background-position: -176px -64px;
+}
+
+.ui-icon-arrow-4 {
+	background-position: 0 -80px;
+}
+
+.ui-icon-arrow-4-diag {
+	background-position: -16px -80px;
+}
+
+.ui-icon-extlink {
+	background-position: -32px -80px;
+}
+
+.ui-icon-newwin {
+	background-position: -48px -80px;
+}
+
+.ui-icon-refresh {
+	background-position: -64px -80px;
+}
+
+.ui-icon-shuffle {
+	background-position: -80px -80px;
+}
+
+.ui-icon-transfer-e-w {
+	background-position: -96px -80px;
+}
+
+.ui-icon-transferthick-e-w {
+	background-position: -112px -80px;
+}
+
+.ui-icon-folder-collapsed {
+	background-position: 0 -96px;
+}
+
+.ui-icon-folder-open {
+	background-position: -16px -96px;
+}
+
+.ui-icon-document {
+	background-position: -32px -96px;
+}
+
+.ui-icon-document-b {
+	background-position: -48px -96px;
+}
+
+.ui-icon-note {
+	background-position: -64px -96px;
+}
+
+.ui-icon-mail-closed {
+	background-position: -80px -96px;
+}
+
+.ui-icon-mail-open {
+	background-position: -96px -96px;
+}
+
+.ui-icon-suitcase {
+	background-position: -112px -96px;
+}
+
+.ui-icon-comment {
+	background-position: -128px -96px;
+}
+
+.ui-icon-person {
+	background-position: -144px -96px;
+}
+
+.ui-icon-print {
+	background-position: -160px -96px;
+}
+
+.ui-icon-trash {
+	background-position: -176px -96px;
+}
+
+.ui-icon-locked {
+	background-position: -192px -96px;
+}
+
+.ui-icon-unlocked {
+	background-position: -208px -96px;
+}
+
+.ui-icon-bookmark {
+	background-position: -224px -96px;
+}
+
+.ui-icon-tag {
+	background-position: -240px -96px;
+}
+
+.ui-icon-home {
+	background-position: 0 -112px;
+}
+
+.ui-icon-flag {
+	background-position: -16px -112px;
+}
+
+.ui-icon-calendar {
+	background-position: -32px -112px;
+}
+
+.ui-icon-cart {
+	background-position: -48px -112px;
+}
+
+.ui-icon-pencil {
+	background-position: -64px -112px;
+}
+
+.ui-icon-clock {
+	background-position: -80px -112px;
+}
+
+.ui-icon-disk {
+	background-position: -96px -112px;
+}
+
+.ui-icon-calculator {
+	background-position: -112px -112px;
+}
+
+.ui-icon-zoomin {
+	background-position: -128px -112px;
+}
+
+.ui-icon-zoomout {
+	background-position: -144px -112px;
+}
+
+.ui-icon-search {
+	background-position: -160px -112px;
+}
+
+.ui-icon-wrench {
+	background-position: -176px -112px;
+}
+
+.ui-icon-gear {
+	background-position: -192px -112px;
+}
+
+.ui-icon-heart {
+	background-position: -208px -112px;
+}
+
+.ui-icon-star {
+	background-position: -224px -112px;
+}
+
+.ui-icon-link {
+	background-position: -240px -112px;
+}
+
+.ui-icon-cancel {
+	background-position: 0 -128px;
+}
+
+.ui-icon-plus {
+	background-position: -16px -128px;
+}
+
+.ui-icon-plusthick {
+	background-position: -32px -128px;
+}
+
+.ui-icon-minus {
+	background-position: -48px -128px;
+}
+
+.ui-icon-minusthick {
+	background-position: -64px -128px;
+}
+
+.ui-icon-close {
+	background-position: -80px -128px;
+}
+
+.ui-icon-closethick {
+	background-position: -96px -128px;
+}
+
+.ui-icon-key {
+	background-position: -112px -128px;
+}
+
+.ui-icon-lightbulb {
+	background-position: -128px -128px;
+}
+
+.ui-icon-scissors {
+	background-position: -144px -128px;
+}
+
+.ui-icon-clipboard {
+	background-position: -160px -128px;
+}
+
+.ui-icon-copy {
+	background-position: -176px -128px;
+}
+
+.ui-icon-contact {
+	background-position: -192px -128px;
+}
+
+.ui-icon-image {
+	background-position: -208px -128px;
+}
+
+.ui-icon-video {
+	background-position: -224px -128px;
+}
+
+.ui-icon-script {
+	background-position: -240px -128px;
+}
+
+.ui-icon-alert {
+	background-position: 0 -144px;
+}
+
+.ui-icon-info {
+	background-position: -16px -144px;
+}
+
+.ui-icon-notice {
+	background-position: -32px -144px;
+}
+
+.ui-icon-help {
+	background-position: -48px -144px;
+}
+
+.ui-icon-check {
+	background-position: -64px -144px;
+}
+
+.ui-icon-bullet {
+	background-position: -80px -144px;
+}
+
+.ui-icon-radio-on {
+	background-position: -96px -144px;
+}
+
+.ui-icon-radio-off {
+	background-position: -112px -144px;
+}
+
+.ui-icon-pin-w {
+	background-position: -128px -144px;
+}
+
+.ui-icon-pin-s {
+	background-position: -144px -144px;
+}
+
+.ui-icon-play {
+	background-position: 0 -160px;
+}
+
+.ui-icon-pause {
+	background-position: -16px -160px;
+}
+
+.ui-icon-seek-next {
+	background-position: -32px -160px;
+}
+
+.ui-icon-seek-prev {
+	background-position: -48px -160px;
+}
+
+.ui-icon-seek-end {
+	background-position: -64px -160px;
+}
+
+.ui-icon-seek-start {
+	background-position: -80px -160px;
+}
+
 /* ui-icon-seek-first is deprecated, use ui-icon-seek-start instead */
-.ui-icon-seek-first { background-position: -80px -160px; }
-.ui-icon-stop { background-position: -96px -160px; }
-.ui-icon-eject { background-position: -112px -160px; }
-.ui-icon-volume-off { background-position: -128px -160px; }
-.ui-icon-volume-on { background-position: -144px -160px; }
-.ui-icon-power { background-position: 0 -176px; }
-.ui-icon-signal-diag { background-position: -16px -176px; }
-.ui-icon-signal { background-position: -32px -176px; }
-.ui-icon-battery-0 { background-position: -48px -176px; }
-.ui-icon-battery-1 { background-position: -64px -176px; }
-.ui-icon-battery-2 { background-position: -80px -176px; }
-.ui-icon-battery-3 { background-position: -96px -176px; }
-.ui-icon-circle-plus { background-position: 0 -192px; }
-.ui-icon-circle-minus { background-position: -16px -192px; }
-.ui-icon-circle-close { background-position: -32px -192px; }
-.ui-icon-circle-triangle-e { background-position: -48px -192px; }
-.ui-icon-circle-triangle-s { background-position: -64px -192px; }
-.ui-icon-circle-triangle-w { background-position: -80px -192px; }
-.ui-icon-circle-triangle-n { background-position: -96px -192px; }
-.ui-icon-circle-arrow-e { background-position: -112px -192px; }
-.ui-icon-circle-arrow-s { background-position: -128px -192px; }
-.ui-icon-circle-arrow-w { background-position: -144px -192px; }
-.ui-icon-circle-arrow-n { background-position: -160px -192px; }
-.ui-icon-circle-zoomin { background-position: -176px -192px; }
-.ui-icon-circle-zoomout { background-position: -192px -192px; }
-.ui-icon-circle-check { background-position: -208px -192px; }
-.ui-icon-circlesmall-plus { background-position: 0 -208px; }
-.ui-icon-circlesmall-minus { background-position: -16px -208px; }
-.ui-icon-circlesmall-close { background-position: -32px -208px; }
-.ui-icon-squaresmall-plus { background-position: -48px -208px; }
-.ui-icon-squaresmall-minus { background-position: -64px -208px; }
-.ui-icon-squaresmall-close { background-position: -80px -208px; }
-.ui-icon-grip-dotted-vertical { background-position: 0 -224px; }
-.ui-icon-grip-dotted-horizontal { background-position: -16px -224px; }
-.ui-icon-grip-solid-vertical { background-position: -32px -224px; }
-.ui-icon-grip-solid-horizontal { background-position: -48px -224px; }
-.ui-icon-gripsmall-diagonal-se { background-position: -64px -224px; }
-.ui-icon-grip-diagonal-se { background-position: -80px -224px; }
+.ui-icon-seek-first {
+	background-position: -80px -160px;
+}
+
+.ui-icon-stop {
+	background-position: -96px -160px;
+}
+
+.ui-icon-eject {
+	background-position: -112px -160px;
+}
+
+.ui-icon-volume-off {
+	background-position: -128px -160px;
+}
+
+.ui-icon-volume-on {
+	background-position: -144px -160px;
+}
+
+.ui-icon-power {
+	background-position: 0 -176px;
+}
+
+.ui-icon-signal-diag {
+	background-position: -16px -176px;
+}
+
+.ui-icon-signal {
+	background-position: -32px -176px;
+}
+
+.ui-icon-battery-0 {
+	background-position: -48px -176px;
+}
+
+.ui-icon-battery-1 {
+	background-position: -64px -176px;
+}
+
+.ui-icon-battery-2 {
+	background-position: -80px -176px;
+}
+
+.ui-icon-battery-3 {
+	background-position: -96px -176px;
+}
+
+.ui-icon-circle-plus {
+	background-position: 0 -192px;
+}
+
+.ui-icon-circle-minus {
+	background-position: -16px -192px;
+}
+
+.ui-icon-circle-close {
+	background-position: -32px -192px;
+}
+
+.ui-icon-circle-triangle-e {
+	background-position: -48px -192px;
+}
+
+.ui-icon-circle-triangle-s {
+	background-position: -64px -192px;
+}
+
+.ui-icon-circle-triangle-w {
+	background-position: -80px -192px;
+}
+
+.ui-icon-circle-triangle-n {
+	background-position: -96px -192px;
+}
+
+.ui-icon-circle-arrow-e {
+	background-position: -112px -192px;
+}
+
+.ui-icon-circle-arrow-s {
+	background-position: -128px -192px;
+}
+
+.ui-icon-circle-arrow-w {
+	background-position: -144px -192px;
+}
+
+.ui-icon-circle-arrow-n {
+	background-position: -160px -192px;
+}
+
+.ui-icon-circle-zoomin {
+	background-position: -176px -192px;
+}
+
+.ui-icon-circle-zoomout {
+	background-position: -192px -192px;
+}
+
+.ui-icon-circle-check {
+	background-position: -208px -192px;
+}
+
+.ui-icon-circlesmall-plus {
+	background-position: 0 -208px;
+}
+
+.ui-icon-circlesmall-minus {
+	background-position: -16px -208px;
+}
+
+.ui-icon-circlesmall-close {
+	background-position: -32px -208px;
+}
+
+.ui-icon-squaresmall-plus {
+	background-position: -48px -208px;
+}
+
+.ui-icon-squaresmall-minus {
+	background-position: -64px -208px;
+}
+
+.ui-icon-squaresmall-close {
+	background-position: -80px -208px;
+}
+
+.ui-icon-grip-dotted-vertical {
+	background-position: 0 -224px;
+}
+
+.ui-icon-grip-dotted-horizontal {
+	background-position: -16px -224px;
+}
+
+.ui-icon-grip-solid-vertical {
+	background-position: -32px -224px;
+}
+
+.ui-icon-grip-solid-horizontal {
+	background-position: -48px -224px;
+}
+
+.ui-icon-gripsmall-diagonal-se {
+	background-position: -64px -224px;
+}
+
+.ui-icon-grip-diagonal-se {
+	background-position: -80px -224px;
+}
 
 
 /* Misc visuals
@@ -23914,18 +24600,21 @@ a.ui-button:active,
 .ui-corner-tl {
 	border-top-left-radius: 3px;
 }
+
 .ui-corner-all,
 .ui-corner-top,
 .ui-corner-right,
 .ui-corner-tr {
 	border-top-right-radius: 3px;
 }
+
 .ui-corner-all,
 .ui-corner-bottom,
 .ui-corner-left,
 .ui-corner-bl {
 	border-bottom-left-radius: 3px;
 }
+
 .ui-corner-all,
 .ui-corner-bottom,
 .ui-corner-right,
@@ -23937,27 +24626,39 @@ a.ui-button:active,
 .ui-widget-overlay {
 	background: #aaaaaa;
 	opacity: .3;
-	filter: Alpha(Opacity=30); /* support: IE8 */
+	filter: Alpha(Opacity=30);
+	/* support: IE8 */
 }
+
 .ui-widget-shadow {
 	-webkit-box-shadow: 0px 0px 5px #666666;
 	box-shadow: 0px 0px 5px #666666;
 }
 
 /* Einheitliche Breite für alle "Aktionen"-Spalten */
-table td:last-child, 
+table td:last-child,
 table th:last-child {
-  width: 150px; /* Anpassen je nach gewünschter Breite */
+	width: 150px;
+	/* Anpassen je nach gewünschter Breite */
 }
 
 /* Buttons in der Spalte rechtsbündig ausrichten */
 table td:last-child {
-  text-align: right;
-  display: flex;
-  /* justify-content: flex-end; */
-  gap: 1px; /* Abstand zwischen den Buttons */
+	text-align: right;
+	display: flex;
+	/* justify-content: flex-end; */
+	gap: 1px;
+	/* Abstand zwischen den Buttons */
 }
 
+.sidebar {
+	flex: 0 0 28%;
+	/* Platz für die rechte Subseite oder das zusätzliche Element */
+	background-color: #f5f5f5;
+	/* Optional: Hintergrundfarbe für die Sidebar */
+	padding: 20px;
+	margin-left: 20px;
+}
 ***jquery-ui.min.css:
 /*! jQuery UI - v1.12.0 - 2016-07-08
 * http://jqueryui.com
@@ -32994,6 +33695,40 @@ footer {
   border-radius: 0;
 }
 
+***extra.css:
+.btn {
+  width: 300px !important;
+  /* margin: 10px !important; */
+}
+
+#flexcontainer-fluid {
+  display: flex !important;
+}
+
+#flexcontainer {
+  flex: 1 !important;
+  /* This will make the main content take up most of the space */
+}
+
+.sidebar {
+  width: 250px !important;
+  flex-shrink: 0 !important;
+  /* Prevent the sidebar from shrinking */
+  background-color: #f8f9fa;
+  padding: 20px !important;
+}
+
+/* Hover-Effekt für die Zeilen */
+table tr:hover {
+  background-color: #f0f0f0;
+  /* Leichtes Grau beim Hover */
+}
+
+/* Aktivierte Zeile bleibt grau hinterlegt */
+table tr.active {
+  background-color: #d3d3d3;
+  /* Dunkleres Grau für die aktive Zeile */
+}
 ***sdx-icons.css:
 @font-face {
     font-family: "sdx-icons";
@@ -87553,10 +88288,11 @@ const CustomerFeedback = () => {
       <section className="featured">
         <div className="content-wrapper banner">
           <div className="float-right">
-            <img className="page-icon" src="/Content/themes/base/images/person_BOLD.svg" alt="Person icon" />
+            <img className="page-icon" src="/Content/themes/base/images/Speak.png" alt="Speak icon" />
           </div>
           <hgroup className="title">
             <h1>Feedback Anfrage generieren</h1>
+            <p>Folgende Felder ausfüllen, um den Feedback-Link zu generieren. </p>
           </hgroup>
         </div>
       </section>
@@ -87604,7 +88340,7 @@ const CustomerFeedback = () => {
             {isSubmitting ? 'Absenden...' : 'Feedback Anfrage generieren'}
           </button>
           {!hideCancel && (
-            <button type="button" className="btn btn-secondary ml-3" onClick={() => navigate('/user')}>
+            <button type="button" className="button-min btn btn-default" onClick={() => navigate('/user')}>
               Abbrechen
             </button>
           )}
@@ -87738,7 +88474,7 @@ const Feedback = () => {
             required
           />
         </div>
-        <button type="submit" className="btn btn-primary">Absenden</button>
+        <button type="submit" className="btn btn-primary btn">Absenden</button>
       </form>
     </div>
   );
@@ -88202,7 +88938,8 @@ const Team = () => {
             <img className="page-icon" src="/Content/themes/base/images/Chain.png" alt="Team icon" /> 
           </div>
           <hgroup className="title"> 
-            <h1>Teamleiter-Dashboard</h1> 
+          <h1>Team Feedbacks</h1>
+          <p>Überblick über erhaltene, offene und selbst erstellte Feedbacks des gesamten Teams</p>
           </hgroup>
         </div>
       </section>
@@ -88359,51 +89096,54 @@ import axios from 'axios';
 import { AuthContext } from './AuthContext';
 
 const TeamReceived = ({ selectedTeam, selectedUser }) => {
-  const { user } = useContext(AuthContext); // Zugriff auf den aktuellen Benutzer
-  const [feedbacks, setFeedbacks] = useState([]); // Liste der erhaltenen Feedbacks
-  const [viewingFeedback, setViewingFeedback] = useState(null); // Angezeigtes Feedback-Detail
+  const { user } = useContext(AuthContext);
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [viewingFeedback, setViewingFeedback] = useState(null);
+  const [activeRow, setActiveRow] = useState(null); // Neuer Zustand für die aktive Zeile
 
-  // Effekt, um die Feedback-Daten basierend auf dem ausgewählten Team und Benutzer zu laden
   useEffect(() => {
     const fetchFilteredFeedbacks = async () => {
-      const token = localStorage.getItem('token'); // Token für API-Anfragen
-      if (selectedTeam && selectedTeam !== 'all') { 
+      const token = localStorage.getItem('token');
+      if (selectedTeam && selectedTeam !== 'all') {
         try {
-          // URL für das Abrufen der Feedbacks für das ausgewählte Team und Benutzer
           const url = selectedUser && selectedUser !== 'all'
             ? `/api/team/received/${selectedTeam}/${selectedUser}`
             : `/api/team/received/${selectedTeam}`;
           const response = await axios.get(url, {
-            headers: { Authorization: `Bearer ${token}` } // Token zur Autorisierung
+            headers: { Authorization: `Bearer ${token}` }
           });
-          setFeedbacks(response.data || []); // Feedbacks setzen
+          setFeedbacks(response.data || []);
         } catch (error) {
           console.error('Fehler beim Abrufen der erhaltenen Team-Feedbacks:', error);
-          setFeedbacks([]); // Bei Fehler leere Liste setzen
+          setFeedbacks([]);
         }
       }
     };
 
-    fetchFilteredFeedbacks(); // Abruf, wenn sich Team oder Benutzer ändern
+    fetchFilteredFeedbacks();
   }, [selectedTeam, selectedUser]);
 
-  // Funktion zum Anzeigen der Details eines spezifischen Feedbacks
   const handleViewFeedback = (feedback) => {
-    setViewingFeedback(feedback); // Angezeigtes Feedback setzen
+    setViewingFeedback(feedback);
+    setActiveRow(feedback.customerFdbckID); // Setzt die aktive Zeile
   };
 
-  // Funktion, um das passende Icon basierend auf der Bewertung zu erhalten
+  const handleCloseFeedback = () => {
+    setViewingFeedback(null);
+    setActiveRow(null); // Entfernt die aktive Zeile
+  };
+
   const getRatingIcon = (rating) => {
     if (rating >= 2) {
-      return <img className="page-icon" src="/Content/themes/base/images/VeryPositive.png" alt="Sehr positiv" />;
+      return <img className="evaluation-img" src="/Content/themes/base/images/VeryPositive.png" alt="Sehr positiv" />;
     } else if (rating === 1) {
-      return <img className="page-icon" src="/Content/themes/base/images/Positive.png" alt="Positiv" />;
+      return <img className="evaluation-img" src="/Content/themes/base/images/Positive.png" alt="Positiv" />;
     } else if (rating === 0) {
-      return <img className="page-icon" src="/Content/themes/base/images/Unknown.png" alt="Unbekannt" />;
+      return <img className="evaluation-img" src="/Content/themes/base/images/Unknown.png" alt="Unbekannt" />;
     } else if (rating === -1) {
-      return <img className="page-icon" src="/Content/themes/base/images/Negative.png" alt="Negativ" />;
+      return <img className="evaluation-img" src="/Content/themes/base/images/Negative.png" alt="Negativ" />;
     } else if (rating <= -2) {
-      return <img className="page-icon" src="/Content/themes/base/images/VeryNegative.png" alt="Sehr negativ" />;
+      return <img className="evaluation-img" src="/Content/themes/base/images/VeryNegative.png" alt="Sehr negativ" />;
     }
   };
 
@@ -88414,9 +89154,9 @@ const TeamReceived = ({ selectedTeam, selectedUser }) => {
         <thead>
           <tr>
             <th>Empfangen am</th>
-            <th>Kundenunternehmen</th>
-            <th>Kontaktperson</th>
-            <th>E-Mail</th>
+            <th>Empfänger</th>
+            <th>Kunde</th>
+            <th>Kontaktperson</th>            
             <th>Bewertung</th>
             <th>Aktionen</th>
           </tr>
@@ -88424,11 +89164,14 @@ const TeamReceived = ({ selectedTeam, selectedUser }) => {
         <tbody>
           {feedbacks.length > 0 ? ( 
             feedbacks.map((feedback) => (
-              <tr key={feedback.customerFdbckID}>
+              <tr
+                key={feedback.customerFdbckID}
+                className={activeRow === feedback.customerFdbckID ? 'active' : ''} // Fügt die Klasse .active hinzu
+              >
                 <td>{new Date(feedback.customerFdbckReceived).toLocaleDateString()}</td>
+                <td>{feedback.usersName}</td>
                 <td>{feedback.customerCompany}</td>
                 <td>{feedback.customerName}</td>
-                <td>{feedback.customerMailaddr}</td>
                 <td>{getRatingIcon(feedback.rating)}</td>
                 <td>
                   <button className="btn btn-primary" onClick={() => handleViewFeedback(feedback)}>
@@ -88439,7 +89182,7 @@ const TeamReceived = ({ selectedTeam, selectedUser }) => {
             ))
           ) : (
             <tr>
-              <td colSpan="6">Keine Feedbacks gefunden.</td> 
+              <td colSpan="6">Keine Feedbacks gefunden.</td>
             </tr>
           )}
         </tbody>
@@ -88448,8 +89191,10 @@ const TeamReceived = ({ selectedTeam, selectedUser }) => {
       {viewingFeedback && (
         <div className="mt-5">
           <h3>Feedback anzeigen</h3>
+          <p><strong>E-Mail:</strong> {viewingFeedback.customerMailaddr}</p>
+          <p><strong>Bewertung:</strong> {getRatingIcon(viewingFeedback.rating)}</p>
           <p style={{ fontSize: '1.5rem' }}><strong>Feedback:</strong> {viewingFeedback.customerFdbckText}</p>
-          <button className="btn btn-secondary" onClick={() => setViewingFeedback(null)}>Schließen</button>
+          <button className="btn btn-secondary" onClick={handleCloseFeedback}>Schließen</button>
         </div>
       )}
     </div>
@@ -88491,6 +89236,13 @@ const TeamRequest = ({ selectedTeam, selectedUser }) => {
     fetchTeamRequests(); // Feedback-Anfragen laden, wenn sich das Team ändert
   }, [selectedTeam, selectedUser]);
 
+  // Funktion, um eine E-Mail-Erinnerung zu senden
+  const handleRemind = (request) => {
+    const sendDate = new Date(request.customerFdbckSend).toLocaleDateString();
+    const mailtoLink = `mailto:${request.customerMailaddr}?subject=Erinnerung%20an%20Feedback%20vom%20${sendDate}&body=Sehr%20geehrter%20Herr%20${request.customerName},%0A%0A${request.customerFdbckUrl}%0A%0AFreundliche%20Grüsse%0A${user.firstName}%20${user.lastName}`;
+    window.location.href = mailtoLink; // E-Mail-Link öffnen
+  };
+
   return (
     <div className="mb-5">
       <h3>Team Feedback Requests</h3>
@@ -88498,9 +89250,9 @@ const TeamRequest = ({ selectedTeam, selectedUser }) => {
         <thead>
           <tr>
             <th>Gesendet am</th>
-            <th>Kundenunternehmen</th>
+            <th>Ersteller</th>
+            <th>Kunde</th>
             <th>Kontaktperson</th>
-            <th>E-Mail</th>
             <th>Aktionen</th>
           </tr>
         </thead>
@@ -88508,12 +89260,14 @@ const TeamRequest = ({ selectedTeam, selectedUser }) => {
           {requests.length > 0 ? (
             requests.map((request) => (
               <tr key={request.customerFdbckID}>
-                <td>{new Date(request.customerFdbckSend).toLocaleDateString('de-DE')}</td>
+                <td>{new Date(request.customerFdbckSend).toLocaleDateString()}</td>
+                <td>{request.usersName}</td>
                 <td>{request.customerCompany}</td>
                 <td>{request.customerName}</td>
-                <td>{request.customerMailaddr}</td>
                 <td>
-                  <button className="btn btn-primary">Erinnerung senden</button>
+                  <button className="btn btn-primary" onClick={() => handleRemind(request)}>
+                    Erinnerung senden
+                  </button>
                 </td>
               </tr>
             ))
@@ -88608,6 +89362,7 @@ const TeamSelector = ({ onFilterChange }) => {
         className="form-control"
         value={selectedTeam}
         onChange={handleTeamChange}
+        disabled={user.role === 2} // Disable the dropdown if the user role is 2
       >
         {teams.map((team) => (
           <option key={team.teamID} value={team.teamID}> 
@@ -88724,11 +89479,12 @@ const User = () => {
             <img className="page-icon" src="/Content/themes/base/images/person_BOLD.svg" alt="User icon" />
           </div>
           <hgroup className="title">
-            <h1>Benutzerbereich</h1>
+            <h1>Meine Feedbacks</h1>
+            <p>Überblick über erhaltene, offene und selbst erstellte Feedbacks</p>
           </hgroup>
         </div>
       </section>
-      <div className="container mt-5">
+      <div className="container mt-5" id="flexcontainer">
         {/* Erhaltene Feedbacks-Tabelle */}
         <UserReceived /> {/* Neue Tabelle hinzugefügt */}
 
@@ -88740,7 +89496,14 @@ const User = () => {
 
 
       </div>
+      <div className="sidebar">
+        {/* Hier kommt der Inhalt der neuen Subseite oder des zusätzlichen Inhalts hin */}
+        <h3>Zusätzlicher Inhalt</h3>
+        <p>Hier könnte z.B. eine weitere Navigation, Statistiken oder ein Dashboard sein.</p>
+        <button className="btn btn-secondary">Beispiel-Button</button>
+      </div>
     </div>
+
   );
 };
 
@@ -88755,6 +89518,7 @@ const UserFeedback = () => {
   const { user } = useContext(AuthContext);
   const [feedbacks, setFeedbacks] = useState([]);
   const [editingFeedback, setEditingFeedback] = useState(null);
+  const [activeRow, setActiveRow] = useState(null); // Neuer Zustand für aktive Zeile
   const [customer, setCustomer] = useState('');
   const [description, setDescription] = useState('');
   const [received, setReceived] = useState('');
@@ -88780,7 +89544,6 @@ const UserFeedback = () => {
     fetchFeedbacks();
   }, [user]);
 
-  // Formatierung des Datums für die Anzeige im Format dd/MM/yyyy
   const formatDateForDisplay = (dateString) => {
     const date = new Date(dateString);
     const day = String(date.getDate()).padStart(2, '0');
@@ -88789,7 +89552,6 @@ const UserFeedback = () => {
     return `${day}/${month}/${year}`;
   };
 
-  // Formatierung des Datums für das <input type="date">-Feld (yyyy-MM-dd)
   const formatDateForInput = (dateString) => {
     const date = new Date(dateString);
     const day = String(date.getDate()).padStart(2, '0');
@@ -88800,36 +89562,41 @@ const UserFeedback = () => {
 
   const handleEdit = (feedback) => {
     setEditingFeedback(feedback);
+    setActiveRow(feedback.variousFdbckID); // Setzt die aktive Zeile
     setCustomer(feedback.variousFdbckCustomer);
     setDescription(feedback.variousFdbckDescription);
-    setReceived(formatDateForInput(feedback.variousFdbckReceived));  // Datum für das input[type="date"] Feld formatieren
+    setReceived(formatDateForInput(feedback.variousFdbckReceived)); 
   };
 
   const handleSaveFeedback = async () => {
     const token = localStorage.getItem('token');
     try {
-      // Formatierung des Datums sicherstellen
-      const formattedDate = received.split('/').reverse().join('-'); // Von dd/MM/yyyy zu yyyy-MM-dd
-
+      const formattedDate = received.split('/').reverse().join('-');
+  
       await axios.put(`/api/feedback/${editingFeedback.variousFdbckID}`, {
         variousFdbckCustomer: customer,
         variousFdbckDescription: description,
-        variousFdbckReceived: formattedDate,  // Speichere das Datum im yyyy-MM-dd Format
+        variousFdbckReceived: formattedDate,
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-
+  
       setFeedbacks(feedbacks.map(fb =>
         fb.variousFdbckID === editingFeedback.variousFdbckID ? { ...fb, variousFdbckCustomer: customer, variousFdbckDescription: description, variousFdbckReceived: formattedDate } : fb
       ));
       setEditingFeedback(null);
+      setActiveRow(null); // Entfernt die aktive Zeile nach dem Speichern
       setMessage('Feedback erfolgreich aktualisiert!');
     } catch (error) {
       console.error('Fehler beim Speichern des Feedbacks:', error.message || error);
     }
   };
-
-
+  
+  const handleCancelEdit = () => {
+    setEditingFeedback(null);
+    setActiveRow(null); // Entfernt die aktive Zeile nach dem Abbrechen
+  };
+  
 
   const handleDeleteFeedback = async (feedbackID) => {
     const token = localStorage.getItem('token');
@@ -88869,12 +89636,15 @@ const UserFeedback = () => {
         <tbody>
           {Array.isArray(feedbacks) && feedbacks.length > 0 ? (
             feedbacks.map((feedback) => (
-              <tr key={feedback.variousFdbckID}>
-                <td>{formatDateForDisplay(feedback.variousFdbckReceived)}</td>  {/* Datum korrekt formatieren */}
+              <tr
+                key={feedback.variousFdbckID}
+                className={activeRow === feedback.variousFdbckID ? 'active' : ''} // Fügt die Klasse .active hinzu
+              >
+                <td>{formatDateForDisplay(feedback.variousFdbckReceived)}</td>
                 <td>{feedback.variousFdbckCustomer}</td>
                 <td>{feedback.variousFdbckDescription}</td>
                 <td>
-                  <a href={feedback.uploadUrl} download className="btn btn-link" onClick={() => console.log(feedback.uploadUrl)}>
+                  <a href={feedback.uploadUrl} download className="btn btn-link">
                     Datei herunterladen
                   </a>
                 </td>
@@ -88934,12 +89704,12 @@ const UserFeedback = () => {
             <input
               type="date"
               className="form-control"
-              value={received}  // Datum im richtigen Format für <input type="date">
+              value={received}
               onChange={(e) => setReceived(e.target.value)}
             />
           </div>
           <button className="btn btn-primary" onClick={handleSaveFeedback}>Speichern</button>
-          <button className="btn btn-secondary ml-2" onClick={() => setEditingFeedback(null)}>Abbrechen</button>
+          <button className="btn btn-secondary ml-2" onClick={handleCancelEdit}>Abbrechen</button>
         </div>
       )}
     </div>
@@ -88957,6 +89727,7 @@ const UserReceived = () => {
   const { user } = useContext(AuthContext);
   const [feedbacks, setFeedbacks] = useState([]);
   const [viewingFeedback, setViewingFeedback] = useState(null);
+  const [activeRow, setActiveRow] = useState(null); // Neuer Zustand für die aktive Zeile
 
   useEffect(() => {
     const fetchFeedbacks = async () => {
@@ -88977,21 +89748,27 @@ const UserReceived = () => {
     fetchFeedbacks();
   }, [user]);
 
-  const handleViewFeedback = (feedback) => {
+  const handleViewFeedback = (feedback, feedbackId) => {
     setViewingFeedback(feedback);
+    setActiveRow(feedbackId); // Setzt die aktive Zeile
+  };
+
+  const handleCloseFeedback = () => {
+    setViewingFeedback(null);
+    setActiveRow(null); // Entfernt die aktive Zeile
   };
 
   const getRatingIcon = (rating) => {
     if (rating >= 2) {
-      return <img className="page-icon" src="/Content/themes/base/images/VeryPositive.png" alt="Very Positive" />;
+      return <img className="evaluation-img" src="/Content/themes/base/images/VeryPositive.png" alt="Very Positive" />;
     } else if (rating === 1) {
-      return <img className="page-icon" src="/Content/themes/base/images/Positive.png" alt="Positive" />;
+      return <img className="evaluation-img" src="/Content/themes/base/images/Positive.png" alt="Positive" />;
     } else if (rating === 0) {
-      return <img className="page-icon" src="/Content/themes/base/images/Unknown.png" alt="Unknown" />;
+      return <img className="evaluation-img" src="/Content/themes/base/images/Unknown.png" alt="Unknown" />;
     } else if (rating === -1) {
-      return <img className="page-icon" src="/Content/themes/base/images/Negative.png" alt="Negative" />;
+      return <img className="evaluation-img" src="/Content/themes/base/images/Negative.png" alt="Negative" />;
     } else if (rating <= -2) {
-      return <img className="page-icon" src="/Content/themes/base/images/VeryNegative.png" alt="Very Negative" />;
+      return <img className="evaluation-img" src="/Content/themes/base/images/VeryNegative.png" alt="Very Negative" />;
     }
   };
 
@@ -89002,7 +89779,7 @@ const UserReceived = () => {
         <thead>
           <tr>
             <th>Erhalten am</th>
-            <th>Kunden Firma</th>
+            <th>Kunde</th>
             <th>Ansprechperson</th>
             <th>E-Mail</th>
             <th>Bewertung</th>
@@ -89012,14 +89789,17 @@ const UserReceived = () => {
         <tbody>
           {Array.isArray(feedbacks) && feedbacks.length > 0 ? (
             feedbacks.map((feedback) => (
-              <tr key={feedback.customerFdbckID}>
+              <tr
+                key={feedback.customerFdbckID}
+                className={activeRow === feedback.customerFdbckID ? 'active' : ''} // Fügt die Klasse .active hinzu
+              >
                 <td>{new Date(feedback.customerFdbckReceived).toLocaleDateString()}</td>
                 <td>{feedback.customerCompany}</td>
                 <td>{feedback.customerName}</td>
                 <td>{feedback.customerMailaddr}</td>
                 <td>{getRatingIcon(feedback.rating)}</td>
                 <td>
-                  <button className="btn btn-primary" onClick={() => handleViewFeedback(feedback)}>
+                  <button className="btn btn-primary" onClick={() => handleViewFeedback(feedback, feedback.customerFdbckID)}>
                     Anzeigen
                   </button>
                 </td>
@@ -89037,7 +89817,7 @@ const UserReceived = () => {
         <div className="mt-5">
           <h3>Feedback anzeigen</h3>
           <p style={{ fontSize: '1.5rem' }}><strong>Feedback:</strong> {viewingFeedback.customerFdbckText}</p>
-          <button className="btn btn-secondary" onClick={() => setViewingFeedback(null)}>Schließen</button>
+          <button className="btn btn-secondary" onClick={handleCloseFeedback}>Schließen</button>
         </div>
       )}
     </div>
@@ -89055,11 +89835,12 @@ const UserRequest = () => {
   const { user } = useContext(AuthContext);
   const [requests, setRequests] = useState([]);
   const [editingRequest, setEditingRequest] = useState(null);
+  const [activeRow, setActiveRow] = useState(null); // Neuer Zustand für aktive Zeile
   const [company, setCompany] = useState('');
   const [contactPerson, setContactPerson] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
-  const [deletingRequestId, setDeletingRequestId] = useState(null); // Zustandsvariable für die Löschbestätigung
+  const [deletingRequestId, setDeletingRequestId] = useState(null);
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -89082,6 +89863,7 @@ const UserRequest = () => {
 
   const handleEdit = (request) => {
     setEditingRequest(request);
+    setActiveRow(request.customerFdbckID); // Setzt die aktive Zeile
     setCompany(request.customerCompany);
     setContactPerson(request.customerName);
     setEmail(request.customerMailaddr);
@@ -89097,16 +89879,23 @@ const UserRequest = () => {
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-
+  
       setRequests(requests.map(req =>
         req.customerFdbckID === editingRequest.customerFdbckID ? { ...req, customerCompany: company, customerName: contactPerson, customerMailaddr: email } : req
       ));
       setEditingRequest(null);
+      setActiveRow(null); // Entfernt die aktive Zeile nach dem Speichern
       setMessage('Feedback-Anfrage erfolgreich aktualisiert!');
     } catch (error) {
       console.error('Fehler beim Speichern der Feedback-Anfrage:', error);
     }
   };
+  
+  const handleCancelEdit = () => {
+    setEditingRequest(null);
+    setActiveRow(null); // Entfernt die aktive Zeile nach dem Abbrechen
+  };
+  
 
   const handleDeleteRequest = async (requestID) => {
     const token = localStorage.getItem('token');
@@ -89115,18 +89904,18 @@ const UserRequest = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setRequests(requests.filter(req => req.customerFdbckID !== requestID));
-      setDeletingRequestId(null); // Zurücksetzen der Löschbestätigung
+      setDeletingRequestId(null);
     } catch (error) {
       console.error('Fehler beim Löschen der Feedback-Anfrage:', error);
     }
   };
 
   const confirmDelete = (requestID) => {
-    setDeletingRequestId(requestID); // Setze die zu löschende Anfrage
+    setDeletingRequestId(requestID);
   };
 
   const cancelDelete = () => {
-    setDeletingRequestId(null); // Setze das Löschbestätigungs-Flag zurück
+    setDeletingRequestId(null);
   };
 
   const handleRemind = (request) => {
@@ -89153,7 +89942,10 @@ const UserRequest = () => {
         <tbody>
           {Array.isArray(requests) && requests.length > 0 ? (
             requests.map((request) => (
-              <tr key={request.customerFdbckID}>
+              <tr
+                key={request.customerFdbckID}
+                className={activeRow === request.customerFdbckID ? 'active' : ''} // Fügt die Klasse .active hinzu
+              >
                 <td>{new Date(request.customerFdbckSend).toLocaleDateString()}</td>
                 <td>{request.customerCompany}</td>
                 <td>{request.customerName}</td>
@@ -89224,7 +90016,7 @@ const UserRequest = () => {
             />
           </div>
           <button className="btn btn-primary" onClick={handleSaveRequest}>Speichern</button>
-          <button className="btn btn-secondary ml-2" onClick={() => setEditingRequest(null)}>Abbrechen</button>
+          <button className="btn btn-secondary ml-2" onClick={handleCancelEdit}>Abbrechen</button>
         </div>
       )}
     </div>
@@ -89232,7 +90024,6 @@ const UserRequest = () => {
 };
 
 export default UserRequest;
-
 ***variousFeedback.js:
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -89269,7 +90060,7 @@ const VariousFeedback = () => {
     const formData = new FormData();
     formData.append('variousFdbckCustomer', customer);
     formData.append('variousFdbckDescription', description);
-    formData.append('variousFdbckReceived', received.toLocaleDateString('de-DE')); // Format the date as dd.MM.yyyy
+    formData.append('variousFdbckReceived', received.toLocaleDateString()); // Format the date as dd.MM.yyyy
     formData.append('uploadUrl', file); // Datei hochladen
 
     const token = localStorage.getItem('token');
@@ -89305,10 +90096,11 @@ const VariousFeedback = () => {
       <section className="featured">
         <div className="content-wrapper banner">
           <div className="float-right">
-            <img className="page-icon" src="/Content/themes/base/images/person_BOLD.svg" alt="Person icon" />
+            <img className="page-icon" src="/Content/themes/base/images/DB.png" alt="Person icon" />
           </div>
           <hgroup className="title">
             <h1>Feedback Erfassen</h1>
+            <p>Lade hier Dateien mit Feedbacks hoch, die du ausserhalb des Tools erhalten hast.</p>
           </hgroup>
         </div>
       </section>

@@ -1,0 +1,33 @@
+.btn {
+  width: 300px !important;
+  /* margin: 10px !important; */
+}
+
+#flexcontainer-fluid {
+  display: flex !important;
+}
+
+#flexcontainer {
+  flex: 1 !important;
+  /* This will make the main content take up most of the space */
+}
+
+.sidebar {
+  width: 250px !important;
+  flex-shrink: 0 !important;
+  /* Prevent the sidebar from shrinking */
+  background-color: #f8f9fa;
+  padding: 20px !important;
+}
+
+/* Hover-Effekt für die Zeilen */
+table tr:hover {
+  background-color: #f0f0f0;
+  /* Leichtes Grau beim Hover */
+}
+
+/* Aktivierte Zeile bleibt grau hinterlegt */
+table tr.active {
+  background-color: #d3d3d3;
+  /* Dunkleres Grau für die aktive Zeile */
+}

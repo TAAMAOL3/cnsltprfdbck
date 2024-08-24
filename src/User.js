@@ -23,11 +23,12 @@ const User = () => {
             <img className="page-icon" src="/Content/themes/base/images/person_BOLD.svg" alt="User icon" />
           </div>
           <hgroup className="title">
-            <h1>Benutzerbereich</h1>
+            <h1>Meine Feedbacks</h1>
+            <p>Überblick über erhaltene, offene und selbst erstellte Feedbacks</p>
           </hgroup>
         </div>
       </section>
-      <div className="container mt-5">
+      <div className="container mt-5" id="flexcontainer">
         {/* Erhaltene Feedbacks-Tabelle */}
         <UserReceived /> {/* Neue Tabelle hinzugefügt */}
 
@@ -39,7 +40,14 @@ const User = () => {
 
 
       </div>
+      <div className="sidebar">
+        {/* Hier kommt der Inhalt der neuen Subseite oder des zusätzlichen Inhalts hin */}
+        <h3>Zusätzlicher Inhalt</h3>
+        <p>Hier könnte z.B. eine weitere Navigation, Statistiken oder ein Dashboard sein.</p>
+        <button className="btn btn-secondary">Beispiel-Button</button>
+      </div>
     </div>
+
   );
 };
 

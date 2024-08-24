@@ -80,10 +80,11 @@ const CustomerFeedback = () => {
       <section className="featured">
         <div className="content-wrapper banner">
           <div className="float-right">
-            <img className="page-icon" src="/Content/themes/base/images/person_BOLD.svg" alt="Person icon" />
+            <img className="page-icon" src="/Content/themes/base/images/Speak.png" alt="Speak icon" />
           </div>
           <hgroup className="title">
             <h1>Feedback Anfrage generieren</h1>
+            <p>Folgende Felder ausfüllen, um den Feedback-Link zu generieren. </p>
           </hgroup>
         </div>
       </section>
@@ -131,7 +132,7 @@ const CustomerFeedback = () => {
             {isSubmitting ? 'Absenden...' : 'Feedback Anfrage generieren'}
           </button>
           {!hideCancel && (
-            <button type="button" className="btn btn-secondary ml-3" onClick={() => navigate('/user')}>
+            <button type="button" className="button-min btn btn-default" onClick={() => navigate('/user')}>
               Abbrechen
             </button>
           )}

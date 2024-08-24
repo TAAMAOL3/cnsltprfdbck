@@ -6,6 +6,7 @@ const UserFeedback = () => {
   const { user } = useContext(AuthContext);
   const [feedbacks, setFeedbacks] = useState([]);
   const [editingFeedback, setEditingFeedback] = useState(null);
+  const [activeRow, setActiveRow] = useState(null); // Neuer Zustand für aktive Zeile
   const [customer, setCustomer] = useState('');
   const [description, setDescription] = useState('');
   const [received, setReceived] = useState('');
@@ -31,7 +32,6 @@ const UserFeedback = () => {
     fetchFeedbacks();
   }, [user]);
 
-  // Formatierung des Datums für die Anzeige im Format dd/MM/yyyy
   const formatDateForDisplay = (dateString) => {
     const date = new Date(dateString);
     const day = String(date.getDate()).padStart(2, '0');
@@ -40,7 +40,6 @@ const UserFeedback = () => {
     return `${day}/${month}/${year}`;
   };
 
-  // Formatierung des Datums für das <input type="date">-Feld (yyyy-MM-dd)
   const formatDateForInput = (dateString) => {
     const date = new Date(dateString);
     const day = String(date.getDate()).padStart(2, '0');
@@ -51,36 +50,41 @@ const UserFeedback = () => {
 
   const handleEdit = (feedback) => {
     setEditingFeedback(feedback);
+    setActiveRow(feedback.variousFdbckID); // Setzt die aktive Zeile
     setCustomer(feedback.variousFdbckCustomer);
     setDescription(feedback.variousFdbckDescription);
-    setReceived(formatDateForInput(feedback.variousFdbckReceived));  // Datum für das input[type="date"] Feld formatieren
+    setReceived(formatDateForInput(feedback.variousFdbckReceived)); 
   };
 
   const handleSaveFeedback = async () => {
     const token = localStorage.getItem('token');
     try {
-      // Formatierung des Datums sicherstellen
-      const formattedDate = received.split('/').reverse().join('-'); // Von dd/MM/yyyy zu yyyy-MM-dd
-
+      const formattedDate = received.split('/').reverse().join('-');
+  
       await axios.put(`/api/feedback/${editingFeedback.variousFdbckID}`, {
         variousFdbckCustomer: customer,
         variousFdbckDescription: description,
-        variousFdbckReceived: formattedDate,  // Speichere das Datum im yyyy-MM-dd Format
+        variousFdbckReceived: formattedDate,
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-
+  
       setFeedbacks(feedbacks.map(fb =>
         fb.variousFdbckID === editingFeedback.variousFdbckID ? { ...fb, variousFdbckCustomer: customer, variousFdbckDescription: description, variousFdbckReceived: formattedDate } : fb
       ));
       setEditingFeedback(null);
+      setActiveRow(null); // Entfernt die aktive Zeile nach dem Speichern
       setMessage('Feedback erfolgreich aktualisiert!');
     } catch (error) {
       console.error('Fehler beim Speichern des Feedbacks:', error.message || error);
     }
   };
-
-
+  
+  const handleCancelEdit = () => {
+    setEditingFeedback(null);
+    setActiveRow(null); // Entfernt die aktive Zeile nach dem Abbrechen
+  };
+  
 
   const handleDeleteFeedback = async (feedbackID) => {
     const token = localStorage.getItem('token');
@@ -120,12 +124,15 @@ const UserFeedback = () => {
         <tbody>
           {Array.isArray(feedbacks) && feedbacks.length > 0 ? (
             feedbacks.map((feedback) => (
-              <tr key={feedback.variousFdbckID}>
-                <td>{formatDateForDisplay(feedback.variousFdbckReceived)}</td>  {/* Datum korrekt formatieren */}
+              <tr
+                key={feedback.variousFdbckID}
+                className={activeRow === feedback.variousFdbckID ? 'active' : ''} // Fügt die Klasse .active hinzu
+              >
+                <td>{formatDateForDisplay(feedback.variousFdbckReceived)}</td>
                 <td>{feedback.variousFdbckCustomer}</td>
                 <td>{feedback.variousFdbckDescription}</td>
                 <td>
-                  <a href={feedback.uploadUrl} download className="btn btn-link" onClick={() => console.log(feedback.uploadUrl)}>
+                  <a href={feedback.uploadUrl} download className="btn btn-link">
                     Datei herunterladen
                   </a>
                 </td>
@@ -185,12 +192,12 @@ const UserFeedback = () => {
             <input
               type="date"
               className="form-control"
-              value={received}  // Datum im richtigen Format für <input type="date">
+              value={received}
               onChange={(e) => setReceived(e.target.value)}
             />
           </div>
           <button className="btn btn-primary" onClick={handleSaveFeedback}>Speichern</button>
-          <button className="btn btn-secondary ml-2" onClick={() => setEditingFeedback(null)}>Abbrechen</button>
+          <button className="btn btn-secondary ml-2" onClick={handleCancelEdit}>Abbrechen</button>
         </div>
       )}
     </div>

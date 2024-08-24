@@ -33,7 +33,7 @@ const VariousFeedback = () => {
     const formData = new FormData();
     formData.append('variousFdbckCustomer', customer);
     formData.append('variousFdbckDescription', description);
-    formData.append('variousFdbckReceived', received.toLocaleDateString('de-DE')); // Format the date as dd.MM.yyyy
+    formData.append('variousFdbckReceived', received.toLocaleDateString()); // Format the date as dd.MM.yyyy
     formData.append('uploadUrl', file); // Datei hochladen
 
     const token = localStorage.getItem('token');
@@ -69,10 +69,11 @@ const VariousFeedback = () => {
       <section className="featured">
         <div className="content-wrapper banner">
           <div className="float-right">
-            <img className="page-icon" src="/Content/themes/base/images/person_BOLD.svg" alt="Person icon" />
+            <img className="page-icon" src="/Content/themes/base/images/DB.png" alt="Person icon" />
           </div>
           <hgroup className="title">
             <h1>Feedback Erfassen</h1>
+            <p>Lade hier Dateien mit Feedbacks hoch, die du ausserhalb des Tools erhalten hast.</p>
           </hgroup>
         </div>
       </section>

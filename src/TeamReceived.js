@@ -3,51 +3,54 @@ import axios from 'axios';
 import { AuthContext } from './AuthContext';
 
 const TeamReceived = ({ selectedTeam, selectedUser }) => {
-  const { user } = useContext(AuthContext); // Zugriff auf den aktuellen Benutzer
-  const [feedbacks, setFeedbacks] = useState([]); // Liste der erhaltenen Feedbacks
-  const [viewingFeedback, setViewingFeedback] = useState(null); // Angezeigtes Feedback-Detail
+  const { user } = useContext(AuthContext);
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [viewingFeedback, setViewingFeedback] = useState(null);
+  const [activeRow, setActiveRow] = useState(null); // Neuer Zustand für die aktive Zeile
 
-  // Effekt, um die Feedback-Daten basierend auf dem ausgewählten Team und Benutzer zu laden
   useEffect(() => {
     const fetchFilteredFeedbacks = async () => {
-      const token = localStorage.getItem('token'); // Token für API-Anfragen
-      if (selectedTeam && selectedTeam !== 'all') { 
+      const token = localStorage.getItem('token');
+      if (selectedTeam && selectedTeam !== 'all') {
         try {
-          // URL für das Abrufen der Feedbacks für das ausgewählte Team und Benutzer
           const url = selectedUser && selectedUser !== 'all'
             ? `/api/team/received/${selectedTeam}/${selectedUser}`
             : `/api/team/received/${selectedTeam}`;
           const response = await axios.get(url, {
-            headers: { Authorization: `Bearer ${token}` } // Token zur Autorisierung
+            headers: { Authorization: `Bearer ${token}` }
           });
-          setFeedbacks(response.data || []); // Feedbacks setzen
+          setFeedbacks(response.data || []);
         } catch (error) {
           console.error('Fehler beim Abrufen der erhaltenen Team-Feedbacks:', error);
-          setFeedbacks([]); // Bei Fehler leere Liste setzen
+          setFeedbacks([]);
         }
       }
     };
 
-    fetchFilteredFeedbacks(); // Abruf, wenn sich Team oder Benutzer ändern
+    fetchFilteredFeedbacks();
   }, [selectedTeam, selectedUser]);
 
-  // Funktion zum Anzeigen der Details eines spezifischen Feedbacks
   const handleViewFeedback = (feedback) => {
-    setViewingFeedback(feedback); // Angezeigtes Feedback setzen
+    setViewingFeedback(feedback);
+    setActiveRow(feedback.customerFdbckID); // Setzt die aktive Zeile
   };
 
-  // Funktion, um das passende Icon basierend auf der Bewertung zu erhalten
+  const handleCloseFeedback = () => {
+    setViewingFeedback(null);
+    setActiveRow(null); // Entfernt die aktive Zeile
+  };
+
   const getRatingIcon = (rating) => {
     if (rating >= 2) {
-      return <img className="page-icon" src="/Content/themes/base/images/VeryPositive.png" alt="Sehr positiv" />;
+      return <img className="evaluation-img" src="/Content/themes/base/images/VeryPositive.png" alt="Sehr positiv" />;
     } else if (rating === 1) {
-      return <img className="page-icon" src="/Content/themes/base/images/Positive.png" alt="Positiv" />;
+      return <img className="evaluation-img" src="/Content/themes/base/images/Positive.png" alt="Positiv" />;
     } else if (rating === 0) {
-      return <img className="page-icon" src="/Content/themes/base/images/Unknown.png" alt="Unbekannt" />;
+      return <img className="evaluation-img" src="/Content/themes/base/images/Unknown.png" alt="Unbekannt" />;
     } else if (rating === -1) {
-      return <img className="page-icon" src="/Content/themes/base/images/Negative.png" alt="Negativ" />;
+      return <img className="evaluation-img" src="/Content/themes/base/images/Negative.png" alt="Negativ" />;
     } else if (rating <= -2) {
-      return <img className="page-icon" src="/Content/themes/base/images/VeryNegative.png" alt="Sehr negativ" />;
+      return <img className="evaluation-img" src="/Content/themes/base/images/VeryNegative.png" alt="Sehr negativ" />;
     }
   };
 
@@ -58,9 +61,9 @@ const TeamReceived = ({ selectedTeam, selectedUser }) => {
         <thead>
           <tr>
             <th>Empfangen am</th>
-            <th>Kundenunternehmen</th>
-            <th>Kontaktperson</th>
-            <th>E-Mail</th>
+            <th>Empfänger</th>
+            <th>Kunde</th>
+            <th>Kontaktperson</th>            
             <th>Bewertung</th>
             <th>Aktionen</th>
           </tr>
@@ -68,11 +71,14 @@ const TeamReceived = ({ selectedTeam, selectedUser }) => {
         <tbody>
           {feedbacks.length > 0 ? ( 
             feedbacks.map((feedback) => (
-              <tr key={feedback.customerFdbckID}>
-                <td>{new Date(feedback.customerFdbckReceived).toLocaleDateString('de-DE')}</td>
+              <tr
+                key={feedback.customerFdbckID}
+                className={activeRow === feedback.customerFdbckID ? 'active' : ''} // Fügt die Klasse .active hinzu
+              >
+                <td>{new Date(feedback.customerFdbckReceived).toLocaleDateString()}</td>
+                <td>{feedback.usersName}</td>
                 <td>{feedback.customerCompany}</td>
                 <td>{feedback.customerName}</td>
-                <td>{feedback.customerMailaddr}</td>
                 <td>{getRatingIcon(feedback.rating)}</td>
                 <td>
                   <button className="btn btn-primary" onClick={() => handleViewFeedback(feedback)}>
@@ -83,7 +89,7 @@ const TeamReceived = ({ selectedTeam, selectedUser }) => {
             ))
           ) : (
             <tr>
-              <td colSpan="6">Keine Feedbacks gefunden.</td> 
+              <td colSpan="6">Keine Feedbacks gefunden.</td>
             </tr>
           )}
         </tbody>
@@ -92,8 +98,10 @@ const TeamReceived = ({ selectedTeam, selectedUser }) => {
       {viewingFeedback && (
         <div className="mt-5">
           <h3>Feedback anzeigen</h3>
+          <p><strong>E-Mail:</strong> {viewingFeedback.customerMailaddr}</p>
+          <p><strong>Bewertung:</strong> {getRatingIcon(viewingFeedback.rating)}</p>
           <p style={{ fontSize: '1.5rem' }}><strong>Feedback:</strong> {viewingFeedback.customerFdbckText}</p>
-          <button className="btn btn-secondary" onClick={() => setViewingFeedback(null)}>Schließen</button>
+          <button className="btn btn-secondary" onClick={handleCloseFeedback}>Schließen</button>
         </div>
       )}
     </div>

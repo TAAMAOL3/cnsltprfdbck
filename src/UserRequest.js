@@ -6,11 +6,12 @@ const UserRequest = () => {
   const { user } = useContext(AuthContext);
   const [requests, setRequests] = useState([]);
   const [editingRequest, setEditingRequest] = useState(null);
+  const [activeRow, setActiveRow] = useState(null); // Neuer Zustand für aktive Zeile
   const [company, setCompany] = useState('');
   const [contactPerson, setContactPerson] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
-  const [deletingRequestId, setDeletingRequestId] = useState(null); // Zustandsvariable für die Löschbestätigung
+  const [deletingRequestId, setDeletingRequestId] = useState(null);
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -33,6 +34,7 @@ const UserRequest = () => {
 
   const handleEdit = (request) => {
     setEditingRequest(request);
+    setActiveRow(request.customerFdbckID); // Setzt die aktive Zeile
     setCompany(request.customerCompany);
     setContactPerson(request.customerName);
     setEmail(request.customerMailaddr);
@@ -48,16 +50,23 @@ const UserRequest = () => {
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-
+  
       setRequests(requests.map(req =>
         req.customerFdbckID === editingRequest.customerFdbckID ? { ...req, customerCompany: company, customerName: contactPerson, customerMailaddr: email } : req
       ));
       setEditingRequest(null);
+      setActiveRow(null); // Entfernt die aktive Zeile nach dem Speichern
       setMessage('Feedback-Anfrage erfolgreich aktualisiert!');
     } catch (error) {
       console.error('Fehler beim Speichern der Feedback-Anfrage:', error);
     }
   };
+  
+  const handleCancelEdit = () => {
+    setEditingRequest(null);
+    setActiveRow(null); // Entfernt die aktive Zeile nach dem Abbrechen
+  };
+  
 
   const handleDeleteRequest = async (requestID) => {
     const token = localStorage.getItem('token');
@@ -66,22 +75,22 @@ const UserRequest = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setRequests(requests.filter(req => req.customerFdbckID !== requestID));
-      setDeletingRequestId(null); // Zurücksetzen der Löschbestätigung
+      setDeletingRequestId(null);
     } catch (error) {
       console.error('Fehler beim Löschen der Feedback-Anfrage:', error);
     }
   };
 
   const confirmDelete = (requestID) => {
-    setDeletingRequestId(requestID); // Setze die zu löschende Anfrage
+    setDeletingRequestId(requestID);
   };
 
   const cancelDelete = () => {
-    setDeletingRequestId(null); // Setze das Löschbestätigungs-Flag zurück
+    setDeletingRequestId(null);
   };
 
   const handleRemind = (request) => {
-    const sendDate = new Date(request.customerFdbckSend).toLocaleDateString('de-DE');
+    const sendDate = new Date(request.customerFdbckSend).toLocaleDateString();
     const mailtoLink = `mailto:${request.customerMailaddr}?subject=Erinnerung%20an%20Feedback%20vom%20${sendDate}&body=Sehr%20geehrter%20Herr%20${request.customerName},%0A%0A${request.customerFdbckUrl}%0A%0AFreundliche%20Grüsse%0A${user.firstName}%20${user.lastName}`;
     window.location.href = mailtoLink;
   };
@@ -104,8 +113,11 @@ const UserRequest = () => {
         <tbody>
           {Array.isArray(requests) && requests.length > 0 ? (
             requests.map((request) => (
-              <tr key={request.customerFdbckID}>
-                <td>{new Date(request.customerFdbckSend).toLocaleDateString('de-DE')}</td>
+              <tr
+                key={request.customerFdbckID}
+                className={activeRow === request.customerFdbckID ? 'active' : ''} // Fügt die Klasse .active hinzu
+              >
+                <td>{new Date(request.customerFdbckSend).toLocaleDateString()}</td>
                 <td>{request.customerCompany}</td>
                 <td>{request.customerName}</td>
                 <td>{request.customerMailaddr}</td>
@@ -175,7 +187,7 @@ const UserRequest = () => {
             />
           </div>
           <button className="btn btn-primary" onClick={handleSaveRequest}>Speichern</button>
-          <button className="btn btn-secondary ml-2" onClick={() => setEditingRequest(null)}>Abbrechen</button>
+          <button className="btn btn-secondary ml-2" onClick={handleCancelEdit}>Abbrechen</button>
         </div>
       )}
     </div>
