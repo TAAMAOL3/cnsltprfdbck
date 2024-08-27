@@ -4,6 +4,7 @@ import { AuthContext } from './AuthContext';
 import UserFeedback from './UserFeedback';
 import UserRequest from './UserRequest';
 import UserReceived from './UserReceived'; // Importiere die neue UserReceived-Komponente
+import Profile from './Profile';
 
 const User = () => {
   const { user } = useContext(AuthContext);
@@ -30,6 +31,8 @@ const User = () => {
       </section>
       <div className="container mt-5" id="flexcontainer">
         {/* Erhaltene Feedbacks-Tabelle */}
+        <Profile /> 
+
         <UserReceived /> {/* Neue Tabelle hinzugefügt */}
 
         {/* Feedback-Tabelle */}
@@ -40,12 +43,12 @@ const User = () => {
 
 
       </div>
-      <div className="sidebar">
-        {/* Hier kommt der Inhalt der neuen Subseite oder des zusätzlichen Inhalts hin */}
+      {/* <div className="sidebar">
+
         <h3>Zusätzlicher Inhalt</h3>
-        <p>Hier könnte z.B. eine weitere Navigation, Statistiken oder ein Dashboard sein.</p>
+
         <button className="btn btn-secondary">Beispiel-Button</button>
-      </div>
+      </div> */}
     </div>
 
   );

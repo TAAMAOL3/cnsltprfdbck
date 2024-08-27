@@ -9,23 +9,71 @@ const TeamReceived = ({ selectedTeam, selectedUser }) => {
   const [activeRow, setActiveRow] = useState(null); // Neuer Zustand für die aktive Zeile
 
   useEffect(() => {
+    // const fetchFilteredFeedbacks = async () => {
+    //   const token = localStorage.getItem('token');
+
+    //   const teamId = selectedTeam === 'all' ? '%' : selectedTeam;
+
+    //   if (selectedTeam && selectedTeam !== 'all') {
+    //   try {
+    //     const url = selectedUser && selectedUser !== 'all'
+    //       ? `/api/team/received/${teamId}/${selectedUser}`
+    //       : `/api/team/received/${teamId}`;
+    //     const response = await axios.get(url, {
+    //       headers: { Authorization: `Bearer ${token}` }
+    //     });
+    //     setFeedbacks(response.data || []);
+    //   } catch (error) {
+    //     console.error('Fehler beim Abrufen der erhaltenen Team-Feedbacks:', error);
+    //     setFeedbacks([]);
+    //   }
+    //   }
+    // };
+
+    // const fetchFilteredFeedbacks = async () => {
+    //   const token = localStorage.getItem('token');
+
+    //   // Überprüfung auf den "all"-Wert
+    //   const teamId = selectedTeam === 'all' ? '%' : selectedTeam;
+    //   const userId = selectedUser === 'all' ? '%' : selectedUser;
+
+    //   if (selectedTeam) {
+    //     try {
+    //       const url = `/api/team/received/${teamId}/${userId}`;
+    //       const response = await axios.get(url, {
+    //         headers: { Authorization: `Bearer ${token}` }
+    //       });
+    //       setFeedbacks(response.data || []);
+    //     } catch (error) {
+    //       console.error('Fehler beim Abrufen der erhaltenen Team-Feedbacks:', error);
+    //       setFeedbacks([]);
+    //     }
+    //   }
+    // };
     const fetchFilteredFeedbacks = async () => {
       const token = localStorage.getItem('token');
-      if (selectedTeam && selectedTeam !== 'all') {
+
+      // Verwende 'all' oder einen leeren String statt '%' in der URL
+      const teamId = selectedTeam === 'all' ? 'all' : selectedTeam;
+
+      if (selectedTeam) {
         try {
           const url = selectedUser && selectedUser !== 'all'
-            ? `/api/team/received/${selectedTeam}/${selectedUser}`
-            : `/api/team/received/${selectedTeam}`;
+            ? `/api/team/received/${teamId}/${selectedUser}`
+            : `/api/team/received/${teamId}`;
+
           const response = await axios.get(url, {
             headers: { Authorization: `Bearer ${token}` }
           });
-          setFeedbacks(response.data || []);
+
+          setFeedbacks(response.data || []); // Setze die erhaltenen Feedbacks
         } catch (error) {
           console.error('Fehler beim Abrufen der erhaltenen Team-Feedbacks:', error);
           setFeedbacks([]);
         }
       }
     };
+
 
     fetchFilteredFeedbacks();
   }, [selectedTeam, selectedUser]);
@@ -63,13 +111,13 @@ const TeamReceived = ({ selectedTeam, selectedUser }) => {
             <th>Empfangen am</th>
             <th>Empfänger</th>
             <th>Kunde</th>
-            <th>Kontaktperson</th>            
+            <th>Kontaktperson</th>
             <th>Bewertung</th>
             <th>Aktionen</th>
           </tr>
         </thead>
         <tbody>
-          {feedbacks.length > 0 ? ( 
+          {feedbacks.length > 0 ? (
             feedbacks.map((feedback) => (
               <tr
                 key={feedback.customerFdbckID}

@@ -12,7 +12,8 @@ import TextMining from './TextMining';
 import User from './User';
 import CustomerFeedback from './customerFeedback';
 import Feedback from './feedback';
-import Team from './Team'; // Importing the Team component
+import Team from './Team';
+import Profile from './Profile'; // Import Profile Component
 
 // ProtectedRoute component to restrict access to authenticated users
 const ProtectedRoute = ({ children }) => {
@@ -27,7 +28,7 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
-  const { loading } = useContext(AuthContext);
+  const { loading, user } = useContext(AuthContext);
 
   if (loading) {
     return <div>Loading user data...</div>;
@@ -52,9 +53,10 @@ function App() {
             <Route path="/user" element={<ProtectedRoute><User /></ProtectedRoute>} />
             <Route path="/customerFeedback" element={<ProtectedRoute><CustomerFeedback /></ProtectedRoute>} />
             <Route path="/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} />
-
-            {/* New route for Team Leader dashboard */}
             <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
+
+            {/* New Profile Route */}
+            <Route path="/profile/:id" element={<ProtectedRoute><Profile user={user} /></ProtectedRoute>} />
           </Routes>
         </div>
       </AuthProvider>

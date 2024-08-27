@@ -1,26 +1,26 @@
-import React, { useState, useEffect, useContext } from 'react'; 
-import axios from 'axios'; 
-import { AuthContext } from './AuthContext'; 
+import React, { useState, useEffect, useContext } from 'react';
+import axios from 'axios';
+import { AuthContext } from './AuthContext';
 
-const TeamSelector = ({ onFilterChange }) => { 
+const TeamSelector = ({ onFilterChange }) => {
   const { user } = useContext(AuthContext); // Zugriff auf den aktuellen Benutzer
   const [teams, setTeams] = useState([]); // Liste der Teams
-  const [selectedTeam, setSelectedTeam] = useState(user.teamId || 'all'); // Ausgewähltes Team
+  const [selectedTeam, setSelectedTeam] = useState(user.role === 3 ? 'all' : user.teamId); // Ausgewähltes Team, standardmäßig 'all' bei Rolle 3
   const [users, setUsers] = useState([]); // Liste der Benutzer
   const [selectedUser, setSelectedUser] = useState('all'); // Ausgewählter Benutzer
 
   // Effekt zum Abrufen der Teams basierend auf der Benutzerrolle
-  useEffect(() => { 
+  useEffect(() => {
     const fetchTeams = async () => {
       const token = localStorage.getItem('token'); // Token aus dem localStorage
       try {
         const response = await axios.get('/api/teams', {
           headers: { Authorization: `Bearer ${token}` } // Autorisierung für die Abfrage
         });
-        if (user.role === 2) { 
+        if (user.role === 2) {
           const userTeam = response.data.filter((team) => team.teamID === user.teamId); // Nur Team des Teamleiters
           setTeams(userTeam);
-        } else if (user.role === 3) { 
+        } else if (user.role === 3) {
           setTeams([{ teamID: 'all', teamName: 'Alle Teams' }, ...response.data]); // Admin: Alle Teams
         }
       } catch (error) {
@@ -32,7 +32,7 @@ const TeamSelector = ({ onFilterChange }) => {
   }, [user]);
 
   // Effekt zum Abrufen der Benutzer basierend auf dem ausgewählten Team
-  useEffect(() => { 
+  useEffect(() => {
     const fetchUsers = async () => {
       const token = localStorage.getItem('token');
       if (selectedTeam !== 'all') {
@@ -54,7 +54,7 @@ const TeamSelector = ({ onFilterChange }) => {
 
   // Handler, wenn das Team geändert wird
   const handleTeamChange = (event) => {
-    const selectedTeamValue = event.target.value; 
+    const selectedTeamValue = event.target.value;
     setSelectedTeam(selectedTeamValue); // Team setzen
     setSelectedUser('all'); // Benutzer zurücksetzen
     onFilterChange(selectedTeamValue, 'all'); // Filter-Callback auslösen
@@ -68,7 +68,7 @@ const TeamSelector = ({ onFilterChange }) => {
   };
 
   return (
-    <div className="team-selector mb-3"> 
+    <div className="team-selector mb-3">
       <label htmlFor="teamSelect">Team auswählen:</label>
       <select
         id="teamSelect"
@@ -78,7 +78,7 @@ const TeamSelector = ({ onFilterChange }) => {
         disabled={user.role === 2} // Disable the dropdown if the user role is 2
       >
         {teams.map((team) => (
-          <option key={team.teamID} value={team.teamID}> 
+          <option key={team.teamID} value={team.teamID}>
             {team.teamName}
           </option>
         ))}
@@ -90,7 +90,7 @@ const TeamSelector = ({ onFilterChange }) => {
         className="form-control"
         value={selectedUser}
         onChange={handleUserChange}
-        disabled={selectedTeam === 'all'} 
+        disabled={selectedTeam === 'all'}
       >
         {users.map((user) => (
           <option key={user.usersID} value={user.usersID}>

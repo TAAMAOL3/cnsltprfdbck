@@ -9,27 +9,34 @@ import TeamSelector from './TeamSelector';
 const Team = () => {
   const { user } = useContext(AuthContext); // Aktueller Benutzer
   const navigate = useNavigate(); // Navigation für Weiterleitung
-  const [selectedTeam, setSelectedTeam] = useState(user.teamId); // Ausgewähltes Team
+  // const [selectedTeam, setSelectedTeam] = useState(user.teamId); // Ausgewähltes Team
+  const [selectedTeam, setSelectedTeam] = useState(user.role === 3 ? 'all' : user.teamId); // Ausgewähltes Team, standardmäßig 'all' bei Rolle 3
   const [selectedUser, setSelectedUser] = useState('all'); // Ausgewählter Benutzer
 
   // Effekt zur Überprüfung, ob der Benutzer zugriffsberechtigt ist
   useEffect(() => {
-    if (!user || user.role !== 2) { 
-      navigate('/login'); // Weiterleitung zu Login, wenn Benutzer nicht Teamleiter ist
+    if (!user || ![2, 3].includes(user.role)) {
+      navigate('/login'); // Weiterleitung zu Login, wenn Benutzer weder Rolle 2 noch Rolle 3 hat
     }
   }, [user, navigate]);
+  
 
     // Effekt, um Standardabfragen beim Laden der Seite auszuführen
     useEffect(() => {
       // Standardmäßige Team- und Benutzerfilter setzen
-      if (user && user.teamId) {
-        setSelectedTeam(user.teamId); // Setzt das Team des Benutzers standardmäßig
+      if (user) {
+        if (user.role === 3) {
+          setSelectedTeam('all'); // Setzt das Team auf 'all', wenn die Benutzerrolle 3 ist
+        } else if (user.teamId) {
+          setSelectedTeam(user.teamId); // Setzt das Team des Benutzers standardmäßig, wenn die Rolle nicht 3 ist
+        }
         setSelectedUser('all'); // Alle Benutzer standardmäßig
       }
     }, [user]);
 
   // Funktion, um Filteränderungen von TeamSelector zu handhaben
   const handleFilterChange = (teamId, userId) => {
+    console.log("Filteränderung:", teamId, userId); // Debugging-Log
     setSelectedTeam(teamId); // Team setzen
     setSelectedUser(userId); // Benutzer setzen
   };

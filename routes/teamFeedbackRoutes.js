@@ -24,6 +24,4 @@ router.put('/:id', authenticateToken, teamFeedbackController.updateTeamFeedback)
 // Route zum Löschen eines Team-Feedbacks
 router.delete('/:id', authenticateToken, teamFeedbackController.deleteTeamFeedback);
 
-
-
 module.exports = router;

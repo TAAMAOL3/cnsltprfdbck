@@ -31,3 +31,92 @@ table tr.active {
   background-color: #d3d3d3;
   /* Dunkleres Grau für die aktive Zeile */
 }
+/* Profile Grid Layout */
+.profile-container {
+  display: grid;
+  grid-template-areas:
+    "A A A A"
+    "B C C D"
+    "B E E F"
+    "G G G G";
+  grid-template-columns: 1fr 2fr 1fr 1fr;
+  grid-template-rows: auto auto auto auto;
+  gap: 20px;
+  align-items: center;
+  width: 100%;
+}
+
+/* A-Bereich: Name */
+.profile-name {
+  grid-area: A;
+  text-align: left;
+}
+
+/* B-Bereich: Profilbild */
+.profile-image {
+  grid-area: B;
+  text-align: center;
+}
+
+/* C-Bereich: Erste 3 Texte */
+.profile-section-text {
+  grid-area: C;
+}
+
+/* D-Bereich: Ergebnisse zu den ersten 3 Texten */
+.profile-section-values {
+  grid-area: D;
+  text-align: right;
+}
+
+/* E-Bereich: Zweite 3 Texte */
+.profile-section-text:nth-of-type(2) {
+  grid-area: E;
+}
+
+/* F-Bereich: Ergebnisse zu den zweiten 3 Texten */
+.profile-section-values:nth-of-type(2) {
+  grid-area: F;
+  text-align: right;
+}
+
+/* G-Bereich: Letzte 2 Texte (Bewertungen) */
+.profile-section-text:nth-of-type(3) {
+  grid-area: G;
+  text-align: left;
+}
+
+/* G-Bereich: Ergebnisse zu den letzten 2 Texten (Bewertungen) */
+.profile-section-values:nth-of-type(3) {
+  grid-area: G;
+  text-align: right;
+}
+
+
+/* CSS für das Hover-Feature */
+.rating-icon-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.rating-value {
+  display: none;
+  /* Wert standardmäßig ausblenden */
+  position: absolute;
+  top: 100%;
+  /* Unter dem Icon anzeigen */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #fff;
+  border: 1px solid #ccc;
+  padding: 5px;
+  font-size: 0.9em;
+  color: #333;
+  white-space: nowrap;
+  z-index: 100;
+}
+
+/* Zeige den Wert beim Hover */
+.rating-icon-wrapper:hover .rating-value {
+  display: block;
+}

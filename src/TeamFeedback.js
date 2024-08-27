@@ -2,13 +2,10 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from './AuthContext';
 
-
-
 const TeamFeedback = ({ selectedTeam, selectedUser }) => {
   const { user } = useContext(AuthContext); // Zugriff auf den aktuellen Benutzer
   const [feedbacks, setFeedbacks] = useState([]); // Liste der erstellten Feedbacks
   const [viewingFeedback, setViewingFeedback] = useState(null); // Detailansicht eines Feedbacks
-
 
   // Formatierung des Datums für die Anzeige im Format dd/MM/yyyy
   const formatDateForDisplay = (dateString) => {
@@ -19,24 +16,21 @@ const TeamFeedback = ({ selectedTeam, selectedUser }) => {
     return `${day}/${month}/${year}`;
   };
 
-  // Formatierung des Datums für das <input type="date">-Feld (yyyy-MM-dd)
-  const formatDateForInput = (dateString) => {
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${year}-${month}-${day}`;
-  };
   // Effekt zum Laden der erstellten Feedback-Daten für das Team
   useEffect(() => {
     const fetchTeamFeedback = async () => {
       const token = localStorage.getItem('token'); // Token für API-Anfragen
-      if (selectedTeam && selectedTeam !== 'all') {
+
+      // Verwende 'all' oder einen leeren String statt '%' in der URL
+      const teamId = selectedTeam === 'all' ? 'all' : selectedTeam;
+
+      if (selectedTeam) {
         try {
           // API-URL zum Abrufen des erstellten Feedbacks für das Team und optional den Benutzer
           const url = selectedUser && selectedUser !== 'all'
-            ? `/api/team/feedback/${selectedTeam}/${selectedUser}`
-            : `/api/team/feedback/${selectedTeam}`;
+            ? `/api/team/feedback/${teamId}/${selectedUser}`
+            : `/api/team/feedback/${teamId}`;
+
           const response = await axios.get(url, {
             headers: { Authorization: `Bearer ${token}` } // Autorisierung
           });
@@ -49,6 +43,7 @@ const TeamFeedback = ({ selectedTeam, selectedUser }) => {
         }
       }
     };
+
 
     fetchTeamFeedback(); // Feedback-Daten laden, wenn sich Team oder Benutzer ändern
   }, [selectedTeam, selectedUser]);
@@ -79,11 +74,6 @@ const TeamFeedback = ({ selectedTeam, selectedUser }) => {
                 <td>{feedback.usersName}</td>
                 <td>{feedback.variousFdbckCustomer}</td>
                 <td>{feedback.variousFdbckDescription}</td>
-                {/* <td>
-                  <a href={feedback.uploadUrl} download className="btn btn-link" onClick={() => console.log(feedback.uploadUrl)}>
-                  <button className="btn btn-primary">Datei herunterladen</button>
-                  </a>
-                </td> */}
                 <td>
                   {feedback.uploadUrl ? (
                     <button className="btn btn-primary" onClick={() => {
@@ -100,7 +90,6 @@ const TeamFeedback = ({ selectedTeam, selectedUser }) => {
                     'Keine Datei'
                   )}
                 </td>
-
               </tr>
             ))
           ) : (

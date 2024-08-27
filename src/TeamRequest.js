@@ -9,26 +9,36 @@ const TeamRequest = ({ selectedTeam, selectedUser }) => {
   // Effekt, um die Feedback-Anfragen für das ausgewählte Team zu laden
   useEffect(() => {
     const fetchTeamRequests = async () => {
-      const token = localStorage.getItem('token'); // Token für API-Anfragen
-      if (selectedTeam && selectedTeam !== 'all') {
+      const token = localStorage.getItem('token'); // Token für die API-Anfrage
+
+      // Verwende 'all' oder den ausgewählten Teamwert
+      const teamId = selectedTeam === 'all' ? 'all' : selectedTeam;
+
+      if (selectedTeam) {
         try {
-          // API-URL zum Abrufen der Feedback-Anfragen für das ausgewählte Team
+          // URL für die API-Anfrage basierend auf Team- und Benutzer-ID
           const url = selectedUser && selectedUser !== 'all'
-            ? `/api/team/requests/${selectedTeam}/${selectedUser}`
-            : `/api/team/requests/${selectedTeam}`;
+            ? `/api/team/requests/${teamId}/${selectedUser}`
+            : `/api/team/requests/${teamId}`;
+
+          // API-Aufruf mit axios
           const response = await axios.get(url, {
-            headers: { Authorization: `Bearer ${token}` } // Token für die Autorisierung
+            headers: { Authorization: `Bearer ${token}` } // Autorisierungs-Token
           });
-          setRequests(response.data || []); // Feedback-Anfragen setzen
+
+          // Setze die Anfragen oder eine leere Liste, wenn keine Daten vorhanden sind
+          setRequests(response.data || []);
         } catch (error) {
-          console.error('Fehler beim Abrufen der Feedback-Anfragen:', error);
-          setRequests([]); // Bei Fehler leere Liste setzen
+          console.error('Fehler beim Abrufen der Team-Requests:', error);
+          setRequests([]); // Bei Fehler die Liste leeren
         }
       }
     };
 
-    fetchTeamRequests(); // Feedback-Anfragen laden, wenn sich das Team ändert
+    fetchTeamRequests(); // Aufruf der Funktion bei Änderung der Abhängigkeiten
   }, [selectedTeam, selectedUser]);
+
+
 
   // Funktion, um eine E-Mail-Erinnerung zu senden
   const handleRemind = (request) => {
