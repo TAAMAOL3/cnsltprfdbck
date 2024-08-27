@@ -2,6 +2,7 @@ import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from './AuthContext'; // Assuming you're using AuthContext for the logged-in user
+// eslint-disable-next-line no-unused-vars
 import LinkGenerator from './linkGenerator'; // Use the LinkGenerator for generating the link
 import { animateButton } from './buttonAnimations'; // Import the button animation function
 import './buttonAnimations.scss'; // Import the SCSS for the animations
@@ -9,6 +10,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css'; // Import the datepicker styles
 
 const VariousFeedback = () => {
+  // eslint-disable-next-line no-unused-vars
   const { user } = useContext(AuthContext); // Assuming you're using AuthContext to get the logged-in user
   const [customer, setCustomer] = useState('');
   const [description, setDescription] = useState('');

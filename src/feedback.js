@@ -9,6 +9,7 @@ const Feedback = () => {
   const [contactPerson, setContactPerson] = useState('');
   const [feedback, setFeedback] = useState('');
   const [error, setError] = useState('');
+  // eslint-disable-next-line no-unused-vars
   const [rating, setRating] = useState(null);  // Neues State für das Rating
   const navigate = useNavigate();
   

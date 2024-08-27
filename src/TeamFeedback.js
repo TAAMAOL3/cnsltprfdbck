@@ -3,6 +3,7 @@ import axios from 'axios';
 import { AuthContext } from './AuthContext';
 
 const TeamFeedback = ({ selectedTeam, selectedUser }) => {
+  // eslint-disable-next-line no-unused-vars
   const { user } = useContext(AuthContext); // Zugriff auf den aktuellen Benutzer
   const [feedbacks, setFeedbacks] = useState([]); // Liste der erstellten Feedbacks
   const [viewingFeedback, setViewingFeedback] = useState(null); // Detailansicht eines Feedbacks
@@ -49,6 +50,7 @@ const TeamFeedback = ({ selectedTeam, selectedUser }) => {
   }, [selectedTeam, selectedUser]);
 
   // Funktion zum Anzeigen der Details eines Feedbacks
+  // eslint-disable-next-line no-unused-vars
   const handleViewFeedback = (feedback) => {
     setViewingFeedback(feedback); // Detailansicht des Feedbacks setzen
   };
