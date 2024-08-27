@@ -11,9 +11,9 @@ const dbConfig = {
 };
 
 // Nur in der Produktionsumgebung wird die SSL-Option hinzugefügt
-if (process.env.NODE_ENV === 'production') {
-  dbConfig.ssl = { ca: fs.readFileSync(__dirname + '/DigiCertGlobalRootG2.crt.pem') };
-}
+// if (process.env.NODE_ENV === 'production') {
+//   dbConfig.ssl = { ca: fs.readFileSync(__dirname + '/DigiCertGlobalRootG2.crt.pem') };
+// }
 
 // Erstellen der Datenbankverbindung
 const db = mysql.createConnection(dbConfig);
