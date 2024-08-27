@@ -3,11 +3,53 @@ import axios from 'axios';
 import { AuthContext } from './AuthContext';
 
 const TeamReceived = ({ selectedTeam, selectedUser }) => {
+  const { user } = useContext(AuthContext);
   const [feedbacks, setFeedbacks] = useState([]);
   const [viewingFeedback, setViewingFeedback] = useState(null);
   const [activeRow, setActiveRow] = useState(null); // Neuer Zustand für die aktive Zeile
 
   useEffect(() => {
+    // const fetchFilteredFeedbacks = async () => {
+    //   const token = localStorage.getItem('token');
+
+    //   const teamId = selectedTeam === 'all' ? '%' : selectedTeam;
+
+    //   if (selectedTeam && selectedTeam !== 'all') {
+    //   try {
+    //     const url = selectedUser && selectedUser !== 'all'
+    //       ? `/api/team/received/${teamId}/${selectedUser}`
+    //       : `/api/team/received/${teamId}`;
+    //     const response = await axios.get(url, {
+    //       headers: { Authorization: `Bearer ${token}` }
+    //     });
+    //     setFeedbacks(response.data || []);
+    //   } catch (error) {
+    //     console.error('Fehler beim Abrufen der erhaltenen Team-Feedbacks:', error);
+    //     setFeedbacks([]);
+    //   }
+    //   }
+    // };
+
+    // const fetchFilteredFeedbacks = async () => {
+    //   const token = localStorage.getItem('token');
+
+    //   // Überprüfung auf den "all"-Wert
+    //   const teamId = selectedTeam === 'all' ? '%' : selectedTeam;
+    //   const userId = selectedUser === 'all' ? '%' : selectedUser;
+
+    //   if (selectedTeam) {
+    //     try {
+    //       const url = `/api/team/received/${teamId}/${userId}`;
+    //       const response = await axios.get(url, {
+    //         headers: { Authorization: `Bearer ${token}` }
+    //       });
+    //       setFeedbacks(response.data || []);
+    //     } catch (error) {
+    //       console.error('Fehler beim Abrufen der erhaltenen Team-Feedbacks:', error);
+    //       setFeedbacks([]);
+    //     }
+    //   }
+    // };
     const fetchFilteredFeedbacks = async () => {
       const token = localStorage.getItem('token');
 
