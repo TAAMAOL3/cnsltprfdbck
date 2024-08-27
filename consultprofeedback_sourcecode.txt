@@ -88726,6 +88726,7 @@ const Feedback = () => {
   const [contactPerson, setContactPerson] = useState('');
   const [feedback, setFeedback] = useState('');
   const [error, setError] = useState('');
+  // eslint-disable-next-line no-unused-vars
   const [rating, setRating] = useState(null);  // Neues State für das Rating
   const navigate = useNavigate();
   
@@ -89445,6 +89446,7 @@ import axios from 'axios';
 import { AuthContext } from './AuthContext';
 
 const TeamFeedback = ({ selectedTeam, selectedUser }) => {
+  // eslint-disable-next-line no-unused-vars
   const { user } = useContext(AuthContext); // Zugriff auf den aktuellen Benutzer
   const [feedbacks, setFeedbacks] = useState([]); // Liste der erstellten Feedbacks
   const [viewingFeedback, setViewingFeedback] = useState(null); // Detailansicht eines Feedbacks
@@ -89491,6 +89493,7 @@ const TeamFeedback = ({ selectedTeam, selectedUser }) => {
   }, [selectedTeam, selectedUser]);
 
   // Funktion zum Anzeigen der Details eines Feedbacks
+  // eslint-disable-next-line no-unused-vars
   const handleViewFeedback = (feedback) => {
     setViewingFeedback(feedback); // Detailansicht des Feedbacks setzen
   };
@@ -89561,6 +89564,7 @@ import axios from 'axios';
 import { AuthContext } from './AuthContext';
 
 const TeamReceived = ({ selectedTeam, selectedUser }) => {
+  // eslint-disable-next-line no-unused-vars
   const { user } = useContext(AuthContext);
   const [feedbacks, setFeedbacks] = useState([]);
   const [viewingFeedback, setViewingFeedback] = useState(null);
@@ -90557,6 +90561,7 @@ import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from './AuthContext'; // Assuming you're using AuthContext for the logged-in user
+// eslint-disable-next-line no-unused-vars
 import LinkGenerator from './linkGenerator'; // Use the LinkGenerator for generating the link
 import { animateButton } from './buttonAnimations'; // Import the button animation function
 import './buttonAnimations.scss'; // Import the SCSS for the animations
@@ -90564,6 +90569,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css'; // Import the datepicker styles
 
 const VariousFeedback = () => {
+  // eslint-disable-next-line no-unused-vars
   const { user } = useContext(AuthContext); // Assuming you're using AuthContext to get the logged-in user
   const [customer, setCustomer] = useState('');
   const [description, setDescription] = useState('');
