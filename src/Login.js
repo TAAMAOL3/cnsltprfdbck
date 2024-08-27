@@ -8,7 +8,6 @@ const Login = () => {
   const [error, setError] = useState('');
   const { user, login, loading } = useContext(AuthContext);
   // eslint-disable-next-line no-unused-vars
-
   const [dbStatus, setDbStatus] = useState("Checking database connection..."); // Neuer Status für die DB-Verbindung
   const navigate = useNavigate();
 
