@@ -20,10 +20,10 @@ jobs:
     - name: Install dependencies
       run: npm install
 
-    # - name: Build project
-    #   run: npm run build
-    - name: Build and start the project in production
-      run: npm run build && npm run start:production
+    - name: Build project
+      run: npm run build
+    # - name: Build and start the project in production
+    #   run: npm run build && npm run start:production
 
 
     - name: Deploy to Azure Web App
