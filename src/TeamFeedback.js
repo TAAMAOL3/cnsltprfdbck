@@ -3,7 +3,6 @@ import axios from 'axios';
 import { AuthContext } from './AuthContext';
 
 const TeamFeedback = ({ selectedTeam, selectedUser }) => {
-  const { user } = useContext(AuthContext); // Zugriff auf den aktuellen Benutzer
   const [feedbacks, setFeedbacks] = useState([]); // Liste der erstellten Feedbacks
   const [viewingFeedback, setViewingFeedback] = useState(null); // Detailansicht eines Feedbacks
 
@@ -47,11 +46,6 @@ const TeamFeedback = ({ selectedTeam, selectedUser }) => {
 
     fetchTeamFeedback(); // Feedback-Daten laden, wenn sich Team oder Benutzer ändern
   }, [selectedTeam, selectedUser]);
-
-  // Funktion zum Anzeigen der Details eines Feedbacks
-  const handleViewFeedback = (feedback) => {
-    setViewingFeedback(feedback); // Detailansicht des Feedbacks setzen
-  };
 
   return (
     <div className="mb-5">

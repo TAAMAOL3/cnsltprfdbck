@@ -9,7 +9,6 @@ const Feedback = () => {
   const [contactPerson, setContactPerson] = useState('');
   const [feedback, setFeedback] = useState('');
   const [error, setError] = useState('');
-  const [rating, setRating] = useState(null);  // Neues State für das Rating
   const navigate = useNavigate();
   
   useEffect(() => {
