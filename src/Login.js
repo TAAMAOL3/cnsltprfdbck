@@ -7,6 +7,9 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { user, login, loading } = useContext(AuthContext);
+  // eslint-disable-next-line no-unused-vars
+
+  const [dbStatus, setDbStatus] = useState("Checking database connection..."); // Neuer Status für die DB-Verbindung
   const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
@@ -26,6 +29,23 @@ const Login = () => {
       navigate('/user');
     }
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    fetch('/api/dbXstatus')
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data);
+        if (data.message === 'Database connected successfully') {
+          setDbStatus('Connected to the database');
+        } else {
+          setDbStatus('Database connection failed');
+        }
+      })
+      .catch((error) => {
+        setDbStatus('Error connecting to the database');
+      });
+  }, []);
+
 
   return (
     <div className="container mt-5">

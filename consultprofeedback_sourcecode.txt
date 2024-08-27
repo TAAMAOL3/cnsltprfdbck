@@ -20998,6 +20998,7 @@ UPLOAD_PATH='./public/uploads'
   },
   "scripts": {
     "start": "node --env-file=.env server.js",
+    "start:production": "node --env-file=.env.production server.js",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -21053,8 +21054,8 @@ app.use(helmet());
 app.use(express.json());
 app.use(morgan('combined'));
 app.use(rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // Limit each IP to 100 requests per windowMs
+  windowMs: 5 * 60 * 1000, // 15 minutes
+  max: 1000 // Limit each IP to 100 requests per windowMs
 }));
 
 // Route imports
@@ -21183,6 +21184,16 @@ app.use((req, res, next) => {
 // Logout route
 app.post('/api/logout', (req, res) => {
   res.json({ message: 'Successfully logged out' });
+});
+
+// API-Endpunkt zum Überprüfen der Datenbankverbindung
+app.get('/api/dbXstatus', (req, res) => {
+  connection.query('SELECT 1', (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: 'Database connection failed', error: err });
+    }
+    res.status(200).json({ message: 'Database connected successfully', results });
+  });
 });
 
 app.listen(port, () => {
@@ -88907,6 +88918,9 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { user, login, loading } = useContext(AuthContext);
+  // eslint-disable-next-line no-unused-vars
+
+  const [dbStatus, setDbStatus] = useState("Checking database connection..."); // Neuer Status für die DB-Verbindung
   const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
@@ -88926,6 +88940,23 @@ const Login = () => {
       navigate('/user');
     }
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    fetch('/api/dbXstatus')
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data);
+        if (data.message === 'Database connected successfully') {
+          setDbStatus('Connected to the database');
+        } else {
+          setDbStatus('Database connection failed');
+        }
+      })
+      .catch((error) => {
+        setDbStatus('Error connecting to the database');
+      });
+  }, []);
+
 
   return (
     <div className="container mt-5">

@@ -28,8 +28,8 @@ app.use(helmet());
 app.use(express.json());
 app.use(morgan('combined'));
 app.use(rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // Limit each IP to 100 requests per windowMs
+  windowMs: 5 * 60 * 1000, // 15 minutes
+  max: 1000 // Limit each IP to 100 requests per windowMs
 }));
 
 // Route imports
@@ -158,6 +158,16 @@ app.use((req, res, next) => {
 // Logout route
 app.post('/api/logout', (req, res) => {
   res.json({ message: 'Successfully logged out' });
+});
+
+// API-Endpunkt zum Überprüfen der Datenbankverbindung
+app.get('/api/dbXstatus', (req, res) => {
+  connection.query('SELECT 1', (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: 'Database connection failed', error: err });
+    }
+    res.status(200).json({ message: 'Database connected successfully', results });
+  });
 });
 
 app.listen(port, () => {
