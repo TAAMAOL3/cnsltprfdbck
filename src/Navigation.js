@@ -30,6 +30,7 @@ function Navigation() {
         </div>
         <div className="navbar-collapse collapse" id="navbar-main">
           <ul className="nav navbar-nav navbar-right">
+          <li><Link to="/status">System Status</Link></li>
             {!user ? (
               <li><Link to="/login">Login</Link></li>
             ) : (

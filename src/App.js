@@ -14,6 +14,7 @@ import CustomerFeedback from './customerFeedback';
 import Feedback from './feedback';
 import Team from './Team';
 import Profile from './Profile'; // Import Profile Component
+import Status from "./Status";
 
 // ProtectedRoute component to restrict access to authenticated users
 const ProtectedRoute = ({ children }) => {
@@ -44,6 +45,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/password-reset" element={<PasswordReset />} />
             <Route path="/" element={<Navigate to="/login" />} />
+            <Route path="/status" element={<Status />} />
 
             {/* Protected routes */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

@@ -160,15 +160,39 @@ app.post('/api/logout', (req, res) => {
   res.json({ message: 'Successfully logged out' });
 });
 
-// API-Endpunkt zum Überprüfen der Datenbankverbindung
 app.get('/api/dbXstatus', (req, res) => {
-  connection.query('SELECT 1', (err, results) => {
+  // Führe eine Abfrage auf t_users durch und prüfe, ob die Tabelle Daten zurückgibt
+  db.query('SELECT * FROM t_users LIMIT 1', (err, results) => {
     if (err) {
-      return res.status(500).json({ message: 'Database connection failed', error: err });
+      console.error('Database connection error:', err);
+      return res.status(200).json({
+        status: 'failed',
+        message: 'Unable to connect to the database',
+        error: err.message
+      });
     }
-    res.status(200).json({ message: 'Database connected successfully', results });
+
+    if (results.length > 0) {
+      // Wenn die Abfrage Ergebnisse zurückgibt, ist die Verbindung erfolgreich
+      return res.status(200).json({
+        status: 'success',
+        message: 'Connected to the database successfully and data retrieved',
+        data: results[0] // Gib die erste Zeile der Ergebnisse zurück
+      });
+    } else {
+      // Wenn keine Ergebnisse zurückgegeben werden, ist die Verbindung da, aber keine Daten vorhanden
+      return res.status(200).json({
+        status: 'warning',
+        message: 'Connected to the database, but no data found in t_users'
+      });
+    }
   });
 });
+
+
+
+
+
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
