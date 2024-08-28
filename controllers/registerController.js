@@ -13,6 +13,7 @@ exports.registerUser = async (req, res) => {
     // Check if email already exists
     db.query("SELECT * FROM t_users WHERE usersEmail = ?", [email], async (err, results) => {
         if (err) {
+            console.error("Database query error:", err);  // Fehlerprotokollierung
             return res.status(500).json({ error: "Database error" });
         }
 
@@ -24,6 +25,7 @@ exports.registerUser = async (req, res) => {
 
         db.query("SELECT rolesID FROM t_roles WHERE rolesName = 'user'", (err, results) => {
             if (err || results.length === 0) {
+                console.error("Role not found or error in query:", err);  // Fehlerprotokollierung
                 return res.status(500).json({ error: "Role not found" });
             }
 
@@ -36,6 +38,7 @@ exports.registerUser = async (req, res) => {
                 [vorname, nachname, email, hashedPassword, roleId],
                 (error) => {
                     if (error) {
+                        console.error("Error registering user:", error);  // Fehlerprotokollierung
                         return res.status(500).json({ error: "Error registering user" });
                     }
                     res.status(201).json({ message: "User registered successfully" });

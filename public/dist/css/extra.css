@@ -42,67 +42,103 @@ table tr.active {
     "G G G G";
   grid-template-columns: 1fr 2fr 1fr 1fr;
   grid-template-rows: auto auto auto auto;
-
   align-items: center;
   width: 100%;
+  gap: 0;
+  /* Gap entfernt */
 }
 
 /* A-Bereich: Name */
 .profile-name {
   grid-area: A;
   text-align: left;
-  border: 1px solid red; /* Temporäre rote Border */
+  background-color: #FFDDC1;
+  /* Pastellorange */
 }
 
 /* B-Bereich: Profilbild */
 .profile-image {
   grid-area: B;
   text-align: center;
-  border: 1px solid blue; /* Temporäre blaue Border */
+  background-color: #C1E1FF;
+  /* Pastellblau */
 }
 
 /* C-Bereich: Erste 3 Texte */
 .profile-section-text:nth-of-type(1) {
   grid-area: C;
-  border: 1px solid green; /* Temporäre grüne Border */
-  display: inline-block; /* Sicherstellen, dass der Text nebeneinander angezeigt wird */
+  display: inline-block;
+  background-color: #D4FFD1;
+  /* Pastellgrün */
 }
 
 /* D-Bereich: Ergebnisse zu den ersten 3 Texten */
 .profile-section-values:nth-of-type(1) {
   grid-area: D;
   text-align: right;
-  border: 1px solid orange; /* Temporäre orange Border */
+  background-color: #FFFACD;
+  /* Pastellgelb */
 }
 
 /* E-Bereich: Zweite 3 Texte */
 .profile-section-text:nth-of-type(2) {
   grid-area: E;
-  border: 1px solid purple; /* Temporäre lila Border */
-  display: inline-block; /* Sicherstellen, dass der Text nebeneinander angezeigt wird */
+  display: inline-block;
+  background-color: #FFD1DC;
+  /* Pastellrosa */
 }
 
 /* F-Bereich: Ergebnisse zu den zweiten 3 Texten */
 .profile-section-values:nth-of-type(2) {
   grid-area: F;
   text-align: right;
-  border: 1px solid pink; /* Temporäre pinke Border */
+  background-color: #E6E6FA;
+  /* Pastellviolett */
 }
 
 /* G-Bereich: Letzte 2 Texte (Bewertungen) */
 .profile-section-text:nth-of-type(3) {
   grid-area: G;
   text-align: left;
-  border: 1px solid yellow; /* Temporäre gelbe Border */
+  background-color: #FFEBB7;
+  /* Pastellgelb */
 }
 
 /* G-Bereich: Ergebnisse zu den letzten 2 Texten (Bewertungen) */
 .profile-section-values:nth-of-type(3) {
   grid-area: G;
   text-align: right;
-  border: 1px solid yellow; /* Temporäre gelbe Border */
+  background-color: #FFEBB7;
+  /* Pastellgelb */
 }
 
+/* CSS für das Hover-Feature */
+.rating-icon-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.rating-value {
+  display: none;
+  /* Wert standardmäßig ausblenden */
+  position: absolute;
+  top: 100%;
+  /* Unter dem Icon anzeigen */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #fff;
+  border: 1px solid #ccc;
+  padding: 5px;
+  font-size: 0.9em;
+  color: #333;
+  white-space: nowrap;
+  z-index: 100;
+}
+
+/* Zeige den Wert beim Hover */
+.rating-icon-wrapper:hover .rating-value {
+  display: block;
+}
 
 
 /* CSS für das Hover-Feature */
