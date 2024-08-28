@@ -21263,27 +21263,33 @@ module.exports = db;
 ***adminController.js:
 const db = require('../config/db');
 
-// Alle Benutzer abrufen
+// Alle Benutzer abrufen und Team-Informationen hinzufügen
 exports.getUsers = (req, res) => {
-  const query = 'SELECT * FROM t_users';
+  const query = `
+    SELECT u.*, t.teamName 
+    FROM t_users u
+    LEFT JOIN t_team t ON u.teamFK = t.teamID
+  `;
   db.query(query, (err, results) => {
     if (err) return res.status(500).send('Fehler beim Abrufen der Benutzer.');
     res.json(results);
   });
 };
 
+
 // Benutzer bearbeiten
 exports.updateUser = (req, res) => {
   const { id } = req.params;
-  const { usersEmail, usersVorname, usersNachname, rolesFK } = req.body;
-  const query = 'UPDATE t_users SET usersEmail = ?, usersVorname = ?, usersNachname = ?, rolesFK = ? WHERE usersID = ?';
-  const values = [usersEmail, usersVorname, usersNachname, rolesFK, id];
+  const { usersEmail, usersVorname, usersNachname, rolesFK, teamFK } = req.body; // teamFK hinzugefügt
+  const query = 'UPDATE t_users SET usersEmail = ?, usersVorname = ?, usersNachname = ?, rolesFK = ?, teamFK = ? WHERE usersID = ?'; // teamFK in die SQL-Abfrage aufgenommen
+  const values = [usersEmail, usersVorname, usersNachname, rolesFK, teamFK, id]; // teamFK in die Werte eingefügt
 
   db.query(query, values, (err, results) => {
     if (err) return res.status(500).send('Fehler beim Bearbeiten des Benutzers.');
     res.status(200).send('Benutzer erfolgreich bearbeitet.');
   });
 };
+
 
 // Alle Rollen abrufen
 exports.getRoles = (req, res) => {
@@ -34028,85 +34034,50 @@ table tr.active {
   /* Dunkleres Grau für die aktive Zeile */
 }
 
-/* Profile Grid Layout */
 .profile-container {
   display: grid;
   grid-template-areas:
-    "A A A A"
-    "B C C D"
-    "B E E F"
-    "G G G G";
-  grid-template-columns: 1fr 2fr 1fr 1fr;
-  grid-template-rows: auto auto auto auto;
+    "y y y y y"
+    "z a c e m"
+    "z b d f n"
+    "z g i k o"
+    "z h j l p";
+  grid-template-columns: repeat(5, 1fr);
+  /* gap: 20px; */
   align-items: center;
-  width: 100%;
-  gap: 0;
-  /* Gap entfernt */
 }
 
-/* A-Bereich: Name */
-.profile-name {
-  grid-area: A;
-  text-align: left;
-  background-color: #FFDDC1;
-  /* Pastellorange */
+h3 {
+  grid-area: y;
+  text-align: left; /* Zentriert den Namen nur in 'y' */
 }
 
-/* B-Bereich: Profilbild */
-.profile-image {
-  grid-area: B;
+.grimg {
+  grid-area: z;
   text-align: center;
-  background-color: #C1E1FF;
-  /* Pastellblau */
+  /* max-width: 100px; */
+  /* height: auto; */
+  height: 100%;
 }
 
-/* C-Bereich: Erste 3 Texte */
-.profile-section-text:nth-of-type(1) {
-  grid-area: C;
-  display: inline-block;
-  background-color: #D4FFD1;
-  /* Pastellgrün */
+.grid-item {
+  text-align: center;
 }
 
-/* D-Bereich: Ergebnisse zu den ersten 3 Texten */
-.profile-section-values:nth-of-type(1) {
-  grid-area: D;
-  text-align: right;
-  background-color: #FFFACD;
-  /* Pastellgelb */
+.highlighted-text {
+  font-size: 3em;
+  font-weight: bold;
 }
 
-/* E-Bereich: Zweite 3 Texte */
-.profile-section-text:nth-of-type(2) {
-  grid-area: E;
-  display: inline-block;
-  background-color: #FFD1DC;
-  /* Pastellrosa */
+/* Entferne Aufzählungszeichen, Padding und Margins */
+ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  text-align: center;
 }
 
-/* F-Bereich: Ergebnisse zu den zweiten 3 Texten */
-.profile-section-values:nth-of-type(2) {
-  grid-area: F;
-  text-align: right;
-  background-color: #E6E6FA;
-  /* Pastellviolett */
-}
 
-/* G-Bereich: Letzte 2 Texte (Bewertungen) */
-.profile-section-text:nth-of-type(3) {
-  grid-area: G;
-  text-align: left;
-  background-color: #FFEBB7;
-  /* Pastellgelb */
-}
-
-/* G-Bereich: Ergebnisse zu den letzten 2 Texten (Bewertungen) */
-.profile-section-values:nth-of-type(3) {
-  grid-area: G;
-  text-align: right;
-  background-color: #FFEBB7;
-  /* Pastellgelb */
-}
 
 /* CSS für das Hover-Feature */
 .rating-icon-wrapper {
@@ -34164,6 +34135,18 @@ table tr.active {
 .rating-icon-wrapper:hover .rating-value {
   display: block;
 }
+
+.evaluation-img-extend{
+  height: auto;
+  display: block;
+  /* padding: 0px 5px 5px 5px; */
+  max-width: 40px;
+}
+
+.bg-pastel-yellow {
+  background-color: #fdfd96; /* Pastell-Gelb */
+}
+
 ***sdx-icons.css:
 @font-face {
     font-family: "sdx-icons";
@@ -88254,6 +88237,7 @@ import axios from 'axios';
 const AdminUser = () => {
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]); // Zustand für Rollenliste
+  const [teams, setTeams] = useState([]); // Zustand für Teams
   const [editingUser, setEditingUser] = useState(null);
   const [deletingUserId, setDeletingUserId] = useState(null); // Neuer Zustand für die Bestätigung
 
@@ -88268,13 +88252,24 @@ const AdminUser = () => {
       setRoles(response.data); // Lade Rollenliste
     };
 
+    const fetchTeams = async () => {
+      const response = await axios.get('/api/admin/teams'); // Teams abrufen
+      setTeams(response.data);
+    };
+
     fetchUsers();
     fetchRoles(); // Lade Rollenliste beim Mounten der Komponente
+    fetchTeams(); // Lade Teams beim Mounten der Komponente
   }, []);
 
   const getRoleName = (roleId) => {
     const role = roles.find(role => role.rolesID === roleId);
     return role ? role.rolesName : 'Unbekannt';
+  };
+
+  const getTeamName = (teamId) => {
+    const team = teams.find(team => team.teamID === teamId);
+    return team ? team.teamName : 'Kein Team';
   };
 
   const confirmDelete = (userId) => {
@@ -88292,17 +88287,26 @@ const AdminUser = () => {
   };
 
   const handleSaveUser = async () => {
-    const { usersID, usersEmail, usersVorname, usersNachname, rolesFK } = editingUser;
-    await axios.put(`/api/admin/users/${usersID}`, {
-      usersEmail,
-      usersVorname,
-      usersNachname,
-      rolesFK
-    });
-    setUsers(users.map((user) =>
-      user.usersID === usersID ? editingUser : user
-    ));
-    setEditingUser(null); // Bearbeitungsformular schließen
+    const { usersID, usersEmail, usersVorname, usersNachname, rolesFK, teamFK } = editingUser;
+    try {
+      await axios.put(`/api/admin/users/${usersID}`, {
+        usersEmail,
+        usersVorname,
+        usersNachname,
+        rolesFK,
+        teamFK // TeamFK korrekt setzen
+      });
+
+      setUsers(users.map((user) =>
+        user.usersID === usersID
+          ? { ...user, usersEmail, usersVorname, usersNachname, rolesFK, teamFK } // Aktualisiere den Benutzer im Zustand mit dem richtigen teamFK
+          : user
+      ));
+
+      setEditingUser(null); // Bearbeitungsformular schließen
+    } catch (error) {
+      console.error('Fehler beim Speichern des Benutzers:', error);
+    }
   };
 
   return (
@@ -88315,18 +88319,23 @@ const AdminUser = () => {
             <th>Nachname</th>
             <th>E-Mail</th>
             <th>Rolle</th>
-            <th>Aktionen</th> {/* User ID wurde entfernt */}
+            <th>Team</th> {/* Team-Spalte hinzufügen */}
+            <th>Aktionen</th>
           </tr>
         </thead>
         <tbody>
           {users.map((user) => (
-            <tr key={user.usersID}>
+            <tr 
+              key={user.usersID}
+              className={user.teamFK === 0 ? 'bg-pastel-yellow' : ''} // Bedingte Klasse für kein Team
+            >
               <td>{user.usersVorname}</td>
               <td>{user.usersNachname}</td>
               <td>{user.usersEmail}</td>
-              <td>{getRoleName(user.rolesFK)}</td> {/* Rollenauswahl nach Namen */}
+              <td>{getRoleName(user.rolesFK)}</td>
+              <td>{getTeamName(user.teamFK)}</td> {/* Teamnamen anzeigen */}
               <td>
-                <button className="btn btn-primary" onClick={() => setEditingUser(user)}>Bearbeiten</button> {/* Blaues Styling hinzugefügt */}
+                <button className="btn btn-primary" onClick={() => setEditingUser(user)}>Bearbeiten</button>
                 {deletingUserId === user.usersID ? (
                   <>
                     <button className="btn btn-danger mr-2" onClick={() => handleDeleteUser(user.usersID)}>Wirklich löschen?</button>
@@ -88382,6 +88391,20 @@ const AdminUser = () => {
                 {roles.map(role => (
                   <option key={role.rolesID} value={role.rolesID}>
                     {role.rolesName}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Team</label>
+              <select
+                className="form-control"
+                value={editingUser.teamFK}
+                onChange={(e) => setEditingUser({ ...editingUser, teamFK: e.target.value })}
+              >
+                {teams.map(team => (
+                  <option key={team.teamID} value={team.teamID}>
+                    {team.teamName}
                   </option>
                 ))}
               </select>
@@ -89214,7 +89237,6 @@ import React, { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from './AuthContext'; // AuthContext importieren
 
-
 const Profile = () => {
   const { user } = useContext(AuthContext); // user aus dem AuthContext extrahieren
   const [profileData, setProfileData] = useState(null);
@@ -89235,19 +89257,28 @@ const Profile = () => {
   }, [user]);
 
   const getRatingIcon = (rating) => {
+    if (rating === null || rating === undefined) {
+      return (
+        <div className="rating-icon-wrapper">
+          <img className="evaluation-img-extend" src="/Content/themes/base/images/Unknown.png" alt="Unknown" />
+          <span className="rating-value">Keine Bewertung</span> {/* Fallback für keine Bewertung */}
+        </div>
+      );
+    }
+  
     let icon;
     if (rating >= 2.00) {
-      icon = <img className="evaluation-img" src="/Content/themes/base/images/VeryPositive.png" alt="Very Positive" />;
+      icon = <img className="evaluation-img-extend" src="/Content/themes/base/images/VeryPositive.png" alt="Very Positive" />;
     } else if (rating >= 1.00 && rating < 2.00) {
-      icon = <img className="evaluation-img" src="/Content/themes/base/images/Positive.png" alt="Positive" />;
+      icon = <img className="evaluation-img-extend" src="/Content/themes/base/images/Positive.png" alt="Positive" />;
     } else if (rating >= -0.99 && rating <= 0.99) {
-      icon = <img className="evaluation-img" src="/Content/themes/base/images/Unknown.png" alt="Unknown" />;
+      icon = <img className="evaluation-img-extend" src="/Content/themes/base/images/Unknown.png" alt="Unknown" />;
     } else if (rating >= -1.99 && rating <= -1.00) {
-      icon = <img className="evaluation-img" src="/Content/themes/base/images/Negative.png" alt="Negative" />;
+      icon = <img className="evaluation-img-extend" src="/Content/themes/base/images/Negative.png" alt="Negative" />;
     } else if (rating <= -2.00) {
-      icon = <img className="evaluation-img" src="/Content/themes/base/images/VeryNegative.png" alt="Very Negative" />;
+      icon = <img className="evaluation-img-extend" src="/Content/themes/base/images/VeryNegative.png" alt="Very Negative" />;
     }
-
+  
     return (
       <div className="rating-icon-wrapper">
         {icon}
@@ -89255,6 +89286,7 @@ const Profile = () => {
       </div>
     );
   };
+  
 
   if (!profileData) {
     return <div>Lade Benutzerprofil...</div>;
@@ -89262,66 +89294,51 @@ const Profile = () => {
 
   return (
     <div className="profile-container">
-      {/* A-Bereich: Name */}
-      <div className="profile-name">
-        <h3>{profileData.fullname}</h3>
+      {/* Y-Bereich: Name */}
+      <h3>{profileData.fullname}</h3>
+
+      {/* Z-Bereich: Profilbild */}
+      <img className="grimg" src="/Content/themes/base/images/userPlaceholder.png" alt="User icon" />
+
+      {/* Grid-Inhalte */}
+      <div className="grid-item">
+        <p>Anzahl Kundenfeedbacks erhalten (aktueller Periode):</p>
+        <p className="highlighted-text">{profileData.currentReceivedFeedback}</p>
       </div>
 
-      {/* B-Bereich: Profilbild */}
-      <div className="profile-image">
-        <img src="/Content/themes/base/images/person_BOLD.svg" alt="User icon" />
+      <div className="grid-item">
+        <p>Anzahl Kundenfeedbacks angefragt (aktueller Periode):</p>
+        <p className="highlighted-text">{profileData.currentRequestedFeedback}</p>
       </div>
 
-      {/* C-Bereich: Erste 3 Texte */}
-      <div className="profile-section-text">
-        <ul className="list-unstyled">
-          <li>Anzahl Kundenfeedbacks erhalten (aktueller Periode):</li>
-          <li>Anzahl Kundenfeedbacks angefragt (aktueller Periode):</li>
-          <li>Anzahl weiterer Feedbacks hochgeladen (aktueller Periode):</li>
-        </ul>
+      <div className="grid-item">
+        <p>Anzahl weiterer Feedbacks hochgeladen (aktueller Periode):</p>
+        <p className="highlighted-text">{profileData.currentUploadedFeedback}</p>
       </div>
 
-      {/* D-Bereich: Ergebnisse zu den ersten 3 Texten */}
-      <div className="profile-section-values">
-        <ul className="list-unstyled">
-          <li className="font-weight-bold">{profileData.currentReceivedFeedback}</li>
-          <li className="font-weight-bold">{profileData.currentRequestedFeedback}</li>
-          <li className="font-weight-bold">{profileData.currentUploadedFeedback}</li>
-        </ul>
+      <div className="grid-item">
+        <p>Durchschnittliche Bewertung (aktuelle Periode):</p>
+        <p className="highlighted-text">{getRatingIcon(profileData.currentAvgRating)}</p>
       </div>
 
-      {/* E-Bereich: Zweite 3 Texte */}
-      <div className="profile-section-text">
-        <ul className="list-unstyled">
-          <li>Anzahl Kundenfeedbacks erhalten (gesamt):</li>
-          <li>Anzahl Kundenfeedbacks angefragt (gesamt):</li>
-          <li>Anzahl weiterer Feedbacks hochgeladen (gesamt):</li>
-        </ul>
+      <div className="grid-item">
+        <p>Anzahl Kundenfeedbacks erhalten (gesamt):</p>
+        <p className="highlighted-text">{profileData.totalReceivedFeedback}</p>
       </div>
 
-      {/* F-Bereich: Ergebnisse zu den zweiten 3 Texten */}
-      <div className="profile-section-values">
-        <ul className="list-unstyled">
-          <li className="font-weight-bold">{profileData.totalReceivedFeedback}</li>
-          <li className="font-weight-bold">{profileData.totalRequestedFeedback}</li>
-          <li className="font-weight-bold">{profileData.totalUploadedFeedback}</li>
-        </ul>
+      <div className="grid-item">
+        <p>Anzahl Kundenfeedbacks angefragt (gesamt):</p>
+        <p className="highlighted-text">{profileData.totalRequestedFeedback}</p>
       </div>
 
-      {/* G-Bereich: Letzte 2 Texte (Bewertungen) */}
-      <div className="profile-section-text">
-        <ul className="list-unstyled">
-          <li>Durchschnittliche Bewertung (aktuelle Periode):</li>
-          <li>Durchschnittliche Bewertung (gesamt):</li>
-        </ul>
+      <div className="grid-item">
+        <p>Anzahl weiterer Feedbacks hochgeladen (gesamt):</p>
+        <p className="highlighted-text">{profileData.totalUploadedFeedback}</p>
       </div>
 
-      {/* G-Bereich: Ergebnisse zu den letzten 2 Texten (Bewertungen) */}
-      <div className="profile-section-values">
-        <ul className="list-unstyled">
-          <li>{getRatingIcon(profileData.currentAvgRating)}</li>
-          <li>{getRatingIcon(profileData.totalAvgRating)}</li>
-        </ul>
+      <div className="grid-item">
+        <p>Durchschnittliche Bewertung (gesamt):</p>
+        <p className="highlighted-text">{getRatingIcon(profileData.totalAvgRating)}</p>
       </div>
     </div>
   );
@@ -90535,6 +90552,8 @@ const UserReceived = () => {
       {viewingFeedback && (
         <div className="mt-5">
           <h3>Feedback anzeigen</h3>
+          <p><strong>E-Mail:</strong> {viewingFeedback.customerMailaddr}</p>
+          <p><strong>Bewertung:</strong> {getRatingIcon(viewingFeedback.rating)}</p>
           <p style={{ fontSize: '1.5rem' }}><strong>Feedback:</strong> {viewingFeedback.customerFdbckText}</p>
           <button className="btn btn-secondary" onClick={handleCloseFeedback}>Schließen</button>
         </div>

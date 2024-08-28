@@ -95,6 +95,8 @@ const UserReceived = () => {
       {viewingFeedback && (
         <div className="mt-5">
           <h3>Feedback anzeigen</h3>
+          <p><strong>E-Mail:</strong> {viewingFeedback.customerMailaddr}</p>
+          <p><strong>Bewertung:</strong> {getRatingIcon(viewingFeedback.rating)}</p>
           <p style={{ fontSize: '1.5rem' }}><strong>Feedback:</strong> {viewingFeedback.customerFdbckText}</p>
           <button className="btn btn-secondary" onClick={handleCloseFeedback}>Schließen</button>
         </div>

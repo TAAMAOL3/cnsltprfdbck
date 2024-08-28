@@ -1,26 +1,32 @@
 const db = require('../config/db');
 
-// Alle Benutzer abrufen
+// Alle Benutzer abrufen und Team-Informationen hinzufügen
 exports.getUsers = (req, res) => {
-  const query = 'SELECT * FROM t_users';
+  const query = `
+    SELECT u.*, t.teamName 
+    FROM t_users u
+    LEFT JOIN t_team t ON u.teamFK = t.teamID
+  `;
   db.query(query, (err, results) => {
     if (err) return res.status(500).send('Fehler beim Abrufen der Benutzer.');
     res.json(results);
   });
 };
 
+
 // Benutzer bearbeiten
 exports.updateUser = (req, res) => {
   const { id } = req.params;
-  const { usersEmail, usersVorname, usersNachname, rolesFK } = req.body;
-  const query = 'UPDATE t_users SET usersEmail = ?, usersVorname = ?, usersNachname = ?, rolesFK = ? WHERE usersID = ?';
-  const values = [usersEmail, usersVorname, usersNachname, rolesFK, id];
+  const { usersEmail, usersVorname, usersNachname, rolesFK, teamFK } = req.body; // teamFK hinzugefügt
+  const query = 'UPDATE t_users SET usersEmail = ?, usersVorname = ?, usersNachname = ?, rolesFK = ?, teamFK = ? WHERE usersID = ?'; // teamFK in die SQL-Abfrage aufgenommen
+  const values = [usersEmail, usersVorname, usersNachname, rolesFK, teamFK, id]; // teamFK in die Werte eingefügt
 
   db.query(query, values, (err, results) => {
     if (err) return res.status(500).send('Fehler beim Bearbeiten des Benutzers.');
     res.status(200).send('Benutzer erfolgreich bearbeitet.');
   });
 };
+
 
 // Alle Rollen abrufen
 exports.getRoles = (req, res) => {

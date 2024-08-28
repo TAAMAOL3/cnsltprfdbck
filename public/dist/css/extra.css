@@ -32,85 +32,50 @@ table tr.active {
   /* Dunkleres Grau für die aktive Zeile */
 }
 
-/* Profile Grid Layout */
 .profile-container {
   display: grid;
   grid-template-areas:
-    "A A A A"
-    "B C C D"
-    "B E E F"
-    "G G G G";
-  grid-template-columns: 1fr 2fr 1fr 1fr;
-  grid-template-rows: auto auto auto auto;
+    "y y y y y"
+    "z a c e m"
+    "z b d f n"
+    "z g i k o"
+    "z h j l p";
+  grid-template-columns: repeat(5, 1fr);
+  /* gap: 20px; */
   align-items: center;
-  width: 100%;
-  gap: 0;
-  /* Gap entfernt */
 }
 
-/* A-Bereich: Name */
-.profile-name {
-  grid-area: A;
-  text-align: left;
-  background-color: #FFDDC1;
-  /* Pastellorange */
+h3 {
+  grid-area: y;
+  text-align: left; /* Zentriert den Namen nur in 'y' */
 }
 
-/* B-Bereich: Profilbild */
-.profile-image {
-  grid-area: B;
+.grimg {
+  grid-area: z;
   text-align: center;
-  background-color: #C1E1FF;
-  /* Pastellblau */
+  /* max-width: 100px; */
+  /* height: auto; */
+  height: 100%;
 }
 
-/* C-Bereich: Erste 3 Texte */
-.profile-section-text:nth-of-type(1) {
-  grid-area: C;
-  display: inline-block;
-  background-color: #D4FFD1;
-  /* Pastellgrün */
+.grid-item {
+  text-align: center;
 }
 
-/* D-Bereich: Ergebnisse zu den ersten 3 Texten */
-.profile-section-values:nth-of-type(1) {
-  grid-area: D;
-  text-align: right;
-  background-color: #FFFACD;
-  /* Pastellgelb */
+.highlighted-text {
+  font-size: 3em;
+  font-weight: bold;
 }
 
-/* E-Bereich: Zweite 3 Texte */
-.profile-section-text:nth-of-type(2) {
-  grid-area: E;
-  display: inline-block;
-  background-color: #FFD1DC;
-  /* Pastellrosa */
+/* Entferne Aufzählungszeichen, Padding und Margins */
+ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  text-align: center;
 }
 
-/* F-Bereich: Ergebnisse zu den zweiten 3 Texten */
-.profile-section-values:nth-of-type(2) {
-  grid-area: F;
-  text-align: right;
-  background-color: #E6E6FA;
-  /* Pastellviolett */
-}
 
-/* G-Bereich: Letzte 2 Texte (Bewertungen) */
-.profile-section-text:nth-of-type(3) {
-  grid-area: G;
-  text-align: left;
-  background-color: #FFEBB7;
-  /* Pastellgelb */
-}
-
-/* G-Bereich: Ergebnisse zu den letzten 2 Texten (Bewertungen) */
-.profile-section-values:nth-of-type(3) {
-  grid-area: G;
-  text-align: right;
-  background-color: #FFEBB7;
-  /* Pastellgelb */
-}
 
 /* CSS für das Hover-Feature */
 .rating-icon-wrapper {
@@ -167,4 +132,15 @@ table tr.active {
 /* Zeige den Wert beim Hover */
 .rating-icon-wrapper:hover .rating-value {
   display: block;
+}
+
+.evaluation-img-extend{
+  height: auto;
+  display: block;
+  /* padding: 0px 5px 5px 5px; */
+  max-width: 40px;
+}
+
+.bg-pastel-yellow {
+  background-color: #fdfd96; /* Pastell-Gelb */
 }

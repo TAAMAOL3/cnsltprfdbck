@@ -4,6 +4,7 @@ import axios from 'axios';
 const AdminUser = () => {
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]); // Zustand für Rollenliste
+  const [teams, setTeams] = useState([]); // Zustand für Teams
   const [editingUser, setEditingUser] = useState(null);
   const [deletingUserId, setDeletingUserId] = useState(null); // Neuer Zustand für die Bestätigung
 
@@ -18,13 +19,24 @@ const AdminUser = () => {
       setRoles(response.data); // Lade Rollenliste
     };
 
+    const fetchTeams = async () => {
+      const response = await axios.get('/api/admin/teams'); // Teams abrufen
+      setTeams(response.data);
+    };
+
     fetchUsers();
     fetchRoles(); // Lade Rollenliste beim Mounten der Komponente
+    fetchTeams(); // Lade Teams beim Mounten der Komponente
   }, []);
 
   const getRoleName = (roleId) => {
     const role = roles.find(role => role.rolesID === roleId);
     return role ? role.rolesName : 'Unbekannt';
+  };
+
+  const getTeamName = (teamId) => {
+    const team = teams.find(team => team.teamID === teamId);
+    return team ? team.teamName : 'Kein Team';
   };
 
   const confirmDelete = (userId) => {
@@ -42,17 +54,29 @@ const AdminUser = () => {
   };
 
   const handleSaveUser = async () => {
-    const { usersID, usersEmail, usersVorname, usersNachname, rolesFK } = editingUser;
-    await axios.put(`/api/admin/users/${usersID}`, {
-      usersEmail,
-      usersVorname,
-      usersNachname,
-      rolesFK
-    });
-    setUsers(users.map((user) =>
-      user.usersID === usersID ? editingUser : user
-    ));
-    setEditingUser(null); // Bearbeitungsformular schließen
+    const { usersID, usersEmail, usersVorname, usersNachname, rolesFK, teamFK } = editingUser;
+    try {
+      await axios.put(`/api/admin/users/${usersID}`, {
+        usersEmail,
+        usersVorname,
+        usersNachname,
+        rolesFK,
+        teamFK
+      });
+
+      // Finde den Namen des Teams, um ihn in der Anzeige zu aktualisieren
+      const updatedTeamName = getTeamName(teamFK);
+
+      setUsers(users.map((user) =>
+        user.usersID === usersID
+          ? { ...user, usersEmail, usersVorname, usersNachname, rolesFK, teamFK, teamName: updatedTeamName } // Aktualisiere teamFK und teamName
+          : user
+      ));
+
+      setEditingUser(null); // Bearbeitungsformular schließen
+    } catch (error) {
+      console.error('Fehler beim Speichern des Benutzers:', error);
+    }
   };
 
   return (
@@ -65,18 +89,23 @@ const AdminUser = () => {
             <th>Nachname</th>
             <th>E-Mail</th>
             <th>Rolle</th>
-            <th>Aktionen</th> {/* User ID wurde entfernt */}
+            <th>Team</th> {/* Team-Spalte hinzufügen */}
+            <th>Aktionen</th>
           </tr>
         </thead>
         <tbody>
           {users.map((user) => (
-            <tr key={user.usersID}>
+            <tr 
+              key={user.usersID}
+              className={user.teamFK === 0 ? 'bg-pastel-yellow' : ''} // Bedingte Klasse für kein Team
+            >
               <td>{user.usersVorname}</td>
               <td>{user.usersNachname}</td>
               <td>{user.usersEmail}</td>
-              <td>{getRoleName(user.rolesFK)}</td> {/* Rollenauswahl nach Namen */}
+              <td>{getRoleName(user.rolesFK)}</td>
+              <td>{user.teamName || getTeamName(user.teamFK)}</td> {/* Teamnamen anzeigen */}
               <td>
-                <button className="btn btn-primary" onClick={() => setEditingUser(user)}>Bearbeiten</button> {/* Blaues Styling hinzugefügt */}
+                <button className="btn btn-primary" onClick={() => setEditingUser(user)}>Bearbeiten</button>
                 {deletingUserId === user.usersID ? (
                   <>
                     <button className="btn btn-danger mr-2" onClick={() => handleDeleteUser(user.usersID)}>Wirklich löschen?</button>
@@ -132,6 +161,20 @@ const AdminUser = () => {
                 {roles.map(role => (
                   <option key={role.rolesID} value={role.rolesID}>
                     {role.rolesName}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Team</label>
+              <select
+                className="form-control"
+                value={editingUser.teamFK}
+                onChange={(e) => setEditingUser({ ...editingUser, teamFK: e.target.value })}
+              >
+                {teams.map(team => (
+                  <option key={team.teamID} value={team.teamID}>
+                    {team.teamName}
                   </option>
                 ))}
               </select>
