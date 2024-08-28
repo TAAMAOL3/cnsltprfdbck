@@ -78,6 +78,41 @@ app.get("/api/user", authenticateToken, (req, res) => {
   });
 });
 
+
+app.get('/api/dbXstatus', (req, res) => {
+  res.set('Cache-Control', 'no-store');  // Cache-Control Header setzen
+
+  // Datenbankabfrage
+  db.query('SELECT * FROM t_users LIMIT 1', (err, results) => {
+    if (err) {
+      console.error('Database connection error:', err);
+      return res.status(200).json({
+        status: 'failed',
+        message: 'Unable to connect to the database',
+        error: err.message
+      });
+    }
+
+    if (results.length > 0) {
+      return res.status(200).json({
+        status: 'success',
+        message: 'Connected to the database successfully and data retrieved',
+        data: results[0]
+      });
+    } else {
+      return res.status(200).json({
+        status: 'warning',
+        message: 'Connected to the database, but no data found in t_users'
+      });
+    }
+  });
+});
+
+
+
+
+
+
 // API route to fetch teams
 app.get('/api/teams', authenticateToken, (req, res) => {
   const query = 'SELECT teamID, teamName FROM t_team';
@@ -159,38 +194,6 @@ app.use((req, res, next) => {
 app.post('/api/logout', (req, res) => {
   res.json({ message: 'Successfully logged out' });
 });
-
-app.get('/api/dbXstatus', (req, res) => {
-  // Führe eine Abfrage auf t_users durch und prüfe, ob die Tabelle Daten zurückgibt
-  db.query('SELECT * FROM t_users LIMIT 1', (err, results) => {
-    if (err) {
-      console.error('Database connection error:', err);
-      return res.status(200).json({
-        status: 'failed',
-        message: 'Unable to connect to the database',
-        error: err.message
-      });
-    }
-
-    if (results.length > 0) {
-      // Wenn die Abfrage Ergebnisse zurückgibt, ist die Verbindung erfolgreich
-      return res.status(200).json({
-        status: 'success',
-        message: 'Connected to the database successfully and data retrieved',
-        data: results[0] // Gib die erste Zeile der Ergebnisse zurück
-      });
-    } else {
-      // Wenn keine Ergebnisse zurückgegeben werden, ist die Verbindung da, aber keine Daten vorhanden
-      return res.status(200).json({
-        status: 'warning',
-        message: 'Connected to the database, but no data found in t_users'
-      });
-    }
-  });
-});
-
-
-
 
 
 

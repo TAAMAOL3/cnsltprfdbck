@@ -8,7 +8,7 @@ const Status = () => {
 
   useEffect(() => {
     axios
-      .get("/api/dbXstatus")
+      .get("/api/dbXstatus", { headers: { 'Cache-Control': 'no-cache' } }) // Stelle sicher, dass kein Cache verwendet wird
       .then((response) => {
         if (response.data.status === 'success') {
           setDbStatus("Connected to the database");
@@ -26,7 +26,8 @@ const Status = () => {
         setDbMessage("An error occurred");
         setError(err.message);
       });
-  }, []);
+  }, []); // Führe dies nur einmal beim Laden der Komponente aus
+
 
   return (
     <div>

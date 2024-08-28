@@ -21105,6 +21105,41 @@ app.get("/api/user", authenticateToken, (req, res) => {
   });
 });
 
+
+app.get('/api/dbXstatus', (req, res) => {
+  res.set('Cache-Control', 'no-store');  // Cache-Control Header setzen
+
+  // Datenbankabfrage
+  db.query('SELECT * FROM t_users LIMIT 1', (err, results) => {
+    if (err) {
+      console.error('Database connection error:', err);
+      return res.status(200).json({
+        status: 'failed',
+        message: 'Unable to connect to the database',
+        error: err.message
+      });
+    }
+
+    if (results.length > 0) {
+      return res.status(200).json({
+        status: 'success',
+        message: 'Connected to the database successfully and data retrieved',
+        data: results[0]
+      });
+    } else {
+      return res.status(200).json({
+        status: 'warning',
+        message: 'Connected to the database, but no data found in t_users'
+      });
+    }
+  });
+});
+
+
+
+
+
+
 // API route to fetch teams
 app.get('/api/teams', authenticateToken, (req, res) => {
   const query = 'SELECT teamID, teamName FROM t_team';
@@ -21186,26 +21221,6 @@ app.use((req, res, next) => {
 app.post('/api/logout', (req, res) => {
   res.json({ message: 'Successfully logged out' });
 });
-
-app.get('/api/dbXstatus', (req, res) => {
-  db.query('SELECT 1', (err, results) => {
-    if (err) {
-      console.error('Database connection error:', err);
-      return res.status(200).json({
-        status: 'failed',
-        message: 'Unable to connect to the database',
-        error: err.message // Geben wir den Fehler als Teil der Antwort zurück
-      });
-    }
-    res.status(200).json({
-      status: 'success',
-      message: 'Connected to the database successfully',
-      results
-    });
-  });
-});
-
-
 
 
 
@@ -34009,6 +34024,7 @@ table tr.active {
   background-color: #d3d3d3;
   /* Dunkleres Grau für die aktive Zeile */
 }
+
 /* Profile Grid Layout */
 .profile-container {
   display: grid;
@@ -34019,7 +34035,7 @@ table tr.active {
     "G G G G";
   grid-template-columns: 1fr 2fr 1fr 1fr;
   grid-template-rows: auto auto auto auto;
-  gap: 20px;
+
   align-items: center;
   width: 100%;
 }
@@ -34028,47 +34044,58 @@ table tr.active {
 .profile-name {
   grid-area: A;
   text-align: left;
+  border: 1px solid red; /* Temporäre rote Border */
 }
 
 /* B-Bereich: Profilbild */
 .profile-image {
   grid-area: B;
   text-align: center;
+  border: 1px solid blue; /* Temporäre blaue Border */
 }
 
 /* C-Bereich: Erste 3 Texte */
-.profile-section-text {
+.profile-section-text:nth-of-type(1) {
   grid-area: C;
+  border: 1px solid green; /* Temporäre grüne Border */
+  display: inline-block; /* Sicherstellen, dass der Text nebeneinander angezeigt wird */
 }
 
 /* D-Bereich: Ergebnisse zu den ersten 3 Texten */
-.profile-section-values {
+.profile-section-values:nth-of-type(1) {
   grid-area: D;
   text-align: right;
+  border: 1px solid orange; /* Temporäre orange Border */
 }
 
 /* E-Bereich: Zweite 3 Texte */
 .profile-section-text:nth-of-type(2) {
   grid-area: E;
+  border: 1px solid purple; /* Temporäre lila Border */
+  display: inline-block; /* Sicherstellen, dass der Text nebeneinander angezeigt wird */
 }
 
 /* F-Bereich: Ergebnisse zu den zweiten 3 Texten */
 .profile-section-values:nth-of-type(2) {
   grid-area: F;
   text-align: right;
+  border: 1px solid pink; /* Temporäre pinke Border */
 }
 
 /* G-Bereich: Letzte 2 Texte (Bewertungen) */
 .profile-section-text:nth-of-type(3) {
   grid-area: G;
   text-align: left;
+  border: 1px solid yellow; /* Temporäre gelbe Border */
 }
 
 /* G-Bereich: Ergebnisse zu den letzten 2 Texten (Bewertungen) */
 .profile-section-values:nth-of-type(3) {
   grid-area: G;
   text-align: right;
+  border: 1px solid yellow; /* Temporäre gelbe Border */
 }
+
 
 
 /* CSS für das Hover-Feature */
@@ -89423,71 +89450,67 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 const Status = () => {
-    const [dbStatus, setDbStatus] = useState("Checking...");
-    const [dbMessage, setDbMessage] = useState("");
-    const [error, setError] = useState(null);
+  const [dbStatus, setDbStatus] = useState("Checking...");
+  const [dbMessage, setDbMessage] = useState("");
+  const [error, setError] = useState(null);
 
-    useEffect(() => {
-        axios
-            .get("/api/dbXstatus")
-            .then((response) => {
-                if (response.data.status === 'success') {
-                    setDbStatus("Connected to the database");
-                    setDbMessage(response.data.message);
-                } else {
-                    setDbStatus("Failed to connect to the database");
-                    setDbMessage(response.data.message);
-                    setError(response.data.error); // Speichern der Fehlermeldung
-                }
-            })
-            .catch((err) => {
-                setDbStatus("Failed to connect to the database");
-                setDbMessage("An error occurred");
-                setError(err.message);
-            });
-    }, []);
-    return (
-        <div>
-            <h2>System Status</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Component</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Verbunden mit:</td>
-                        <td>{process.env.REACT_APP_URL_HOST}</td>
-                    </tr>
-                    <tr>
-                        <td>Datenbankhost:</td>
-                        <td>{process.env.REACT_APP_DB_HOST}</td>
-                    </tr>
-                    <tr>
-                        <td>Verbunden mit AZURE MySQL Host:</td>
-                        <td>{process.env.REACT_APP_AZURE_MYSQL_HOST}</td>
-                    </tr>
+  useEffect(() => {
+    axios
+      .get("/api/dbXstatus", { headers: { 'Cache-Control': 'no-cache' } }) // Stelle sicher, dass kein Cache verwendet wird
+      .then((response) => {
+        if (response.data.status === 'success') {
+          setDbStatus("Connected to the database");
+          setDbMessage(response.data.message);
+        } else if (response.data.status === 'warning') {
+          setDbStatus("Connected, but no data found");
+          setDbMessage(response.data.message);
+        } else {
+          setDbStatus("Failed to connect to the database");
+          setDbMessage(response.data.message);
+        }
+      })
+      .catch((err) => {
+        setDbStatus("Failed to connect to the database");
+        setDbMessage("An error occurred");
+        setError(err.message);
+      });
+  }, []); // Führe dies nur einmal beim Laden der Komponente aus
 
-                    <tr>
-                        <td>Verbunden mit AZURE MySQL Host:</td>
-                        <td>{process.env.AZURE_MYSQL_HOST}</td>
-                    </tr>
-                    <tr>
-                        <td>Verbunden mit Datenbank:</td>
-                        <td style={{ color: dbStatus === 'Connected to the database' ? 'green' : 'red' }}>
-                            {dbStatus}
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-            {error && <p style={{ color: 'red' }}>Error: {error}</p>}
-        </div>
-    );
+
+  return (
+    <div>
+      <h2>System Status</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Verbunden mit:</td>
+            <td>{process.env.REACT_APP_URL_HOST}</td>
+          </tr>
+          <tr>
+            <td>Azure MySQL Host:</td>
+            <td>{process.env.REACT_APP_AZURE_MYSQL_HOST}</td>
+          </tr>
+          <tr>
+            <td>Verbunden mit Datenbank:</td>
+            <td style={{ color: dbStatus === 'Connected to the database' ? 'green' : 'red' }}>
+              {dbMessage}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      {error && <p style={{ color: 'red' }}>Error: {error}</p>}
+    </div>
+  );
 };
 
 export default Status;
+
 ***Team.js:
 import React, { useContext, useEffect, useState } from 'react'; 
 import { useNavigate } from 'react-router-dom'; 
