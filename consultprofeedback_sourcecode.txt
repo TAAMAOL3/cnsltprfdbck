@@ -88852,6 +88852,7 @@ const Feedback = () => {
     } else {
       fetchCustomerFeedback(feedbackId);
     }
+// eslint-disable-next-line
   }, [searchParams]);
 
   // const fetchCustomerFeedback = async (id) => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useSearchParams } from 'react-router-dom';
@@ -9,10 +9,24 @@ const Feedback = () => {
   const [contactPerson, setContactPerson] = useState('');
   const [feedback, setFeedback] = useState('');
   const [error, setError] = useState('');
-  const [rating, setRating] = useState(null);
+  // eslint-disable-next-line no-unused-vars
+  const [rating, setRating] = useState(null);  // Neues State für das Rating
   const navigate = useNavigate();
 
-  const fetchCustomerFeedback = useCallback(async () => {
+  useEffect(() => {
+    const feedbackId = searchParams.get('id');
+    if (!feedbackId) {
+      setError('Dieser Feedback Link ist leider ungültig.');
+    } else {
+      fetchCustomerFeedback(feedbackId);
+    }
+// eslint-disable-next-line
+  }, [searchParams]);
+
+  // const fetchCustomerFeedback = async (id) => {
+  //   try {
+  //     const response = await axios.get(`/api/customerFeedback/${id}`);
+  const fetchCustomerFeedback = async () => {
     const feedbackId = searchParams.get('id');
     try {
       const response = await axios.get(`/api/customerFeedback/${feedbackId}`);
@@ -26,17 +40,9 @@ const Feedback = () => {
     } catch (error) {
       setError('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
     }
-  }, [searchParams]);
+  };
 
-  useEffect(() => {
-    const feedbackId = searchParams.get('id');
-    if (!feedbackId) {
-      setError('Dieser Feedback Link ist leider ungültig.');
-    } else {
-      fetchCustomerFeedback(feedbackId);
-    }
-  }, [fetchCustomerFeedback]);
-
+  // Funktion zur Textanalyse
   const analyzeText = async (text) => {
     try {
       const response = await fetch('/api/analyze', {
@@ -47,7 +53,7 @@ const Feedback = () => {
         body: JSON.stringify({ text }),
       });
       const data = await response.json();
-      setRating(data.score);
+      setRating(data.score);  // Speichere das Ergebnis der Analyse
       return data.score;
     } catch (error) {
       console.error('Fehler bei der Textanalyse:', error);
@@ -58,8 +64,10 @@ const Feedback = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const feedbackId = searchParams.get('id');
-    const token = localStorage.getItem('token');
 
+    const token = localStorage.getItem('token');  // Token from localStorage
+
+    // Textanalyse durchführen und Rating erhalten
     const analyzedRating = await analyzeText(feedback);
 
     try {
@@ -67,10 +75,10 @@ const Feedback = () => {
         customerFdbckText: feedback,
         customerFdbckReceived: new Date(),
         customerFdbckAnswered: 1,
-        rating: analyzedRating,
+        rating: analyzedRating,  // Neues Rating-Feld
       }, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`  // Add token to the request
         }
       });
       navigate('/feedback-success');
