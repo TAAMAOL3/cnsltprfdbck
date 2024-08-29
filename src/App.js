@@ -46,6 +46,7 @@ function App() {
             <Route path="/password-reset" element={<PasswordReset />} />
             <Route path="/" element={<Navigate to="/login" />} />
             <Route path="/status" element={<Status />} />
+            <Route path="/feedback" element={<Feedback />} />
 
             {/* Protected routes */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -54,7 +55,7 @@ function App() {
             <Route path="/textmining" element={<ProtectedRoute><TextMining /></ProtectedRoute>} />
             <Route path="/user" element={<ProtectedRoute><User /></ProtectedRoute>} />
             <Route path="/customerFeedback" element={<ProtectedRoute><CustomerFeedback /></ProtectedRoute>} />
-            <Route path="/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} />
+            {/* <Route path="/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} /> */}
             <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
 
             {/* New Profile Route */}

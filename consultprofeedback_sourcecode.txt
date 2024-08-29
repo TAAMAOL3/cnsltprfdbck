@@ -34054,10 +34054,13 @@ h3 {
 
 .grimg {
   grid-area: z;
-  text-align: center;
+  text-align: left;
   /* max-width: 100px; */
   /* height: auto; */
   height: 100%;
+  border-right: 2px solid #001155;
+
+  align-content: center;
 }
 
 .grid-item {
@@ -34108,33 +34111,7 @@ ul {
 }
 
 
-/* CSS für das Hover-Feature */
-.rating-icon-wrapper {
-  position: relative;
-  display: inline-block;
-}
 
-.rating-value {
-  display: none;
-  /* Wert standardmäßig ausblenden */
-  position: absolute;
-  top: 100%;
-  /* Unter dem Icon anzeigen */
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #fff;
-  border: 1px solid #ccc;
-  padding: 5px;
-  font-size: 0.9em;
-  color: #333;
-  white-space: nowrap;
-  z-index: 100;
-}
-
-/* Zeige den Wert beim Hover */
-.rating-icon-wrapper:hover .rating-value {
-  display: block;
-}
 
 .evaluation-img-extend{
   height: auto;
@@ -88239,7 +88216,7 @@ const AdminUser = () => {
   const [roles, setRoles] = useState([]); // Zustand für Rollenliste
   const [teams, setTeams] = useState([]); // Zustand für Teams
   const [editingUser, setEditingUser] = useState(null);
-  const [deletingUserId, setDeletingUserId] = useState(null); // Neuer Zustand für die Bestätigung
+  const [deletingUserId, setDeletingUserId] = useState(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -88249,41 +88226,43 @@ const AdminUser = () => {
 
     const fetchRoles = async () => {
       const response = await axios.get('/api/admin/roles');
-      setRoles(response.data); // Lade Rollenliste
+      setRoles(response.data);
     };
 
     const fetchTeams = async () => {
-      const response = await axios.get('/api/admin/teams'); // Teams abrufen
+      const response = await axios.get('/api/admin/teams');
       setTeams(response.data);
     };
 
-    fetchUsers();
-    fetchRoles(); // Lade Rollenliste beim Mounten der Komponente
-    fetchTeams(); // Lade Teams beim Mounten der Komponente
+    Promise.all([fetchUsers(), fetchRoles(), fetchTeams()]).then(() => {
+      console.log('Users, Roles, and Teams loaded.');
+    });
   }, []);
 
   const getRoleName = (roleId) => {
-    const role = roles.find(role => role.rolesID === roleId);
+    const numericRoleId = parseInt(roleId, 10); // Sicherstellen, dass roleId numerisch ist
+    const role = roles.find(role => role.rolesID === numericRoleId);
     return role ? role.rolesName : 'Unbekannt';
   };
 
   const getTeamName = (teamId) => {
-    const team = teams.find(team => team.teamID === teamId);
+    const numericTeamId = parseInt(teamId, 10); // Sicherstellen, dass teamId numerisch ist
+    const team = teams.find(team => team.teamID === numericTeamId);
     return team ? team.teamName : 'Kein Team';
   };
 
   const confirmDelete = (userId) => {
-    setDeletingUserId(userId); // Setzt das zu löschende User ID
+    setDeletingUserId(userId);
   };
 
   const cancelDelete = () => {
-    setDeletingUserId(null); // Löschen abbrechen
+    setDeletingUserId(null);
   };
 
   const handleDeleteUser = async (userId) => {
     await axios.delete(`/api/admin/users/${userId}`);
     setUsers(users.filter((user) => user.usersID !== userId));
-    setDeletingUserId(null); // Reset delete confirmation state
+    setDeletingUserId(null);
   };
 
   const handleSaveUser = async () => {
@@ -88294,16 +88273,27 @@ const AdminUser = () => {
         usersVorname,
         usersNachname,
         rolesFK,
-        teamFK // TeamFK korrekt setzen
+        teamFK
       });
 
-      setUsers(users.map((user) =>
-        user.usersID === usersID
-          ? { ...user, usersEmail, usersVorname, usersNachname, rolesFK, teamFK } // Aktualisiere den Benutzer im Zustand mit dem richtigen teamFK
-          : user
-      ));
+      setUsers(prevUsers => 
+        prevUsers.map((user) =>
+          user.usersID === usersID
+            ? {
+                ...user,
+                usersEmail,
+                usersVorname,
+                usersNachname,
+                rolesFK,
+                teamFK,
+                roleName: getRoleName(rolesFK), // Rollennamen korrekt setzen
+                teamName: getTeamName(teamFK) // Teamnamen korrekt setzen
+              }
+            : user
+        )
+      );
 
-      setEditingUser(null); // Bearbeitungsformular schließen
+      setEditingUser(null); // Bearbeitungsmodus beenden
     } catch (error) {
       console.error('Fehler beim Speichern des Benutzers:', error);
     }
@@ -88319,7 +88309,7 @@ const AdminUser = () => {
             <th>Nachname</th>
             <th>E-Mail</th>
             <th>Rolle</th>
-            <th>Team</th> {/* Team-Spalte hinzufügen */}
+            <th>Team</th>
             <th>Aktionen</th>
           </tr>
         </thead>
@@ -88327,13 +88317,13 @@ const AdminUser = () => {
           {users.map((user) => (
             <tr 
               key={user.usersID}
-              className={user.teamFK === 0 ? 'bg-pastel-yellow' : ''} // Bedingte Klasse für kein Team
+              className={user.teamFK === 0 ? 'bg-pastel-yellow' : ''}
             >
               <td>{user.usersVorname}</td>
               <td>{user.usersNachname}</td>
               <td>{user.usersEmail}</td>
               <td>{getRoleName(user.rolesFK)}</td>
-              <td>{getTeamName(user.teamFK)}</td> {/* Teamnamen anzeigen */}
+              <td>{user.teamName || getTeamName(user.teamFK)}</td>
               <td>
                 <button className="btn btn-primary" onClick={() => setEditingUser(user)}>Bearbeiten</button>
                 {deletingUserId === user.usersID ? (
@@ -88509,6 +88499,7 @@ function App() {
             <Route path="/password-reset" element={<PasswordReset />} />
             <Route path="/" element={<Navigate to="/login" />} />
             <Route path="/status" element={<Status />} />
+            <Route path="/feedback" element={<Feedback />} />
 
             {/* Protected routes */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -88517,7 +88508,7 @@ function App() {
             <Route path="/textmining" element={<ProtectedRoute><TextMining /></ProtectedRoute>} />
             <Route path="/user" element={<ProtectedRoute><User /></ProtectedRoute>} />
             <Route path="/customerFeedback" element={<ProtectedRoute><CustomerFeedback /></ProtectedRoute>} />
-            <Route path="/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} />
+            {/* <Route path="/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} /> */}
             <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
 
             {/* New Profile Route */}
@@ -89237,15 +89228,16 @@ import React, { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from './AuthContext'; // AuthContext importieren
 
-const Profile = () => {
+const Profile = ({ selectedUserId }) => {
   const { user } = useContext(AuthContext); // user aus dem AuthContext extrahieren
   const [profileData, setProfileData] = useState(null);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      if (user && user.id) {
+      const userId = selectedUserId || user.id; // Verwende selectedUserId, wenn vorhanden, sonst user.id
+      if (userId) {
         try {
-          const response = await axios.get(`/api/profile/${user.id}`);
+          const response = await axios.get(`/api/profile/${userId}`);
           setProfileData(response.data);
         } catch (error) {
           console.error('Fehler beim Laden des Profils:', error);
@@ -89254,7 +89246,7 @@ const Profile = () => {
     };
 
     fetchUserProfile();
-  }, [user]);
+  }, [selectedUserId, user]);
 
   const getRatingIcon = (rating) => {
     if (rating === null || rating === undefined) {
@@ -89286,7 +89278,6 @@ const Profile = () => {
       </div>
     );
   };
-  
 
   if (!profileData) {
     return <div>Lade Benutzerprofil...</div>;
@@ -89295,10 +89286,12 @@ const Profile = () => {
   return (
     <div className="profile-container">
       {/* Y-Bereich: Name */}
-      <h3>{profileData.fullname}</h3>
+      {/* <h3>{profileData.fullname}</h3> */}
+      <h3><span></span></h3>
 
       {/* Z-Bereich: Profilbild */}
-      <img className="grimg" src="/Content/themes/base/images/userPlaceholder.png" alt="User icon" />
+      {/* <img className="grimg" src="/Content/themes/base/images/userPlaceholder.png" alt="User icon" /> */}
+      <h2 className="grimg">{profileData.fullname}</h2>
 
       {/* Grid-Inhalte */}
       <div className="grid-item">
@@ -89575,11 +89568,11 @@ import TeamFeedback from './TeamFeedback';
 import TeamRequest from './TeamRequest'; 
 import TeamReceived from './TeamReceived'; 
 import TeamSelector from './TeamSelector'; 
+import Profile from './Profile'; // Import der Profile-Komponente
 
 const Team = () => {
   const { user } = useContext(AuthContext); // Aktueller Benutzer
   const navigate = useNavigate(); // Navigation für Weiterleitung
-  // const [selectedTeam, setSelectedTeam] = useState(user.teamId); // Ausgewähltes Team
   const [selectedTeam, setSelectedTeam] = useState(user.role === 3 ? 'all' : user.teamId); // Ausgewähltes Team, standardmäßig 'all' bei Rolle 3
   const [selectedUser, setSelectedUser] = useState('all'); // Ausgewählter Benutzer
 
@@ -89589,20 +89582,19 @@ const Team = () => {
       navigate('/login'); // Weiterleitung zu Login, wenn Benutzer weder Rolle 2 noch Rolle 3 hat
     }
   }, [user, navigate]);
-  
 
-    // Effekt, um Standardabfragen beim Laden der Seite auszuführen
-    useEffect(() => {
-      // Standardmäßige Team- und Benutzerfilter setzen
-      if (user) {
-        if (user.role === 3) {
-          setSelectedTeam('all'); // Setzt das Team auf 'all', wenn die Benutzerrolle 3 ist
-        } else if (user.teamId) {
-          setSelectedTeam(user.teamId); // Setzt das Team des Benutzers standardmäßig, wenn die Rolle nicht 3 ist
-        }
-        setSelectedUser('all'); // Alle Benutzer standardmäßig
+  // Effekt, um Standardabfragen beim Laden der Seite auszuführen
+  useEffect(() => {
+    // Standardmäßige Team- und Benutzerfilter setzen
+    if (user) {
+      if (user.role === 3) {
+        setSelectedTeam('all'); // Setzt das Team auf 'all', wenn die Benutzerrolle 3 ist
+      } else if (user.teamId) {
+        setSelectedTeam(user.teamId); // Setzt das Team des Benutzers standardmäßig, wenn die Rolle nicht 3 ist
       }
-    }, [user]);
+      setSelectedUser('all'); // Alle Benutzer standardmäßig
+    }
+  }, [user]);
 
   // Funktion, um Filteränderungen von TeamSelector zu handhaben
   const handleFilterChange = (teamId, userId) => {
@@ -89619,8 +89611,8 @@ const Team = () => {
             <img className="page-icon" src="/Content/themes/base/images/Chain.png" alt="Team icon" /> 
           </div>
           <hgroup className="title"> 
-          <h1>Team Feedbacks</h1>
-          <p>Überblick über erhaltene, offene und selbst erstellte Feedbacks des gesamten Teams</p>
+            <h1>Team Feedbacks</h1>
+            <p>Überblick über erhaltene, offene und selbst erstellte Feedbacks des gesamten Teams</p>
           </hgroup>
         </div>
       </section>
@@ -89628,6 +89620,9 @@ const Team = () => {
       <div className="container mt-5"> 
         {/* Auswahl von Team und Benutzer */}
         <TeamSelector onFilterChange={handleFilterChange} /> 
+
+        {/* Profile Komponente anzeigen, wenn ein spezifischer Benutzer ausgewählt ist */}
+        {selectedUser !== 'all' && <Profile selectedUserId={selectedUser} />} 
         
         {/* Tabelle für erhaltene Team-Feedbacks */}
         <TeamReceived selectedTeam={selectedTeam} selectedUser={selectedUser} /> 

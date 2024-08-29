@@ -2,15 +2,16 @@ import React, { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from './AuthContext'; // AuthContext importieren
 
-const Profile = () => {
+const Profile = ({ selectedUserId }) => {
   const { user } = useContext(AuthContext); // user aus dem AuthContext extrahieren
   const [profileData, setProfileData] = useState(null);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      if (user && user.id) {
+      const userId = selectedUserId || user.id; // Verwende selectedUserId, wenn vorhanden, sonst user.id
+      if (userId) {
         try {
-          const response = await axios.get(`/api/profile/${user.id}`);
+          const response = await axios.get(`/api/profile/${userId}`);
           setProfileData(response.data);
         } catch (error) {
           console.error('Fehler beim Laden des Profils:', error);
@@ -19,7 +20,7 @@ const Profile = () => {
     };
 
     fetchUserProfile();
-  }, [user]);
+  }, [selectedUserId, user]);
 
   const getRatingIcon = (rating) => {
     if (rating === null || rating === undefined) {
@@ -51,7 +52,6 @@ const Profile = () => {
       </div>
     );
   };
-  
 
   if (!profileData) {
     return <div>Lade Benutzerprofil...</div>;
@@ -60,10 +60,12 @@ const Profile = () => {
   return (
     <div className="profile-container">
       {/* Y-Bereich: Name */}
-      <h3>{profileData.fullname}</h3>
+      {/* <h3>{profileData.fullname}</h3> */}
+      <h3><span></span></h3>
 
       {/* Z-Bereich: Profilbild */}
-      <img className="grimg" src="/Content/themes/base/images/userPlaceholder.png" alt="User icon" />
+      {/* <img className="grimg" src="/Content/themes/base/images/userPlaceholder.png" alt="User icon" /> */}
+      <h2 className="grimg">{profileData.fullname}</h2>
 
       {/* Grid-Inhalte */}
       <div className="grid-item">

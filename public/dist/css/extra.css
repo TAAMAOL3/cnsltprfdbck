@@ -52,10 +52,13 @@ h3 {
 
 .grimg {
   grid-area: z;
-  text-align: center;
+  text-align: left;
   /* max-width: 100px; */
   /* height: auto; */
   height: 100%;
+  border-right: 2px solid #001155;
+
+  align-content: center;
 }
 
 .grid-item {
@@ -106,33 +109,7 @@ ul {
 }
 
 
-/* CSS für das Hover-Feature */
-.rating-icon-wrapper {
-  position: relative;
-  display: inline-block;
-}
 
-.rating-value {
-  display: none;
-  /* Wert standardmäßig ausblenden */
-  position: absolute;
-  top: 100%;
-  /* Unter dem Icon anzeigen */
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #fff;
-  border: 1px solid #ccc;
-  padding: 5px;
-  font-size: 0.9em;
-  color: #333;
-  white-space: nowrap;
-  z-index: 100;
-}
-
-/* Zeige den Wert beim Hover */
-.rating-icon-wrapper:hover .rating-value {
-  display: block;
-}
 
 .evaluation-img-extend{
   height: auto;

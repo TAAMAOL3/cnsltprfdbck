@@ -6,7 +6,7 @@ const AdminUser = () => {
   const [roles, setRoles] = useState([]); // Zustand für Rollenliste
   const [teams, setTeams] = useState([]); // Zustand für Teams
   const [editingUser, setEditingUser] = useState(null);
-  const [deletingUserId, setDeletingUserId] = useState(null); // Neuer Zustand für die Bestätigung
+  const [deletingUserId, setDeletingUserId] = useState(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -16,41 +16,43 @@ const AdminUser = () => {
 
     const fetchRoles = async () => {
       const response = await axios.get('/api/admin/roles');
-      setRoles(response.data); // Lade Rollenliste
+      setRoles(response.data);
     };
 
     const fetchTeams = async () => {
-      const response = await axios.get('/api/admin/teams'); // Teams abrufen
+      const response = await axios.get('/api/admin/teams');
       setTeams(response.data);
     };
 
-    fetchUsers();
-    fetchRoles(); // Lade Rollenliste beim Mounten der Komponente
-    fetchTeams(); // Lade Teams beim Mounten der Komponente
+    Promise.all([fetchUsers(), fetchRoles(), fetchTeams()]).then(() => {
+      console.log('Users, Roles, and Teams loaded.');
+    });
   }, []);
 
   const getRoleName = (roleId) => {
-    const role = roles.find(role => role.rolesID === roleId);
+    const numericRoleId = parseInt(roleId, 10); // Sicherstellen, dass roleId numerisch ist
+    const role = roles.find(role => role.rolesID === numericRoleId);
     return role ? role.rolesName : 'Unbekannt';
   };
 
   const getTeamName = (teamId) => {
-    const team = teams.find(team => team.teamID === teamId);
+    const numericTeamId = parseInt(teamId, 10); // Sicherstellen, dass teamId numerisch ist
+    const team = teams.find(team => team.teamID === numericTeamId);
     return team ? team.teamName : 'Kein Team';
   };
 
   const confirmDelete = (userId) => {
-    setDeletingUserId(userId); // Setzt das zu löschende User ID
+    setDeletingUserId(userId);
   };
 
   const cancelDelete = () => {
-    setDeletingUserId(null); // Löschen abbrechen
+    setDeletingUserId(null);
   };
 
   const handleDeleteUser = async (userId) => {
     await axios.delete(`/api/admin/users/${userId}`);
     setUsers(users.filter((user) => user.usersID !== userId));
-    setDeletingUserId(null); // Reset delete confirmation state
+    setDeletingUserId(null);
   };
 
   const handleSaveUser = async () => {
@@ -64,16 +66,24 @@ const AdminUser = () => {
         teamFK
       });
 
-      // Finde den Namen des Teams, um ihn in der Anzeige zu aktualisieren
-      const updatedTeamName = getTeamName(teamFK);
+      setUsers(prevUsers => 
+        prevUsers.map((user) =>
+          user.usersID === usersID
+            ? {
+                ...user,
+                usersEmail,
+                usersVorname,
+                usersNachname,
+                rolesFK,
+                teamFK,
+                roleName: getRoleName(rolesFK), // Rollennamen korrekt setzen
+                teamName: getTeamName(teamFK) // Teamnamen korrekt setzen
+              }
+            : user
+        )
+      );
 
-      setUsers(users.map((user) =>
-        user.usersID === usersID
-          ? { ...user, usersEmail, usersVorname, usersNachname, rolesFK, teamFK, teamName: updatedTeamName } // Aktualisiere teamFK und teamName
-          : user
-      ));
-
-      setEditingUser(null); // Bearbeitungsformular schließen
+      setEditingUser(null); // Bearbeitungsmodus beenden
     } catch (error) {
       console.error('Fehler beim Speichern des Benutzers:', error);
     }
@@ -89,7 +99,7 @@ const AdminUser = () => {
             <th>Nachname</th>
             <th>E-Mail</th>
             <th>Rolle</th>
-            <th>Team</th> {/* Team-Spalte hinzufügen */}
+            <th>Team</th>
             <th>Aktionen</th>
           </tr>
         </thead>
@@ -97,13 +107,13 @@ const AdminUser = () => {
           {users.map((user) => (
             <tr 
               key={user.usersID}
-              className={user.teamFK === 0 ? 'bg-pastel-yellow' : ''} // Bedingte Klasse für kein Team
+              className={user.teamFK === 0 ? 'bg-pastel-yellow' : ''}
             >
               <td>{user.usersVorname}</td>
               <td>{user.usersNachname}</td>
               <td>{user.usersEmail}</td>
               <td>{getRoleName(user.rolesFK)}</td>
-              <td>{user.teamName || getTeamName(user.teamFK)}</td> {/* Teamnamen anzeigen */}
+              <td>{user.teamName || getTeamName(user.teamFK)}</td>
               <td>
                 <button className="btn btn-primary" onClick={() => setEditingUser(user)}>Bearbeiten</button>
                 {deletingUserId === user.usersID ? (
