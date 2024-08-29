@@ -12,7 +12,7 @@ const Feedback = () => {
   // eslint-disable-next-line no-unused-vars
   const [rating, setRating] = useState(null);  // Neues State für das Rating
   const navigate = useNavigate();
-  
+
   useEffect(() => {
     const feedbackId = searchParams.get('id');
     if (!feedbackId) {
@@ -22,9 +22,14 @@ const Feedback = () => {
     }
   }, [searchParams]);
 
-  const fetchCustomerFeedback = async (id) => {
+  // const fetchCustomerFeedback = async (id) => {
+  //   try {
+  //     const response = await axios.get(`/api/customerFeedback/${id}`);
+  const fetchCustomerFeedback = async () => {
+    const feedbackId = searchParams.get('id');
     try {
-      const response = await axios.get(`/api/customerFeedback/${id}`);
+      const response = await axios.get(`/api/customerFeedback/${feedbackId}`);
+
       if (response.data) {
         setCompany(response.data.customerCompany);
         setContactPerson(response.data.customerName);
@@ -60,10 +65,10 @@ const Feedback = () => {
     const feedbackId = searchParams.get('id');
 
     const token = localStorage.getItem('token');  // Token from localStorage
-    
+
     // Textanalyse durchführen und Rating erhalten
     const analyzedRating = await analyzeText(feedback);
-    
+
     try {
       await axios.put(`/api/customerFeedback/text/${feedbackId}`, {
         customerFdbckText: feedback,
