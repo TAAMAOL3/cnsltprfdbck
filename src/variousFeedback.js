@@ -24,6 +24,14 @@ const VariousFeedback = () => {
     setFile(e.target.files[0]);
   };
 
+  const formatDateForInput = (dateString) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${year}-${month}-${day}`;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -35,7 +43,8 @@ const VariousFeedback = () => {
     const formData = new FormData();
     formData.append('variousFdbckCustomer', customer);
     formData.append('variousFdbckDescription', description);
-    formData.append('variousFdbckReceived', received.toLocaleDateString()); // Format the date as dd.MM.yyyy
+    // formData.append('variousFdbckReceived', received.toLocaleDateString()); // Format the date as dd.MM.yyyy
+    formData.append('variousFdbckReceived', formatDateForInput(received)); // Format the date as yyyy-MM-dd
     formData.append('uploadUrl', file); // Datei hochladen
 
     const token = localStorage.getItem('token');

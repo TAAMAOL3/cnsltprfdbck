@@ -22173,6 +22173,8 @@ exports.createFeedback = (req, res) => {
       try {
         // Überprüfe den Dateityp und Buffer vor der Verarbeitung
         console.log('Hochgeladene Datei:', req.file.originalname);
+        console.debug('Hochgeladene Datei:', req.file.originalname);
+        console.info('Hochgeladene Datei:', req.file.originalname);
         console.log('Dateityp:', req.file.mimetype);
         console.log('Buffer Länge:', req.file.buffer.length);
     
@@ -22184,6 +22186,11 @@ exports.createFeedback = (req, res) => {
           await fs.promises.writeFile(uploadPath, req.file.buffer);
         }
         uploadUrl = `/uploads/${fileName}`;
+
+        console.log('UploadPath: ', uploadPath);
+        console.log('UploadUrl: ', uploadUrl);
+        console.log('ENV Path: ', process.env.UPLOAD_PATH);
+
       } catch (error) {
         console.error('Fehler beim Speichern der Datei:', error);
         return res.status(500).send('Fehler beim Speichern der Datei');
@@ -22194,13 +22201,19 @@ exports.createFeedback = (req, res) => {
     
 
     // Datum in das Format yyyy-MM-dd konvertieren
-    const formattedDate = new Date(variousFdbckReceived.split('.').reverse().join('-'));
+    console.log('Datum:', variousFdbckReceived);
+    // const formattedDate = new Date(variousFdbckReceived).toLocaleDateString();
+    const formattedDate = new Date(variousFdbckReceived).toISOString().slice(0, 10);  // Konvertiere ins Format yyyy-MM-dd
+    console.log('Formatiertes Datum:', formattedDate);
 
     const query = `
       INSERT INTO t_variousFdbck (variousFdbckCustomer, variousFdbckDescription, variousFdbckReceived, uploadUrl, usersFK)
       VALUES (?, ?, ?, ?, ?)
     `;
     const values = [variousFdbckCustomer, variousFdbckDescription, formattedDate, uploadUrl, userId];
+
+    console.log('Query:', query);
+    console.log('Values:', values);
 
     db.query(query, values, (err, results) => {
       if (err) {
@@ -90790,6 +90803,14 @@ const VariousFeedback = () => {
     setFile(e.target.files[0]);
   };
 
+  const formatDateForInput = (dateString) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${year}-${month}-${day}`;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -90801,7 +90822,8 @@ const VariousFeedback = () => {
     const formData = new FormData();
     formData.append('variousFdbckCustomer', customer);
     formData.append('variousFdbckDescription', description);
-    formData.append('variousFdbckReceived', received.toLocaleDateString()); // Format the date as dd.MM.yyyy
+    // formData.append('variousFdbckReceived', received.toLocaleDateString()); // Format the date as dd.MM.yyyy
+    formData.append('variousFdbckReceived', formatDateForInput(received)); // Format the date as yyyy-MM-dd
     formData.append('uploadUrl', file); // Datei hochladen
 
     const token = localStorage.getItem('token');
