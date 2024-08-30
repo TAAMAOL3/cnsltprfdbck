@@ -20,11 +20,12 @@
 .env.test.local
 .env.production.local
 .env
+.env.production
 
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-consultprofeedback_sourcecode.txt
+./consultprofeedback_sourcecode.txt
 consultprofeedbackdb.txt
 directory_structure.py.py

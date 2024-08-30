@@ -63,19 +63,7 @@ exports.createFeedback = (req, res) => {
 
       try {
         // Überprüfe den Dateityp und Buffer vor der Verarbeitung
-        console.log('Hochgeladene Datei:', req.file.originalname);
-        console.log('Dateityp:', req.file.mimetype);
-        console.log('Buffer Länge:', req.file.buffer.length);
-        console.log('UploadPath: ', uploadPath);
-        console.log('ENV Path: ', process.env.UPLOAD_PATH);
         uploadUrl = `/uploads/${fileName}`;
-        console.log('UploadUrl: ', uploadUrl);
-        console.log('Current working directory:', process.cwd());
-        const uploadPath2 = path.join(__dirname, 'public', 'uploads', fileName);
-        console.log('UploadPath2: ', uploadPath2);
-
-
-
         // Nur unterstützte Bildformate (PNG, JPEG) mit sharp verarbeiten
         if (['image/png', 'image/jpeg'].includes(req.file.mimetype)) {
           await sharp(req.file.buffer).toFile(uploadPath);
