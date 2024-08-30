@@ -48,7 +48,8 @@ table tr.active {
 
 h3 {
   grid-area: y;
-  text-align: left; /* Zentriert den Namen nur in 'y' */
+  text-align: left;
+  /* Zentriert den Namen nur in 'y' */
 }
 
 .grimg {
@@ -112,7 +113,7 @@ ul {
 
 
 
-.evaluation-img-extend{
+.evaluation-img-extend {
   height: auto;
   display: block;
   /* padding: 0px 5px 5px 5px; */
@@ -120,5 +121,28 @@ ul {
 }
 
 .bg-pastel-yellow {
-  background-color: #fdfd96; /* Pastell-Gelb */
+  background-color: #fdfd96;
+  /* Pastell-Gelb */
+}
+
+.feedback-success-message .checkmark {
+  font-size: 5rem;
+  color: green;
+  margin-bottom: 20px;
+}
+
+
+
+.feedback-success-message {
+  user-select: none;
+  display: table;
+  margin-inline: auto;
+}
+
+.feedback-success-message h3{
+  text-align: center;
+}
+
+.year-separator {
+  height: 20px; /* Definiert den Abstand */
 }

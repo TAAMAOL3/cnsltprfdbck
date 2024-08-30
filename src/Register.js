@@ -48,7 +48,7 @@ const Register = () => {
         <div className="col-md-6">
           <div className="card">
             <div className="card-body">
-              <h5 className="card-title">Registrieren</h5>
+              <h1 className="card-title">Registrieren</h1>
               {message && (
                 <div className={`alert ${error ? 'alert-danger' : 'alert-success'}`}>
                   {message}

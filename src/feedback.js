@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { useSearchParams } from 'react-router-dom';
+import axios from 'axios';
+
 
 const Feedback = () => {
   const [searchParams] = useSearchParams();
@@ -9,9 +9,9 @@ const Feedback = () => {
   const [contactPerson, setContactPerson] = useState('');
   const [feedback, setFeedback] = useState('');
   const [error, setError] = useState('');
+  const [submitted, setSubmitted] = useState(false);
   // eslint-disable-next-line no-unused-vars
   const [rating, setRating] = useState(null);  // Neues State für das Rating
-  const navigate = useNavigate();
 
   useEffect(() => {
     const feedbackId = searchParams.get('id');
@@ -20,20 +20,18 @@ const Feedback = () => {
     } else {
       fetchCustomerFeedback(feedbackId);
     }
-// eslint-disable-next-line
   }, [searchParams]);
 
-  // const fetchCustomerFeedback = async (id) => {
-  //   try {
-  //     const response = await axios.get(`/api/customerFeedback/${id}`);
-  const fetchCustomerFeedback = async () => {
-    const feedbackId = searchParams.get('id');
+  const fetchCustomerFeedback = async (feedbackId) => {
     try {
       const response = await axios.get(`/api/customerFeedback/${feedbackId}`);
-
       if (response.data) {
-        setCompany(response.data.customerCompany);
-        setContactPerson(response.data.customerName);
+        if (response.data.customerFdbckAnswered === 1) {
+          setSubmitted(true); // Direkt zur Erfolgsmeldung springen, wenn bereits beantwortet
+        } else {
+          setCompany(response.data.customerCompany);
+          setContactPerson(response.data.customerName);
+        }
       } else {
         setError('Dieser Feedback Link ist leider ungültig.');
       }
@@ -64,8 +62,7 @@ const Feedback = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const feedbackId = searchParams.get('id');
-
-    const token = localStorage.getItem('token');  // Token from localStorage
+    const token = localStorage.getItem('token');
 
     // Textanalyse durchführen und Rating erhalten
     const analyzedRating = await analyzeText(feedback);
@@ -78,10 +75,17 @@ const Feedback = () => {
         rating: analyzedRating,  // Neues Rating-Feld
       }, {
         headers: {
-          'Authorization': `Bearer ${token}`  // Add token to the request
+          'Authorization': `Bearer ${token}`
         }
       });
-      navigate('/feedback-success');
+      setSubmitted(true);
+
+      setTimeout(() => {
+        const formContainer = document.querySelector('.feedback-form-container');
+        if (formContainer) {
+          formContainer.style.display = 'none';
+        }
+      }, 1000);
     } catch (error) {
       setError('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
     }
@@ -93,28 +97,39 @@ const Feedback = () => {
 
   return (
     <div className="container">
-      <h2>Feedback Formular</h2>
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label>Kunden Firma</label>
-          <input type="text" className="form-control" value={company} readOnly />
+      {!submitted ? (
+        <div className="feedback-form-container">
+          <h2>Feedback Formular</h2>
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label>Kunden Firma</label>
+              <input type="text" className="form-control" value={company} readOnly />
+            </div>
+            <div className="form-group">
+              <label>Ansprechperson</label>
+              <input type="text" className="form-control" value={contactPerson} readOnly />
+            </div>
+            <div className="form-group">
+              <label>Feedback</label>
+              <textarea
+                className="form-control"
+                value={feedback}
+                onChange={(e) => setFeedback(e.target.value)}
+                placeholder="Ihr Feedback"
+                required
+              />
+            </div>
+            <button type="submit" className="btn btn-primary btn">Absenden</button>
+          </form>
         </div>
-        <div className="form-group">
-          <label>Ansprechperson</label>
-          <input type="text" className="form-control" value={contactPerson} readOnly />
+      ) : (
+
+        <div className="feedback-success-message" style={{ textAlign: 'center' }}>
+          <div className="checkmark">&#10003;</div>
+          <h3>Vielen Dank für Ihr Feedback! Sie können das Fenster nun schließen.</h3>
         </div>
-        <div className="form-group">
-          <label>Feedback</label>
-          <textarea
-            className="form-control"
-            value={feedback}
-            onChange={(e) => setFeedback(e.target.value)}
-            placeholder="Ihr Feedback"
-            required
-          />
-        </div>
-        <button type="submit" className="btn btn-primary btn">Absenden</button>
-      </form>
+
+      )}
     </div>
   );
 };

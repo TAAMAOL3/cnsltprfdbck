@@ -1,5 +1,5 @@
-import React, { useContext } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useContext, useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, AuthContext } from './AuthContext';
 import Navigation from './Navigation';
 import Login from './Login';
@@ -13,19 +13,33 @@ import User from './User';
 import CustomerFeedback from './customerFeedback';
 import Feedback from './feedback';
 import Team from './Team';
-import Profile from './Profile'; // Import Profile Component
+import Profile from './Profile';
 import Status from "./Status";
 
-// ProtectedRoute component to restrict access to authenticated users
-const ProtectedRoute = ({ children }) => {
-  const { user } = useContext(AuthContext);
+// Layout-Komponente, die Header, Footer und Navigation bedingt rendert
+const Layout = ({ children }) => {
+  const location = useLocation();
+  const hideNavigation = location.pathname === '/feedback';
 
-  // If no user is logged in, redirect to the login page
-  if (!user) {
-    return <Navigate to="/login" />;
+  return (
+    <>
+      {!hideNavigation && <Navigation />}
+      <div className="App">
+        <main>{children}</main>
+      </div>
+    </>
+  );
+};
+
+// Geschützte Route-Komponente, die den Zugriff auf authentifizierte Benutzer beschränkt
+const ProtectedRoute = ({ children }) => {
+  const { user, loading } = useContext(AuthContext);
+
+  if (loading) {
+    return <div>Loading...</div>;
   }
 
-  return children;
+  return user ? children : <Navigate to="/login" />;
 };
 
 function App() {
@@ -38,8 +52,7 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <div>
-          <Navigation />
+        <Layout>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -48,20 +61,19 @@ function App() {
             <Route path="/status" element={<Status />} />
             <Route path="/feedback" element={<Feedback />} />
 
-            {/* Protected routes */}
+            {/* Geschützte Routen */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/variousFeedback" element={<ProtectedRoute><VariousFeedback /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/textmining" element={<ProtectedRoute><TextMining /></ProtectedRoute>} />
             <Route path="/user" element={<ProtectedRoute><User /></ProtectedRoute>} />
             <Route path="/customerFeedback" element={<ProtectedRoute><CustomerFeedback /></ProtectedRoute>} />
-            {/* <Route path="/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} /> */}
             <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
 
-            {/* New Profile Route */}
+            {/* Neue Profil-Route */}
             <Route path="/profile/:id" element={<ProtectedRoute><Profile user={user} /></ProtectedRoute>} />
           </Routes>
-        </div>
+        </Layout>
       </AuthProvider>
     </Router>
   );

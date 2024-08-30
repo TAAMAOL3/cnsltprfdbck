@@ -122,7 +122,7 @@ const UserRequest = () => {
                 <td>{request.customerName}</td>
                 <td>{request.customerMailaddr}</td>
                 <td>
-                  <a href={request.customerFdbckUrl} download className="btn btn-link">
+                  <a href={request.customerFdbckUrl} target="_blank" className="btn btn-link">
                     Feedback öffnen
                   </a>
                 </td>

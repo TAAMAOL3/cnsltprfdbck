@@ -67,23 +67,34 @@ const UserReceived = () => {
         </thead>
         <tbody>
           {Array.isArray(feedbacks) && feedbacks.length > 0 ? (
-            feedbacks.map((feedback) => (
-              <tr
-                key={feedback.customerFdbckID}
-                className={activeRow === feedback.customerFdbckID ? 'active' : ''} // Fügt die Klasse .active hinzu
-              >
-                <td>{new Date(feedback.customerFdbckReceived).toLocaleDateString()}</td>
-                <td>{feedback.customerCompany}</td>
-                <td>{feedback.customerName}</td>
-                <td>{feedback.customerMailaddr}</td>
-                <td>{getRatingIcon(feedback.rating)}</td>
-                <td>
-                  <button className="btn btn-primary" onClick={() => handleViewFeedback(feedback, feedback.customerFdbckID)}>
-                    Anzeigen
-                  </button>
-                </td>
-              </tr>
-            ))
+            feedbacks.map((feedback, index) => {
+              const previousFeedback = feedbacks[index - 1];
+              const currentYear = new Date(feedback.customerFdbckReceived).getFullYear();
+              const previousYear = previousFeedback ? new Date(previousFeedback.customerFdbckReceived).getFullYear() : currentYear;
+              console.log('currentYear:', currentYear, 'previousYear:', previousYear);
+
+              const isNewYear = previousFeedback && currentYear < previousYear;
+
+              return (
+                <React.Fragment key={feedback.customerFdbckID}>
+                  {isNewYear && <tr className="year-separator"></tr>}
+                  <tr
+                    className={activeRow === feedback.customerFdbckID ? 'active' : ''}
+                  >
+                    <td>{new Date(feedback.customerFdbckReceived).toLocaleDateString()}</td>
+                    <td>{feedback.customerCompany}</td>
+                    <td>{feedback.customerName}</td>
+                    <td>{feedback.customerMailaddr}</td>
+                    <td>{getRatingIcon(feedback.rating)}</td>
+                    <td>
+                      <button className="btn btn-primary" onClick={() => handleViewFeedback(feedback, feedback.customerFdbckID)}>
+                        Anzeigen
+                      </button>
+                    </td>
+                  </tr>
+                </React.Fragment>
+              );
+            })
           ) : (
             <tr>
               <td colSpan="6">Keine erhaltenen Feedbacks gefunden.</td>

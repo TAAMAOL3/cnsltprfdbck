@@ -17,7 +17,7 @@ const PasswordReset = () => {
         <div className="col-md-6">
           <div className="card">
             <div className="card-body">
-              <h5 className="card-title">Passwort zurücksetzen</h5>
+              <h1 className="card-title">Passwort zurücksetzen</h1>
               <form onSubmit={handleSubmit}>
                 <div className="form-group">
                   <label htmlFor="email">E-mail Adresse</label>
