@@ -60,7 +60,7 @@ exports.createFeedback = (req, res) => {
     if (req.file) {
       const fileName = `feedback_${Date.now()}_${req.file.originalname}`;
       const uploadPath = path.join(process.env.UPLOAD_PATH || './uploads', fileName);
-    
+
       try {
         // Überprüfe den Dateityp und Buffer vor der Verarbeitung
         console.log('Hochgeladene Datei:', req.file.originalname);
@@ -70,6 +70,11 @@ exports.createFeedback = (req, res) => {
         console.log('ENV Path: ', process.env.UPLOAD_PATH);
         uploadUrl = `/uploads/${fileName}`;
         console.log('UploadUrl: ', uploadUrl);
+        console.log('Current working directory:', process.cwd());
+        const uploadPath2 = path.join(__dirname, 'public', 'uploads', fileName);
+        console.log('UploadPath2: ', uploadPath2);
+
+
 
         // Nur unterstützte Bildformate (PNG, JPEG) mit sharp verarbeiten
         if (['image/png', 'image/jpeg'].includes(req.file.mimetype)) {
@@ -78,17 +83,17 @@ exports.createFeedback = (req, res) => {
           // PDF- und andere Dateien direkt speichern, ohne sharp zu verwenden
           await fs.promises.writeFile(uploadPath, req.file.buffer);
         }
-                
-      
+
+
 
       } catch (error) {
         console.error('Fehler beim Speichern der Datei:', error);
         return res.status(500).send('Fehler beim Speichern der Datei');
       }
     }
-    
-    
-    
+
+
+
 
     // Datum in das Format yyyy-MM-dd konvertieren
     console.log('Datum:', variousFdbckReceived);
