@@ -68,6 +68,8 @@ exports.getFeedbackById = (req, res) => {
 exports.updateCustomerFeedbackText = (req, res) => {
   const { id } = req.params;
   const { customerFdbckText, customerFdbckReceived, customerFdbckAnswered, rating } = req.body;  // Include rating
+  const formattedDate = new Date(customerFdbckReceived).toISOString().slice(0, 10);  // Konvertiere ins Format yyyy-MM-dd
+
 
   const query = `
     UPDATE t_customerfdbck
@@ -75,7 +77,7 @@ exports.updateCustomerFeedbackText = (req, res) => {
     WHERE customerFdbckUrlID = ?
   `;
 
-  db.query(query, [customerFdbckText, customerFdbckReceived, customerFdbckAnswered, rating, id], (err, result) => {
+  db.query(query, [customerFdbckText, formattedDate, customerFdbckAnswered, rating, id], (err, result) => {
     if (err) {
       console.error('Error updating customer feedback text:', err);
       return res.status(500).send('Error updating feedback');

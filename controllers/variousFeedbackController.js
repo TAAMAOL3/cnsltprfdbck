@@ -64,11 +64,13 @@ exports.createFeedback = (req, res) => {
       try {
         // Überprüfe den Dateityp und Buffer vor der Verarbeitung
         console.log('Hochgeladene Datei:', req.file.originalname);
-        console.debug('Hochgeladene Datei:', req.file.originalname);
-        console.info('Hochgeladene Datei:', req.file.originalname);
         console.log('Dateityp:', req.file.mimetype);
         console.log('Buffer Länge:', req.file.buffer.length);
-    
+        console.log('UploadPath: ', uploadPath);
+        console.log('ENV Path: ', process.env.UPLOAD_PATH);
+        uploadUrl = `/uploads/${fileName}`;
+        console.log('UploadUrl: ', uploadUrl);
+
         // Nur unterstützte Bildformate (PNG, JPEG) mit sharp verarbeiten
         if (['image/png', 'image/jpeg'].includes(req.file.mimetype)) {
           await sharp(req.file.buffer).toFile(uploadPath);
@@ -76,11 +78,8 @@ exports.createFeedback = (req, res) => {
           // PDF- und andere Dateien direkt speichern, ohne sharp zu verwenden
           await fs.promises.writeFile(uploadPath, req.file.buffer);
         }
-        uploadUrl = `/uploads/${fileName}`;
-
-        console.log('UploadPath: ', uploadPath);
-        console.log('UploadUrl: ', uploadUrl);
-        console.log('ENV Path: ', process.env.UPLOAD_PATH);
+                
+      
 
       } catch (error) {
         console.error('Fehler beim Speichern der Datei:', error);
