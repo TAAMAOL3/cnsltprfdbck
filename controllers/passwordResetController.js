@@ -2,6 +2,8 @@
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const db = require('../config/db');
+const { sendMail } = require('../src/mailService');
+
 
 exports.requestPasswordReset = (req, res) => {
     const { email } = req.body;
@@ -51,4 +53,13 @@ exports.resetPassword = (req, res) => {
             );
         }
     );
+};
+
+exports.sendPasswordResetEmail = (req, res) => {
+    const { email } = req.body;
+
+    // Versendet die E-Mail zur Passwort-Zurücksetzung
+    sendMail(email, 'Passwort-Zurücksetzung', 'Dies ist eine generische E-Mail zur Bestätigung Ihrer Passwort-Zurücksetzungsanforderung.')
+        .then(() => res.status(200).json({ message: 'E-Mail gesendet' }))
+        .catch(error => res.status(500).json({ error: 'Fehler beim E-Mail-Versand', details: error.message }));
 };

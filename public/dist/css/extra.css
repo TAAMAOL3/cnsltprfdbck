@@ -139,10 +139,29 @@ ul {
   margin-inline: auto;
 }
 
-.feedback-success-message h3{
+.feedback-success-message h3 {
   text-align: center;
 }
 
 .year-separator {
-  height: 20px; /* Definiert den Abstand */
+  height: 20px;
+  /* Definiert den Abstand */
 }
+
+.feedback-legend {
+  display: flex;
+  /* justify-content: space-around; */
+  margin-top: 15px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-right: 20px;
+}
+
+/* .evaluation-img {
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+} */

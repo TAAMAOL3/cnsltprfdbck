@@ -21,10 +21,11 @@ const Admin = () => {
       <section className="featured">
         <div className="content-wrapper banner">
           <div className="float-right">
-            <img className="page-icon" src="/Content/themes/base/images/person_BOLD.svg" alt="Admin icon" />
+            <img className="page-icon" src="/Content/themes/base/images/Config.png" alt="Admin icon" />
           </div>
           <hgroup className="title">
             <h1>Adminbereich</h1>
+            <p>Verwaltung von Benutzern, Rollen und Teams</p>
           </hgroup>
         </div>
       </section>

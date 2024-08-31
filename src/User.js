@@ -27,11 +27,33 @@ const User = () => {
             <h1>Meine Feedbacks</h1>
             <p>Überblick über erhaltene, offene und selbst erstellte Feedbacks</p>
           </hgroup>
+          <div className="feedback-legend">
+            <div className="legend-item">
+              <img className="evaluation-img" src="/Content/themes/base/images/VeryPositive.png" alt="Sehr Positiv" />
+              <span>Sehr Positiv</span>
+            </div>
+            <div className="legend-item">
+              <img className="evaluation-img" src="/Content/themes/base/images/Positive.png" alt="Positiv" />
+              <span>Positiv</span>
+            </div>
+            <div className="legend-item">
+              <img className="evaluation-img" src="/Content/themes/base/images/Unknown.png" alt="Neutral" />
+              <span>Neutral</span>
+            </div>
+            <div className="legend-item">
+              <img className="evaluation-img" src="/Content/themes/base/images/Negative.png" alt="Negativ" />
+              <span>Negativ</span>
+            </div>
+            <div className="legend-item">
+              <img className="evaluation-img" src="/Content/themes/base/images/VeryNegative.png" alt="Sehr Negativ" />
+              <span>Sehr Negativ</span>
+            </div>
+          </div>
         </div>
       </section>
       <div className="container mt-5" id="flexcontainer">
         {/* Erhaltene Feedbacks-Tabelle */}
-        <Profile /> 
+        <Profile />
 
         <UserReceived /> {/* Neue Tabelle hinzugefügt */}
 

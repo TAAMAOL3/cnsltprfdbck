@@ -1,14 +1,22 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom'; // Importiere die Link-Komponente
-
+import { Link } from 'react-router-dom';
 
 const PasswordReset = () => {
   const [email, setEmail] = useState('');
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    // Hier könnte ein API-Aufruf zum Zurücksetzen des Passworts hinzugefügt werden
-    console.log('Email:', email);
+    
+    fetch('/api/password-reset/send-password-reset-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    })
+    .then(response => response.json())
+    .then(data => console.log(data))
+    .catch(error => console.error('Fehler:', error));
   };
 
   return (

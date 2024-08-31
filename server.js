@@ -17,7 +17,8 @@ const textMiningRoutes = require('./routes/textMiningRoutes');
 const customerFeedbackRoutes = require('./routes/customerFeedbackRoutes');
 const teamFeedbackRoutes = require('./routes/teamFeedbackRoutes'); // Team Feedback Routes
 const profileRoutes = require('./routes/profileRoutes'); // Profile Routes
-const authenticateToken = require('./middleware/authenticateToken'); // Token authentication middleware
+const authenticateToken = require('./middleware/authenticateToken'); // Token authentication middleware// server.js
+
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -34,13 +35,16 @@ app.use(rateLimit({
 
 // Route imports
 app.use('/api/register', registerRoutes);
-app.use('/api/password-reset', passwordResetRoutes);
+// app.use('/api/password-reset', passwordResetRoutes);
 app.use('/api/feedback', variousFeedbackRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', textMiningRoutes);
 app.use('/api/customerFeedback', customerFeedbackRoutes);
 app.use('/api/team', teamFeedbackRoutes);
 app.use('/api/profile', profileRoutes); // Profile Routes
+app.use('/api/password-reset', passwordResetRoutes);  // Verwende die Passwort-Zurücksetzung-Routen
+
+
 
 // Serve the uploads directory as static files
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
