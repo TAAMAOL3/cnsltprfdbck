@@ -6,7 +6,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
 const VariousFeedback = () => {
-  const { user } = useContext(AuthContext);
+  const { user } = useContext(AuthContext); // eslint-disable-line no-use-before-define
   const [customer, setCustomer] = useState('');
   const [description, setDescription] = useState('');
   const [received, setReceived] = useState(new Date());

@@ -3,7 +3,7 @@ import axios from 'axios';
 import { AuthContext } from './AuthContext';
 
 const TeamReceived = ({ selectedTeam, selectedUser }) => {
-  const { user } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);// eslint-disable-line no-use-before-define
   const [feedbacks, setFeedbacks] = useState([]);
   const [viewingFeedback, setViewingFeedback] = useState(null);
   const [activeRow, setActiveRow] = useState(null); // Neuer Zustand für die aktive Zeile

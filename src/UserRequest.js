@@ -50,7 +50,7 @@ const UserRequest = () => {
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-  
+
       setRequests(requests.map(req =>
         req.customerFdbckID === editingRequest.customerFdbckID ? { ...req, customerCompany: company, customerName: contactPerson, customerMailaddr: email } : req
       ));
@@ -61,12 +61,12 @@ const UserRequest = () => {
       console.error('Fehler beim Speichern der Feedback-Anfrage:', error);
     }
   };
-  
+
   const handleCancelEdit = () => {
     setEditingRequest(null);
     setActiveRow(null); // Entfernt die aktive Zeile nach dem Abbrechen
   };
-  
+
 
   const handleDeleteRequest = async (requestID) => {
     const token = localStorage.getItem('token');
@@ -130,7 +130,7 @@ const UserRequest = () => {
                     <td>{request.customerName}</td>
                     <td>{request.customerMailaddr}</td>
                     <td>
-                      <a href={request.customerFdbckUrl} target="_blank" className="btn btn-link">
+                      <a href={request.customerFdbckUrl} target="_blank" rel="noreferrer" className="btn btn-link">
                         Feedback öffnen
                       </a>
                     </td>
