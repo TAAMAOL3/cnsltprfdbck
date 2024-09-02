@@ -107,8 +107,6 @@ const UserFeedback = () => {
     setDeletingFeedbackId(null);
   };
 
-  
-
   return (
     <div className="mb-5">
       <h3>Meine Feedbacks</h3>
@@ -125,41 +123,50 @@ const UserFeedback = () => {
         </thead>
         <tbody>
           {Array.isArray(feedbacks) && feedbacks.length > 0 ? (
-            feedbacks.map((feedback) => (
-              <tr
-                key={feedback.variousFdbckID}
-                className={activeRow === feedback.variousFdbckID ? 'active' : ''} // Fügt die Klasse .active hinzu
-              >
-                <td>{formatDateForDisplay(feedback.variousFdbckReceived)}</td>
-                <td>{feedback.variousFdbckCustomer}</td>
-                <td>{feedback.variousFdbckDescription}</td>
-                <td>
-                  <a href={feedback.uploadUrl} download className="btn btn-link">
-                    Datei herunterladen
-                  </a>
-                </td>
+            feedbacks.map((feedback, index) => {
+              const previousFeedback = feedbacks[index - 1];
+              const currentYear = new Date(feedback.variousFdbckReceived).getFullYear();
+              const previousYear = previousFeedback ? new Date(previousFeedback.variousFdbckReceived).getFullYear() : currentYear;
 
-                <td>
-                  {deletingFeedbackId === feedback.variousFdbckID ? (
-                    <>
-                      <button className="btn btn-danger mr-2" onClick={() => handleDeleteFeedback(feedback.variousFdbckID)}>
-                        Wirklich löschen?
-                      </button>
-                      <button className="btn btn-secondary" onClick={cancelDelete}>
-                        Abbrechen
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button className="btn btn-primary mr-2" onClick={() => handleEdit(feedback)}>Bearbeiten</button>
-                      <button className="btn btn-danger mr-2" onClick={() => confirmDelete(feedback.variousFdbckID)}>
-                        Löschen
-                      </button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))
+              const isNewYear = previousFeedback && currentYear < previousYear;
+
+              return (
+                <React.Fragment key={feedback.variousFdbckID}>
+                  {isNewYear && <tr className="year-separator"></tr>}
+                  <tr
+                    className={activeRow === feedback.variousFdbckID ? 'active' : ''}
+                  >
+                    <td>{formatDateForDisplay(feedback.variousFdbckReceived)}</td>
+                    <td>{feedback.variousFdbckCustomer}</td>
+                    <td>{feedback.variousFdbckDescription}</td>
+                    <td>
+                      <a href={feedback.uploadUrl} download className="btn btn-link">
+                        Datei herunterladen
+                      </a>
+                    </td>
+                    <td>
+                      {deletingFeedbackId === feedback.variousFdbckID ? (
+                        <>
+                          <button className="btn btn-danger mr-2" onClick={() => handleDeleteFeedback(feedback.variousFdbckID)}>
+                            Wirklich löschen?
+                          </button>
+                          <button className="btn btn-secondary" onClick={cancelDelete}>
+                            Abbrechen
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button className="btn btn-primary mr-2" onClick={() => handleEdit(feedback)}>Bearbeiten</button>
+                          <button className="btn btn-danger mr-2" onClick={() => confirmDelete(feedback.variousFdbckID)}>
+                            Löschen
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                </React.Fragment>
+              );
+            })
           ) : (
             <tr>
               <td colSpan="5">Keine Feedbacks gefunden.</td>

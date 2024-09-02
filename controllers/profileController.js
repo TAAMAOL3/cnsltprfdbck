@@ -155,10 +155,11 @@ exports.getTeamProfile = (req, res) => {
 
   // Abfrage, um die Teamdaten und die Benutzerprofile innerhalb des Teams zu erhalten
   const teamProfileQuery = `
-    SELECT *
-    FROM t_users 
-    WHERE teamFK = ?
-  `;
+  SELECT t_team.teamName, t_users.*
+  FROM t_users 
+  JOIN t_team ON t_users.teamFK = t_team.teamID
+  WHERE teamFK = ?
+`;
 
   db.query(teamProfileQuery, [teamId], (error, teamResults) => {
     if (error) {
@@ -271,6 +272,7 @@ exports.getTeamProfile = (req, res) => {
 
                     // Erfolgreiche Rückgabe der Team-Profildaten
                     res.status(200).json({
+                      teamname: teamResults[0].teamName,
                       teamMembers, // Hier werden die Teammitglieder und ihre Details zurückgegeben
                       currentReceivedFeedback: currentReceivedFeedbackResults[0].currentReceivedFeedback,
                       currentRequestedFeedback: currentRequestedFeedbackResults[0].currentRequestedFeedback,

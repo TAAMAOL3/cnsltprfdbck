@@ -3,10 +3,10 @@ import axios from 'axios';
 import { AuthContext } from './AuthContext';
 
 const TeamFeedback = ({ selectedTeam, selectedUser }) => {
-  // eslint-disable-next-line no-unused-vars
   const { user } = useContext(AuthContext); // Zugriff auf den aktuellen Benutzer
   const [feedbacks, setFeedbacks] = useState([]); // Liste der erstellten Feedbacks
   const [viewingFeedback, setViewingFeedback] = useState(null); // Detailansicht eines Feedbacks
+  const [activeRow, setActiveRow] = useState(null); // Neuer Zustand für die aktive Zeile
 
   // Formatierung des Datums für die Anzeige im Format dd/MM/yyyy
   const formatDateForDisplay = (dateString) => {
@@ -22,12 +22,10 @@ const TeamFeedback = ({ selectedTeam, selectedUser }) => {
     const fetchTeamFeedback = async () => {
       const token = localStorage.getItem('token'); // Token für API-Anfragen
 
-      // Verwende 'all' oder einen leeren String statt '%' in der URL
       const teamId = selectedTeam === 'all' ? 'all' : selectedTeam;
 
       if (selectedTeam) {
         try {
-          // API-URL zum Abrufen des erstellten Feedbacks für das Team und optional den Benutzer
           const url = selectedUser && selectedUser !== 'all'
             ? `/api/team/feedback/${teamId}/${selectedUser}`
             : `/api/team/feedback/${teamId}`;
@@ -45,14 +43,12 @@ const TeamFeedback = ({ selectedTeam, selectedUser }) => {
       }
     };
 
-
     fetchTeamFeedback(); // Feedback-Daten laden, wenn sich Team oder Benutzer ändern
   }, [selectedTeam, selectedUser]);
 
-  // Funktion zum Anzeigen der Details eines Feedbacks
-  // eslint-disable-next-line no-unused-vars
   const handleViewFeedback = (feedback) => {
     setViewingFeedback(feedback); // Detailansicht des Feedbacks setzen
+    setActiveRow(feedback.variousFdbckID); // Setzt die aktive Zeile
   };
 
   return (
@@ -70,30 +66,43 @@ const TeamFeedback = ({ selectedTeam, selectedUser }) => {
         </thead>
         <tbody>
           {feedbacks.length > 0 ? (
-            feedbacks.map((feedback) => (
-              <tr key={feedback.variousFdbckID}>
-                <td>{formatDateForDisplay(feedback.variousFdbckReceived)}</td> {/* Datum korrekt formatieren */}
-                <td>{feedback.usersName}</td>
-                <td>{feedback.variousFdbckCustomer}</td>
-                <td>{feedback.variousFdbckDescription}</td>
-                <td>
-                  {feedback.uploadUrl ? (
-                    <button className="btn btn-primary" onClick={() => {
-                      const link = document.createElement('a');
-                      link.href = feedback.uploadUrl;
-                      link.setAttribute('download', '');
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                    }}>
-                      Datei herunterladen
-                    </button>
-                  ) : (
-                    'Keine Datei'
-                  )}
-                </td>
-              </tr>
-            ))
+            feedbacks.map((feedback, index) => {
+              const previousFeedback = feedbacks[index - 1];
+              const currentYear = new Date(feedback.variousFdbckReceived).getFullYear();
+              const previousYear = previousFeedback ? new Date(previousFeedback.variousFdbckReceived).getFullYear() : currentYear;
+
+              const isNewYear = previousFeedback && currentYear < previousYear;
+
+              return (
+                <React.Fragment key={feedback.variousFdbckID}>
+                  {isNewYear && <tr className="year-separator"></tr>}
+                  <tr
+                    className={activeRow === feedback.variousFdbckID ? 'active' : ''}
+                  >
+                    <td>{formatDateForDisplay(feedback.variousFdbckReceived)}</td>
+                    <td>{feedback.usersName}</td>
+                    <td>{feedback.variousFdbckCustomer}</td>
+                    <td>{feedback.variousFdbckDescription}</td>
+                    <td>
+                      {feedback.uploadUrl ? (
+                        <button className="btn btn-primary" onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = feedback.uploadUrl;
+                          link.setAttribute('download', '');
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }}>
+                          Datei herunterladen
+                        </button>
+                      ) : (
+                        'Keine Datei'
+                      )}
+                    </td>
+                  </tr>
+                </React.Fragment>
+              );
+            })
           ) : (
             <tr>
               <td colSpan="6">Keine Feedbacks gefunden.</td>

@@ -5,29 +5,25 @@ import { AuthContext } from './AuthContext';
 const TeamRequest = ({ selectedTeam, selectedUser }) => {
   const { user } = useContext(AuthContext); // Zugriff auf den aktuellen Benutzer
   const [requests, setRequests] = useState([]); // Liste der Feedback-Anfragen
+  const [activeRow, setActiveRow] = useState(null); // Neuer Zustand für die aktive Zeile
 
-  // Effekt, um die Feedback-Anfragen für das ausgewählte Team zu laden
   useEffect(() => {
     const fetchTeamRequests = async () => {
       const token = localStorage.getItem('token'); // Token für die API-Anfrage
 
-      // Verwende 'all' oder den ausgewählten Teamwert
       const teamId = selectedTeam === 'all' ? 'all' : selectedTeam;
 
       if (selectedTeam) {
         try {
-          // URL für die API-Anfrage basierend auf Team- und Benutzer-ID
           const url = selectedUser && selectedUser !== 'all'
             ? `/api/team/requests/${teamId}/${selectedUser}`
             : `/api/team/requests/${teamId}`;
 
-          // API-Aufruf mit axios
           const response = await axios.get(url, {
             headers: { Authorization: `Bearer ${token}` } // Autorisierungs-Token
           });
 
-          // Setze die Anfragen oder eine leere Liste, wenn keine Daten vorhanden sind
-          setRequests(response.data || []);
+          setRequests(response.data || []); // Setze die Anfragen oder eine leere Liste
         } catch (error) {
           console.error('Fehler beim Abrufen der Team-Requests:', error);
           setRequests([]); // Bei Fehler die Liste leeren
@@ -37,8 +33,6 @@ const TeamRequest = ({ selectedTeam, selectedUser }) => {
 
     fetchTeamRequests(); // Aufruf der Funktion bei Änderung der Abhängigkeiten
   }, [selectedTeam, selectedUser]);
-
-
 
   // Funktion, um eine E-Mail-Erinnerung zu senden
   const handleRemind = (request) => {
@@ -62,19 +56,32 @@ const TeamRequest = ({ selectedTeam, selectedUser }) => {
         </thead>
         <tbody>
           {requests.length > 0 ? (
-            requests.map((request) => (
-              <tr key={request.customerFdbckID}>
-                <td>{new Date(request.customerFdbckSend).toLocaleDateString()}</td>
-                <td>{request.usersName}</td>
-                <td>{request.customerCompany}</td>
-                <td>{request.customerName}</td>
-                <td>
-                  <button className="btn btn-primary" onClick={() => handleRemind(request)}>
-                    Erinnerung senden
-                  </button>
-                </td>
-              </tr>
-            ))
+            requests.map((request, index) => {
+              const previousRequest = requests[index - 1];
+              const currentYear = new Date(request.customerFdbckSend).getFullYear();
+              const previousYear = previousRequest ? new Date(previousRequest.customerFdbckSend).getFullYear() : currentYear;
+
+              const isNewYear = previousRequest && currentYear < previousYear;
+
+              return (
+                <React.Fragment key={request.customerFdbckID}>
+                  {isNewYear && <tr className="year-separator"></tr>}
+                  <tr
+                    className={activeRow === request.customerFdbckID ? 'active' : ''}
+                  >
+                    <td>{new Date(request.customerFdbckSend).toLocaleDateString()}</td>
+                    <td>{request.usersName}</td>
+                    <td>{request.customerCompany}</td>
+                    <td>{request.customerName}</td>
+                    <td>
+                      <button className="btn btn-primary" onClick={() => handleRemind(request)}>
+                        Erinnerung senden
+                      </button>
+                    </td>
+                  </tr>
+                </React.Fragment>
+              );
+            })
           ) : (
             <tr>
               <td colSpan="5">Keine Feedback-Anfragen gefunden.</td>

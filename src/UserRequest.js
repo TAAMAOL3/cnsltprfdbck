@@ -112,42 +112,52 @@ const UserRequest = () => {
         </thead>
         <tbody>
           {Array.isArray(requests) && requests.length > 0 ? (
-            requests.map((request) => (
-              <tr
-                key={request.customerFdbckID}
-                className={activeRow === request.customerFdbckID ? 'active' : ''} // Fügt die Klasse .active hinzu
-              >
-                <td>{new Date(request.customerFdbckSend).toLocaleDateString()}</td>
-                <td>{request.customerCompany}</td>
-                <td>{request.customerName}</td>
-                <td>{request.customerMailaddr}</td>
-                <td>
-                  <a href={request.customerFdbckUrl} target="_blank" className="btn btn-link">
-                    Feedback öffnen
-                  </a>
-                </td>
-                <td>
-                  {deletingRequestId === request.customerFdbckID ? (
-                    <>
-                      <button className="btn btn-danger mr-2" onClick={() => handleDeleteRequest(request.customerFdbckID)}>
-                        Wirklich löschen?
-                      </button>
-                      <button className="btn btn-secondary" onClick={cancelDelete}>
-                        Abbrechen
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button className="btn btn-primary mr-2" onClick={() => handleEdit(request)}>Bearbeiten</button>
-                      <button className="btn btn-danger mr-2" onClick={() => confirmDelete(request.customerFdbckID)}>
-                        Löschen
-                      </button>
-                      <button className="btn btn-warning" onClick={() => handleRemind(request)}>Erinnern</button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))
+            requests.map((request, index) => {
+              const previousRequest = requests[index - 1];
+              const currentYear = new Date(request.customerFdbckSend).getFullYear();
+              const previousYear = previousRequest ? new Date(previousRequest.customerFdbckSend).getFullYear() : currentYear;
+
+              const isNewYear = previousRequest && currentYear < previousYear;
+
+              return (
+                <React.Fragment key={request.customerFdbckID}>
+                  {isNewYear && <tr className="year-separator"></tr>}
+                  <tr
+                    className={activeRow === request.customerFdbckID ? 'active' : ''}
+                  >
+                    <td>{new Date(request.customerFdbckSend).toLocaleDateString()}</td>
+                    <td>{request.customerCompany}</td>
+                    <td>{request.customerName}</td>
+                    <td>{request.customerMailaddr}</td>
+                    <td>
+                      <a href={request.customerFdbckUrl} target="_blank" className="btn btn-link">
+                        Feedback öffnen
+                      </a>
+                    </td>
+                    <td>
+                      {deletingRequestId === request.customerFdbckID ? (
+                        <>
+                          <button className="btn btn-danger mr-2" onClick={() => handleDeleteRequest(request.customerFdbckID)}>
+                            Wirklich löschen?
+                          </button>
+                          <button className="btn btn-secondary" onClick={cancelDelete}>
+                            Abbrechen
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button className="btn btn-primary mr-2" onClick={() => handleEdit(request)}>Bearbeiten</button>
+                          <button className="btn btn-danger mr-2" onClick={() => confirmDelete(request.customerFdbckID)}>
+                            Löschen
+                          </button>
+                          <button className="btn btn-warning" onClick={() => handleRemind(request)}>Erinnern</button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                </React.Fragment>
+              );
+            })
           ) : (
             <tr>
               <td colSpan="6">Keine Feedback-Anfragen gefunden.</td>

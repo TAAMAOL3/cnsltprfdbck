@@ -60,12 +60,12 @@ const TeamProfile = ({ selectedTeamId }) => {
   return (
     <div className="profile-container">
       {/* Y-Bereich: Name */}
-      {/* <h3>{profileData.fullname}</h3> */}
+      {/* <h3>{profileData.teamname}</h3> */}
       <h3><span></span></h3>
 
       {/* Z-Bereich: Profilbild */}
       {/* <img className="grimg" src="/Content/themes/base/images/userPlaceholder.png" alt="User icon" /> */}
-      <h2 className="grimg">{profileData.fullname}</h2>
+      <h2 className="grimg">{profileData.teamname}</h2>
 
       {/* Grid-Inhalte */}
       <div className="grid-item">
