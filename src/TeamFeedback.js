@@ -3,6 +3,7 @@ import axios from 'axios';
 import { AuthContext } from './AuthContext';
 
 const TeamFeedback = ({ selectedTeam, selectedUser }) => {
+  // eslint-disable-next-line no-unused-vars
   const { user } = useContext(AuthContext); // eslint-disable-line no-use-before-define
   const [feedbacks, setFeedbacks] = useState([]); // Liste der erstellten Feedbacks
   const [viewingFeedback, setViewingFeedback] = useState(null); // Detailansicht eines Feedbacks
@@ -45,7 +46,7 @@ const TeamFeedback = ({ selectedTeam, selectedUser }) => {
 
     fetchTeamFeedback(); // Feedback-Daten laden, wenn sich Team oder Benutzer ändern
   }, [selectedTeam, selectedUser]);
-
+// eslint-disable-next-line no-unused-vars
   const handleViewFeedback = (feedback) => {// eslint-disable-line no-use-before-define
     setViewingFeedback(feedback); // Detailansicht des Feedbacks setzen
     setActiveRow(feedback.variousFdbckID); // Setzt die aktive Zeile

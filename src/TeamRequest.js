@@ -5,6 +5,7 @@ import { AuthContext } from './AuthContext';
 const TeamRequest = ({ selectedTeam, selectedUser }) => {
   const { user } = useContext(AuthContext); // Zugriff auf den aktuellen Benutzer
   const [requests, setRequests] = useState([]); // Liste der Feedback-Anfragen
+  // eslint-disable-next-line no-unused-vars
   const [activeRow, setActiveRow] = useState(null); // eslint-disable-line no-use-before-define
 
   useEffect(() => {

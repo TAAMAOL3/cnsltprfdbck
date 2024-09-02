@@ -3,6 +3,7 @@ import axios from 'axios';
 import { AuthContext } from './AuthContext';
 
 const TeamReceived = ({ selectedTeam, selectedUser }) => {
+  // eslint-disable-next-line no-unused-vars
   const { user } = useContext(AuthContext);// eslint-disable-line no-use-before-define
   const [feedbacks, setFeedbacks] = useState([]);
   const [viewingFeedback, setViewingFeedback] = useState(null);

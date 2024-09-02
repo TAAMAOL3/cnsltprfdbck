@@ -6,6 +6,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
 const VariousFeedback = () => {
+  // eslint-disable-next-line no-unused-vars
   const { user } = useContext(AuthContext); // eslint-disable-line no-use-before-define
   const [customer, setCustomer] = useState('');
   const [description, setDescription] = useState('');
