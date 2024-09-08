@@ -1,11 +1,57 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { translate } from './translateFunction'; // Import the translate function
 
 const AdminTeam = () => {
   const [teams, setTeams] = useState([]);
-  const [users, setUsers] = useState([]); // Neuer Zustand für Benutzer
+  const [users, setUsers] = useState([]); 
   const [editingTeam, setEditingTeam] = useState(null);
-  const [deletingTeamId, setDeletingTeamId] = useState(null); // Neuer Zustand für die Bestätigung
+  const [deletingTeamId, setDeletingTeamId] = useState(null); 
+
+  // State for translations
+  const [translations, setTranslations] = useState({
+    teamManagement: '',
+    teamNameLabel: '',
+    teamLeaderLabel: '',
+    actionsLabel: '',
+    editButton: '',
+    deleteButton: '',
+    confirmDeleteButton: '',
+    cancelButton: '',
+    saveButton: '',
+    cancelEditButton: ''
+  });
+
+  // Load translations when the component mounts
+  useEffect(() => {
+    const loadTranslations = async () => {
+      const teamManagement = await translate(120); // "Teamverwaltung"
+      const teamNameLabel = await translate(121); // "Teamname"
+      const teamLeaderLabel = await translate(122); // "Teamleiter"
+      const actionsLabel = await translate(123); // "Aktionen"
+      const editButton = await translate(124); // "Bearbeiten"
+      const deleteButton = await translate(125); // "Löschen"
+      const confirmDeleteButton = await translate(126); // "Wirklich löschen?"
+      const cancelButton = await translate(127); // "Abbrechen"
+      const saveButton = await translate(128); // "Speichern"
+      const cancelEditButton = await translate(129); // "Abbrechen"
+
+      setTranslations({
+        teamManagement,
+        teamNameLabel,
+        teamLeaderLabel,
+        actionsLabel,
+        editButton,
+        deleteButton,
+        confirmDeleteButton,
+        cancelButton,
+        saveButton,
+        cancelEditButton
+      });
+    };
+
+    loadTranslations();
+  }, []);
 
   useEffect(() => {
     const fetchTeams = async () => {
@@ -15,11 +61,11 @@ const AdminTeam = () => {
 
     const fetchUsers = async () => {
       const response = await axios.get('/api/admin/users');
-      setUsers(response.data); // Lade Benutzerliste
+      setUsers(response.data); 
     };
 
     fetchTeams();
-    fetchUsers(); // Lade die Benutzerliste beim Mounten der Komponente
+    fetchUsers(); 
   }, []);
 
   const getUserFullName = (userId) => {
@@ -28,17 +74,17 @@ const AdminTeam = () => {
   };
 
   const confirmDelete = (teamId) => {
-    setDeletingTeamId(teamId); // Setzt das zu löschende Team ID
+    setDeletingTeamId(teamId); 
   };
 
   const cancelDelete = () => {
-    setDeletingTeamId(null); // Löschen abbrechen
+    setDeletingTeamId(null); 
   };
 
   const handleDeleteTeam = async (teamId) => {
     await axios.delete(`/api/admin/teams/${teamId}`);
     setTeams(teams.filter((team) => team.teamID !== teamId));
-    setDeletingTeamId(null); // Reset delete confirmation state
+    setDeletingTeamId(null); 
   };
 
   const handleSaveTeam = async () => {
@@ -48,7 +94,6 @@ const AdminTeam = () => {
       teamLeaderFK
     });
 
-    // Teams und Benutzer erneut abrufen, um die aktuelle Anzeige zu aktualisieren
     const fetchTeams = async () => {
       const response = await axios.get('/api/admin/teams');
       setTeams(response.data);
@@ -62,34 +107,34 @@ const AdminTeam = () => {
     await fetchTeams();
     await fetchUsers();
 
-    setEditingTeam(null); // Bearbeitungsformular schließen
+    setEditingTeam(null); 
   };
 
   return (
     <div className="mb-5">
-      <h3>Teamverwaltung</h3>
+      <h3>{translations.teamManagement}</h3>
       <table className="table">
         <thead>
           <tr>
-            <th>Teamname</th>
-            <th>Teamleiter</th>
-            <th>Aktionen</th> {/* Team ID wurde entfernt */}
+            <th>{translations.teamNameLabel}</th>
+            <th>{translations.teamLeaderLabel}</th>
+            <th>{translations.actionsLabel}</th>
           </tr>
         </thead>
         <tbody>
           {teams.map((team) => (
             <tr key={team.teamID}>
               <td>{team.teamName}</td>
-              <td>{getUserFullName(team.teamLeaderFK)}</td> {/* Zeigt Vor- und Nachname an */}
+              <td>{getUserFullName(team.teamLeaderFK)}</td> 
               <td>
-                <button className="btn btn-primary" onClick={() => setEditingTeam(team)}>Bearbeiten</button> {/* Blaues Styling hinzugefügt */}
+                <button className="btn btn-primary" onClick={() => setEditingTeam(team)}>{translations.editButton}</button>
                 {deletingTeamId === team.teamID ? (
                   <>
-                    <button className="btn btn-danger mr-2" onClick={() => handleDeleteTeam(team.teamID)}>Wirklich löschen?</button>
-                    <button className="btn btn-secondary" onClick={cancelDelete}>Abbrechen</button>
+                    <button className="btn btn-danger mr-2" onClick={() => handleDeleteTeam(team.teamID)}>{translations.confirmDeleteButton}</button>
+                    <button className="btn btn-secondary" onClick={cancelDelete}>{translations.cancelButton}</button>
                   </>
                 ) : (
-                  <button className="btn btn-danger" onClick={() => confirmDelete(team.teamID)}>Löschen</button>
+                  <button className="btn btn-danger" onClick={() => confirmDelete(team.teamID)}>{translations.deleteButton}</button>
                 )}
               </td>
             </tr>
@@ -99,10 +144,10 @@ const AdminTeam = () => {
 
       {editingTeam && (
         <div className="mb-5">
-          <h3>Team bearbeiten</h3>
+          <h3>{translations.teamNameLabel}</h3>
           <form onSubmit={handleSaveTeam}>
             <div className="form-group">
-              <label>Teamname</label>
+              <label>{translations.teamNameLabel}</label>
               <input
                 type="text"
                 className="form-control"
@@ -111,7 +156,7 @@ const AdminTeam = () => {
               />
             </div>
             <div className="form-group">
-              <label>Teamleiter</label>
+              <label>{translations.teamLeaderLabel}</label>
               <select
                 className="form-control"
                 value={editingTeam.teamLeaderFK}
@@ -124,8 +169,8 @@ const AdminTeam = () => {
                 ))}
               </select>
             </div>
-            <button type="button" className="btn btn-primary" onClick={handleSaveTeam}>Speichern</button>
-            <button type="button" className="btn btn-secondary ml-2" onClick={() => setEditingTeam(null)}>Abbrechen</button>
+            <button type="button" className="btn btn-primary" onClick={handleSaveTeam}>{translations.saveButton}</button>
+            <button type="button" className="btn btn-secondary ml-2" onClick={() => setEditingTeam(null)}>{translations.cancelEditButton}</button>
           </form>
         </div>
       )}

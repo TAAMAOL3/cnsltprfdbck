@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { translate } from './translateFunction'; // Import the translate function
 
 const Register = () => {
   const [vorname, setVorname] = useState('');
@@ -7,20 +8,71 @@ const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [message, setMessage] = useState(''); // Nachricht für Erfolg oder Fehler
-  const [error, setError] = useState(false); // Status für Fehlermeldungen
+  const [message, setMessage] = useState(''); 
+  const [error, setError] = useState(false); 
+
+  // State for translations
+  const [translations, setTranslations] = useState({
+    registerTitle: '',
+    firstNameLabel: '',
+    lastNameLabel: '',
+    emailLabel: '',
+    passwordLabel: '',
+    confirmPasswordLabel: '',
+    registerButton: '',
+    alreadyRegisteredLink: '',
+    passwordMismatchMessage: '',
+    registrationSuccessMessage: '',
+    registrationFailedMessage: '',
+    tryAgainMessage: ''
+  });
+
+  // Load translations when the component mounts
+  useEffect(() => {
+    const loadTranslations = async () => {
+      const registerTitle = await translate(160); // "Registrieren"
+      const firstNameLabel = await translate(161); // "Vorname"
+      const lastNameLabel = await translate(162); // "Nachname"
+      const emailLabel = await translate(163); // "E-Mail Adresse"
+      const passwordLabel = await translate(164); // "Passwort"
+      const confirmPasswordLabel = await translate(165); // "Passwort bestätigen"
+      const registerButton = await translate(166); // "Registrieren"
+      const alreadyRegisteredLink = await translate(167); // "Bereits registriert? Anmelden"
+      const passwordMismatchMessage = await translate(168); // "Passwörter stimmen nicht überein"
+      const registrationSuccessMessage = await translate(169); // "Erfolgreich registriert"
+      const registrationFailedMessage = await translate(170); // "Registrierung fehlgeschlagen"
+      const tryAgainMessage = await translate(171); // "Ein Fehler ist aufgetreten. Bitte versuche es erneut."
+
+      setTranslations({
+        registerTitle,
+        firstNameLabel,
+        lastNameLabel,
+        emailLabel,
+        passwordLabel,
+        confirmPasswordLabel,
+        registerButton,
+        alreadyRegisteredLink,
+        passwordMismatchMessage,
+        registrationSuccessMessage,
+        registrationFailedMessage,
+        tryAgainMessage
+      });
+    };
+
+    loadTranslations();
+  }, []);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
   
     if (password !== confirmPassword) {
-      setMessage('Passwörter stimmen nicht überein');
+      setMessage(translations.passwordMismatchMessage);
       setError(true);
       return;
     }
   
     try {
-      const response = await fetch('/api/register', {  // Pfad angepasst
+      const response = await fetch('/api/register', { 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -29,15 +81,15 @@ const Register = () => {
       });
   
       if (response.ok) {
-        setMessage('Erfolgreich registriert');
+        setMessage(translations.registrationSuccessMessage);
         setError(false);
       } else {
         const result = await response.json();
-        setMessage(result.error || 'Registrierung fehlgeschlagen');
+        setMessage(result.error || translations.registrationFailedMessage);
         setError(true);
       }
     } catch (error) {
-      setMessage('Ein Fehler ist aufgetreten. Bitte versuche es erneut.');
+      setMessage(translations.tryAgainMessage);
       setError(true);
     }
   };
@@ -48,7 +100,7 @@ const Register = () => {
         <div className="col-md-6">
           <div className="card">
             <div className="card-body">
-              <h1 className="card-title">Registrieren</h1>
+              <h1 className="card-title">{translations.registerTitle}</h1>
               {message && (
                 <div className={`alert ${error ? 'alert-danger' : 'alert-success'}`}>
                   {message}
@@ -56,69 +108,69 @@ const Register = () => {
               )}
               <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                  <label htmlFor="vorname">Vorname</label>
+                  <label htmlFor="vorname">{translations.firstNameLabel}</label>
                   <input
                     type="text"
                     className="form-control"
                     id="vorname"
                     value={vorname}
                     onChange={(e) => setVorname(e.target.value)}
-                    placeholder="Vorname"
+                    placeholder={translations.firstNameLabel}
                     required
                   />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="nachname">Nachname</label>
+                  <label htmlFor="nachname">{translations.lastNameLabel}</label>
                   <input
                     type="text"
                     className="form-control"
                     id="nachname"
                     value={nachname}
                     onChange={(e) => setNachname(e.target.value)}
-                    placeholder="Nachname"
+                    placeholder={translations.lastNameLabel}
                     required
                   />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="email">E-mail Adresse</label>
+                  <label htmlFor="email">{translations.emailLabel}</label>
                   <input
                     type="email"
                     className="form-control"
                     id="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="E-mail Adresse"
+                    placeholder={translations.emailLabel}
                     required
                   />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="password">Passwort</label>
+                  <label htmlFor="password">{translations.passwordLabel}</label>
                   <input
                     type="password"
                     className="form-control"
                     id="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Passwort"
+                    placeholder={translations.passwordLabel}
                     required
                   />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="confirmPassword">Passwort bestätigen</label>
+                  <label htmlFor="confirmPassword">{translations.confirmPasswordLabel}</label>
                   <input
                     type="password"
                     className="form-control"
                     id="confirmPassword"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Passwort bestätigen"
+                    placeholder={translations.confirmPasswordLabel}
                     required
                   />
                 </div>
-                <button type="submit" className="btn btn-primary">Registrieren</button>
+                <button type="submit" className="btn btn-primary">{translations.registerButton}</button>
               </form>
               <div className="mt-3">
-                <Link to="/login" className="btn btn-link">Bereits registriert? Anmelden</Link>
+                <Link to="/login">{translations.alreadyRegisteredLink}</Link>
               </div>
             </div>
           </div>

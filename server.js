@@ -17,8 +17,10 @@ const textMiningRoutes = require('./routes/textMiningRoutes');
 const customerFeedbackRoutes = require('./routes/customerFeedbackRoutes');
 const teamFeedbackRoutes = require('./routes/teamFeedbackRoutes'); // Team Feedback Routes
 const profileRoutes = require('./routes/profileRoutes'); // Profile Routes
-const authenticateToken = require('./middleware/authenticateToken'); // Token authentication middleware// server.js
+const authenticateToken = require('./middleware/authenticateToken'); // Token authentication middleware
 
+// Importiere den Controller für die Passwortänderung
+const passwordResetController = require('./controllers/passwordResetController');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -35,7 +37,6 @@ app.use(rateLimit({
 
 // Route imports
 app.use('/api/register', registerRoutes);
-// app.use('/api/password-reset', passwordResetRoutes);
 app.use('/api/feedback', variousFeedbackRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', textMiningRoutes);
@@ -44,7 +45,8 @@ app.use('/api/team', teamFeedbackRoutes);
 app.use('/api/profile', profileRoutes); // Profile Routes
 app.use('/api/password-reset', passwordResetRoutes);  // Verwende die Passwort-Zurücksetzung-Routen
 
-
+// Füge die Route für die Passwortänderung hinzu
+app.post('/api/change-password', passwordResetController.changePassword);
 
 // Serve the uploads directory as static files
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
@@ -75,13 +77,13 @@ app.get("/api/user", authenticateToken, (req, res) => {
           role: user.rolesFK,
           vorname: user.usersVorname,
           nachname: user.usersNachname,
-          teamId: user.teamFK
+          teamId: user.teamFK,
+          hastochange: user.hastochange
         }
       });
     });
   });
 });
-
 
 app.get('/api/dbXstatus', (req, res) => {
   res.set('Cache-Control', 'no-store');  // Cache-Control Header setzen
@@ -112,11 +114,6 @@ app.get('/api/dbXstatus', (req, res) => {
   });
 });
 
-
-
-
-
-
 // API route to fetch teams
 app.get('/api/teams', authenticateToken, (req, res) => {
   const query = 'SELECT teamID, teamName FROM t_team';
@@ -139,6 +136,23 @@ app.get("/api/users/team/:teamId", authenticateToken, (req, res) => {
     res.status(200).json(results);
   });
 });
+
+// Beispiel für eine Route in server.js oder einem entsprechenden Controller
+app.get('/api/translate/:id', (req, res) => {
+  const { id } = req.params;
+
+  db.query('SELECT * FROM t_translate WHERE translateID = ?', [id], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    }
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Keine Übersetzung gefunden' });
+    }
+
+    res.json(results[0]); // Gibt die Übersetzung für die angegebene ID zurück
+  });
+});
+
 
 // Login route
 app.post("/api/login", [body("email").isEmail(), body("password").exists()], (req, res) => {
@@ -198,8 +212,6 @@ app.use((req, res, next) => {
 app.post('/api/logout', (req, res) => {
   res.json({ message: 'Successfully logged out' });
 });
-
-
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

@@ -33,8 +33,15 @@ export const AuthProvider = ({ children }) => {
       const userResponse = await axios.get('/api/user', {
         headers: { Authorization: `Bearer ${response.data.token}` }
       });
+
       setUser(userResponse.data.user);
-      return '/user'; // Redirect to dashboard after login
+
+      // Check if the user needs to change their password
+      if (userResponse.data.user.hastochange === 1) {
+        return '/change-password';
+      }
+
+      return '/user';
     } catch (error) {
       return null;
     }

@@ -1,15 +1,56 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from './AuthContext';
+import { translate } from './translateFunction'; // Import the translate function
 
 const TeamFeedback = ({ selectedTeam, selectedUser }) => {
-  // eslint-disable-next-line no-unused-vars
-  const { user } = useContext(AuthContext); // eslint-disable-line no-use-before-define
-  const [feedbacks, setFeedbacks] = useState([]); // Liste der erstellten Feedbacks
-  const [viewingFeedback, setViewingFeedback] = useState(null); // Detailansicht eines Feedbacks
-  const [activeRow, setActiveRow] = useState(null); // Neuer Zustand für die aktive Zeile
+  const { user } = useContext(AuthContext);
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [viewingFeedback, setViewingFeedback] = useState(null);
+  const [activeRow, setActiveRow] = useState(null);
 
-  // Formatierung des Datums für die Anzeige im Format dd/MM/yyyy
+  // State for translations
+  const [translations, setTranslations] = useState({
+    teamFeedbackTitle: '',
+    feedbackReceived: '',
+    recipient: '',
+    customer: '',
+    description: '',
+    actions: '',
+    noFeedbackFound: '',
+    view: '',
+    noFile: ''
+  });
+
+  // Load translations when the component mounts
+  useEffect(() => {
+    const loadTranslations = async () => {
+      const teamFeedbackTitle = await translate(40); // "Team Feedback"
+      const feedbackReceived = await translate(41); // "Feedback Erhalten"
+      const recipient = await translate(42); // "Empfänger"
+      const customer = await translate(43); // "Kunde"
+      const description = await translate(44); // "Beschreibung"
+      const actions = await translate(45); // "Aktionen"
+      const noFeedbackFound = await translate(46); // "Keine Feedbacks gefunden."
+      const view = await translate(47); // "Anzeigen"
+      const noFile = await translate(48); // "Keine Datei"
+
+      setTranslations({
+        teamFeedbackTitle,
+        feedbackReceived,
+        recipient,
+        customer,
+        description,
+        actions,
+        noFeedbackFound,
+        view,
+        noFile
+      });
+    };
+
+    loadTranslations();
+  }, []);
+
   const formatDateForDisplay = (dateString) => {
     const date = new Date(dateString);
     const day = String(date.getDate()).padStart(2, '0');
@@ -18,11 +59,9 @@ const TeamFeedback = ({ selectedTeam, selectedUser }) => {
     return `${day}/${month}/${year}`;
   };
 
-  // Effekt zum Laden der erstellten Feedback-Daten für das Team
   useEffect(() => {
     const fetchTeamFeedback = async () => {
-      const token = localStorage.getItem('token'); // Token für API-Anfragen
-
+      const token = localStorage.getItem('token');
       const teamId = selectedTeam === 'all' ? 'all' : selectedTeam;
 
       if (selectedTeam) {
@@ -32,37 +71,36 @@ const TeamFeedback = ({ selectedTeam, selectedUser }) => {
             : `/api/team/feedback/${teamId}`;
 
           const response = await axios.get(url, {
-            headers: { Authorization: `Bearer ${token}` } // Autorisierung
+            headers: { Authorization: `Bearer ${token}` }
           });
 
-          // Überprüfe, ob die Antwort ein Array ist, wenn nicht, setze es auf ein leeres Array
-          setFeedbacks(Array.isArray(response.data) ? response.data : []); // Feedbacks setzen
+          setFeedbacks(Array.isArray(response.data) ? response.data : []);
         } catch (error) {
           console.error('Fehler beim Abrufen des Team-Feedbacks:', error);
-          setFeedbacks([]); // Bei Fehler leere Liste setzen
+          setFeedbacks([]);
         }
       }
     };
 
-    fetchTeamFeedback(); // Feedback-Daten laden, wenn sich Team oder Benutzer ändern
+    fetchTeamFeedback();
   }, [selectedTeam, selectedUser]);
-// eslint-disable-next-line no-unused-vars
-  const handleViewFeedback = (feedback) => {// eslint-disable-line no-use-before-define
-    setViewingFeedback(feedback); // Detailansicht des Feedbacks setzen
-    setActiveRow(feedback.variousFdbckID); // Setzt die aktive Zeile
+
+  const handleViewFeedback = (feedback) => {
+    setViewingFeedback(feedback);
+    setActiveRow(feedback.variousFdbckID);
   };
 
   return (
     <div className="mb-5">
-      <h3>Team Feedback</h3>
+      <h3>{translations.teamFeedbackTitle}</h3>
       <table className="table">
         <thead>
           <tr>
-            <th>Feedback Erhalten</th>
-            <th>Empfänger</th>
-            <th>Kunde</th>
-            <th>Beschreibung</th>
-            <th>Aktionen</th>
+            <th>{translations.feedbackReceived}</th>
+            <th>{translations.recipient}</th>
+            <th>{translations.customer}</th>
+            <th>{translations.description}</th>
+            <th>{translations.actions}</th>
           </tr>
         </thead>
         <tbody>
@@ -77,27 +115,18 @@ const TeamFeedback = ({ selectedTeam, selectedUser }) => {
               return (
                 <React.Fragment key={feedback.variousFdbckID}>
                   {isNewYear && <tr className="year-separator"></tr>}
-                  <tr
-                    className={activeRow === feedback.variousFdbckID ? 'active' : ''}
-                  >
+                  <tr className={activeRow === feedback.variousFdbckID ? 'active' : ''}>
                     <td>{formatDateForDisplay(feedback.variousFdbckReceived)}</td>
                     <td>{feedback.usersName}</td>
                     <td>{feedback.variousFdbckCustomer}</td>
                     <td>{feedback.variousFdbckDescription}</td>
                     <td>
                       {feedback.uploadUrl ? (
-                        <button className="btn btn-primary" onClick={() => {
-                          const link = document.createElement('a');
-                          link.href = feedback.uploadUrl;
-                          link.setAttribute('download', '');
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
-                        }}>
-                          Datei herunterladen
-                        </button>
+                        <a href={feedback.uploadUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+                          {translations.view}
+                        </a>
                       ) : (
-                        'Keine Datei'
+                        translations.noFile
                       )}
                     </td>
                   </tr>
@@ -106,7 +135,7 @@ const TeamFeedback = ({ selectedTeam, selectedUser }) => {
             })
           ) : (
             <tr>
-              <td colSpan="6">Keine Feedbacks gefunden.</td>
+              <td colSpan="5">{translations.noFeedbackFound}</td>
             </tr>
           )}
         </tbody>
@@ -114,7 +143,7 @@ const TeamFeedback = ({ selectedTeam, selectedUser }) => {
 
       {viewingFeedback && (
         <div className="mt-5">
-          <h3>Feedback anzeigen</h3>
+          <h3>{translations.view}</h3>
           <p style={{ fontSize: '1.5rem' }}><strong>Feedback:</strong> {viewingFeedback.customerFdbckText}</p>
           <button className="btn btn-secondary" onClick={() => setViewingFeedback(null)}>Schließen</button>
         </div>

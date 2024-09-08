@@ -1,12 +1,67 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { translate } from './translateFunction'; // Import the translate function
 
 const AdminUser = () => {
   const [users, setUsers] = useState([]);
-  const [roles, setRoles] = useState([]); // Zustand für Rollenliste
-  const [teams, setTeams] = useState([]); // Zustand für Teams
+  const [roles, setRoles] = useState([]); 
+  const [teams, setTeams] = useState([]); 
   const [editingUser, setEditingUser] = useState(null);
   const [deletingUserId, setDeletingUserId] = useState(null);
+
+  // State for translations
+  const [translations, setTranslations] = useState({
+    userManagement: '',
+    firstNameLabel: '',
+    lastNameLabel: '',
+    emailLabel: '',
+    roleLabel: '',
+    teamLabel: '',
+    actionsLabel: '',
+    editButton: '',
+    deleteButton: '',
+    confirmDeleteButton: '',
+    cancelButton: '',
+    saveButton: '',
+    cancelEditButton: ''
+  });
+
+  // Load translations when the component mounts
+  useEffect(() => {
+    const loadTranslations = async () => {
+      const userManagement = await translate(130); // "Benutzerverwaltung"
+      const firstNameLabel = await translate(131); // "Vorname"
+      const lastNameLabel = await translate(132); // "Nachname"
+      const emailLabel = await translate(133); // "E-Mail"
+      const roleLabel = await translate(134); // "Rolle"
+      const teamLabel = await translate(135); // "Team"
+      const actionsLabel = await translate(136); // "Aktionen"
+      const editButton = await translate(137); // "Bearbeiten"
+      const deleteButton = await translate(138); // "Löschen"
+      const confirmDeleteButton = await translate(139); // "Wirklich löschen?"
+      const cancelButton = await translate(140); // "Abbrechen"
+      const saveButton = await translate(141); // "Speichern"
+      const cancelEditButton = await translate(142); // "Abbrechen"
+
+      setTranslations({
+        userManagement,
+        firstNameLabel,
+        lastNameLabel,
+        emailLabel,
+        roleLabel,
+        teamLabel,
+        actionsLabel,
+        editButton,
+        deleteButton,
+        confirmDeleteButton,
+        cancelButton,
+        saveButton,
+        cancelEditButton
+      });
+    };
+
+    loadTranslations();
+  }, []);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -30,13 +85,13 @@ const AdminUser = () => {
   }, []);
 
   const getRoleName = (roleId) => {
-    const numericRoleId = parseInt(roleId, 10); // Sicherstellen, dass roleId numerisch ist
+    const numericRoleId = parseInt(roleId, 10);
     const role = roles.find(role => role.rolesID === numericRoleId);
     return role ? role.rolesName : 'Unbekannt';
   };
 
   const getTeamName = (teamId) => {
-    const numericTeamId = parseInt(teamId, 10); // Sicherstellen, dass teamId numerisch ist
+    const numericTeamId = parseInt(teamId, 10);
     const team = teams.find(team => team.teamID === numericTeamId);
     return team ? team.teamName : 'Kein Team';
   };
@@ -76,14 +131,14 @@ const AdminUser = () => {
                 usersNachname,
                 rolesFK,
                 teamFK,
-                roleName: getRoleName(rolesFK), // Rollennamen korrekt setzen
-                teamName: getTeamName(teamFK) // Teamnamen korrekt setzen
+                roleName: getRoleName(rolesFK),
+                teamName: getTeamName(teamFK)
               }
             : user
         )
       );
 
-      setEditingUser(null); // Bearbeitungsmodus beenden
+      setEditingUser(null);
     } catch (error) {
       console.error('Fehler beim Speichern des Benutzers:', error);
     }
@@ -91,16 +146,16 @@ const AdminUser = () => {
 
   return (
     <div className="mb-5">
-      <h3>Benutzerverwaltung</h3>
+      <h3>{translations.userManagement}</h3>
       <table className="table">
         <thead>
           <tr>
-            <th>Vorname</th>
-            <th>Nachname</th>
-            <th>E-Mail</th>
-            <th>Rolle</th>
-            <th>Team</th>
-            <th>Aktionen</th>
+            <th>{translations.firstNameLabel}</th>
+            <th>{translations.lastNameLabel}</th>
+            <th>{translations.emailLabel}</th>
+            <th>{translations.roleLabel}</th>
+            <th>{translations.teamLabel}</th>
+            <th>{translations.actionsLabel}</th>
           </tr>
         </thead>
         <tbody>
@@ -115,14 +170,14 @@ const AdminUser = () => {
               <td>{getRoleName(user.rolesFK)}</td>
               <td>{user.teamName || getTeamName(user.teamFK)}</td>
               <td>
-                <button className="btn btn-primary" onClick={() => setEditingUser(user)}>Bearbeiten</button>
+                <button className="btn btn-primary" onClick={() => setEditingUser(user)}>{translations.editButton}</button>
                 {deletingUserId === user.usersID ? (
                   <>
-                    <button className="btn btn-danger mr-2" onClick={() => handleDeleteUser(user.usersID)}>Wirklich löschen?</button>
-                    <button className="btn btn-secondary" onClick={cancelDelete}>Abbrechen</button>
+                    <button className="btn btn-danger mr-2" onClick={() => handleDeleteUser(user.usersID)}>{translations.confirmDeleteButton}</button>
+                    <button className="btn btn-secondary" onClick={cancelDelete}>{translations.cancelButton}</button>
                   </>
                 ) : (
-                  <button className="btn btn-danger" onClick={() => confirmDelete(user.usersID)}>Löschen</button>
+                  <button className="btn btn-danger" onClick={() => confirmDelete(user.usersID)}>{translations.deleteButton}</button>
                 )}
               </td>
             </tr>
@@ -132,10 +187,10 @@ const AdminUser = () => {
 
       {editingUser && (
         <div className="mb-5">
-          <h3>Benutzer bearbeiten</h3>
+          <h3>{translations.firstNameLabel} {translations.lastNameLabel}</h3>
           <form onSubmit={handleSaveUser}>
             <div className="form-group">
-              <label>E-Mail</label>
+              <label>{translations.emailLabel}</label>
               <input
                 type="email"
                 className="form-control"
@@ -144,7 +199,7 @@ const AdminUser = () => {
               />
             </div>
             <div className="form-group">
-              <label>Vorname</label>
+              <label>{translations.firstNameLabel}</label>
               <input
                 type="text"
                 className="form-control"
@@ -153,7 +208,7 @@ const AdminUser = () => {
               />
             </div>
             <div className="form-group">
-              <label>Nachname</label>
+              <label>{translations.lastNameLabel}</label>
               <input
                 type="text"
                 className="form-control"
@@ -162,7 +217,7 @@ const AdminUser = () => {
               />
             </div>
             <div className="form-group">
-              <label>Rolle</label>
+              <label>{translations.roleLabel}</label>
               <select
                 className="form-control"
                 value={editingUser.rolesFK}
@@ -176,7 +231,7 @@ const AdminUser = () => {
               </select>
             </div>
             <div className="form-group">
-              <label>Team</label>
+              <label>{translations.teamLabel}</label>
               <select
                 className="form-control"
                 value={editingUser.teamFK}
@@ -189,8 +244,8 @@ const AdminUser = () => {
                 ))}
               </select>
             </div>
-            <button type="button" className="btn btn-primary" onClick={handleSaveUser}>Speichern</button>
-            <button type="button" className="btn btn-secondary ml-2" onClick={() => setEditingUser(null)}>Abbrechen</button>
+            <button type="button" className="btn btn-primary" onClick={handleSaveUser}>{translations.saveButton}</button>
+            <button type="button" className="btn btn-secondary ml-2" onClick={() => setEditingUser(null)}>{translations.cancelEditButton}</button>
           </form>
         </div>
       )}

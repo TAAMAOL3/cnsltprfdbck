@@ -1,10 +1,47 @@
 import React, { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from './AuthContext'; // AuthContext importieren
+import { translate } from './translateFunction'; // Import the translate function
 
 const TeamProfile = ({ selectedTeamId }) => {
   const { user } = useContext(AuthContext); // user aus dem AuthContext extrahieren
   const [profileData, setProfileData] = useState(null);
+  const [translations, setTranslations] = useState({
+    receivedFeedbackCurrent: '',
+    requestedFeedbackCurrent: '',
+    uploadedFeedbackCurrent: '',
+    avgRatingCurrent: '',
+    receivedFeedbackTotal: '',
+    requestedFeedbackTotal: '',
+    uploadedFeedbackTotal: '',
+    avgRatingTotal: ''
+  });
+
+  useEffect(() => {
+    const loadTranslations = async () => {
+      const receivedFeedbackCurrent = await translate(400); // "Anzahl Kundenfeedbacks erhalten (aktueller Periode)"
+      const requestedFeedbackCurrent = await translate(401); // "Anzahl Kundenfeedbacks angefragt (aktueller Periode)"
+      const uploadedFeedbackCurrent = await translate(402); // "Anzahl weiterer Feedbacks hochgeladen (aktueller Periode)"
+      const avgRatingCurrent = await translate(403); // "Durchschnittliche Bewertung (aktuelle Periode)"
+      const receivedFeedbackTotal = await translate(404); // "Anzahl Kundenfeedbacks erhalten (gesamt)"
+      const requestedFeedbackTotal = await translate(405); // "Anzahl Kundenfeedbacks angefragt (gesamt)"
+      const uploadedFeedbackTotal = await translate(406); // "Anzahl weiterer Feedbacks hochgeladen (gesamt)"
+      const avgRatingTotal = await translate(407); // "Durchschnittliche Bewertung (gesamt)"
+
+      setTranslations({
+        receivedFeedbackCurrent,
+        requestedFeedbackCurrent,
+        uploadedFeedbackCurrent,
+        avgRatingCurrent,
+        receivedFeedbackTotal,
+        requestedFeedbackTotal,
+        uploadedFeedbackTotal,
+        avgRatingTotal
+      });
+    };
+
+    loadTranslations();
+  }, []);
 
   useEffect(() => {
     const fetchTeamProfile = async () => {
@@ -69,42 +106,42 @@ const TeamProfile = ({ selectedTeamId }) => {
 
       {/* Grid-Inhalte */}
       <div className="grid-item">
-        <p>Anzahl Kundenfeedbacks erhalten (aktueller Periode):</p>
+        <p>{translations.receivedFeedbackCurrent}</p>
         <p className="highlighted-text">{profileData.currentReceivedFeedback}</p>
       </div>
 
       <div className="grid-item">
-        <p>Anzahl Kundenfeedbacks angefragt (aktueller Periode):</p>
+        <p>{translations.requestedFeedbackCurrent}</p>
         <p className="highlighted-text">{profileData.currentRequestedFeedback}</p>
       </div>
 
       <div className="grid-item">
-        <p>Anzahl weiterer Feedbacks hochgeladen (aktueller Periode):</p>
+        <p>{translations.uploadedFeedbackCurrent}</p>
         <p className="highlighted-text">{profileData.currentUploadedFeedback}</p>
       </div>
 
       <div className="grid-item">
-        <p>Durchschnittliche Bewertung (aktuelle Periode):</p>
+        <p>{translations.avgRatingCurrent}</p>
         <p className="highlighted-text">{getRatingIcon(profileData.currentAvgRating)}</p>
       </div>
 
       <div className="grid-item">
-        <p>Anzahl Kundenfeedbacks erhalten (gesamt):</p>
+        <p>{translations.receivedFeedbackTotal}</p>
         <p className="highlighted-text">{profileData.totalReceivedFeedback}</p>
       </div>
 
       <div className="grid-item">
-        <p>Anzahl Kundenfeedbacks angefragt (gesamt):</p>
+        <p>{translations.requestedFeedbackTotal}</p>
         <p className="highlighted-text">{profileData.totalRequestedFeedback}</p>
       </div>
 
       <div className="grid-item">
-        <p>Anzahl weiterer Feedbacks hochgeladen (gesamt):</p>
+        <p>{translations.uploadedFeedbackTotal}</p>
         <p className="highlighted-text">{profileData.totalUploadedFeedback}</p>
       </div>
 
       <div className="grid-item">
-        <p>Durchschnittliche Bewertung (gesamt):</p>
+        <p>{translations.avgRatingTotal}</p>
         <p className="highlighted-text">{getRatingIcon(profileData.totalAvgRating)}</p>
       </div>
     </div>

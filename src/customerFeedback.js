@@ -4,21 +4,61 @@ import axios from 'axios';
 import { AuthContext } from './AuthContext'; // Assuming you're using AuthContext for the logged-in user
 import LinkGenerator from './linkGenerator'; // Use the LinkGenerator for generating the link
 import { animateButton } from './buttonAnimations'; // Import the button animation function
+import { translate } from './translateFunction'; // Import the translate function
 import './buttonAnimations.scss'; // Import the SCSS for the animations
 
 const CustomerFeedback = () => {
-  const { user } = useContext(AuthContext); // Assuming you're using AuthContext to get the logged-in user
+  const { user } = useContext(AuthContext); 
   const [company, setCompany] = useState('');
   const [contactPerson, setContactPerson] = useState('');
   const [email, setEmail] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false); // State to handle form submission
-  const [hideCancel, setHideCancel] = useState(false); // State to hide the "Abbrechen" button
+  const [isSubmitting, setIsSubmitting] = useState(false); 
+  const [hideCancel, setHideCancel] = useState(false); 
   const navigate = useNavigate();
+
+  // State for translations
+  const [translations, setTranslations] = useState({
+    feedbackRequestTitle: '',
+    fillFields: '',
+    customerCompanyLabel: '',
+    contactPersonLabel: '',
+    emailLabel: '',
+    generateFeedbackRequest: '',
+    cancel: '',
+    submitting: ''
+  });
+
+  // Load translations when the component mounts
+  React.useEffect(() => {
+    const loadTranslations = async () => {
+      const feedbackRequestTitle = await translate(70); // "Feedback Anfrage generieren"
+      const fillFields = await translate(71); // "Folgende Felder ausfüllen, um den Feedback-Link zu generieren."
+      const customerCompanyLabel = await translate(72); // "Kunden Firma"
+      const contactPersonLabel = await translate(73); // "Ansprechperson"
+      const emailLabel = await translate(74); // "E-Mail"
+      const generateFeedbackRequest = await translate(75); // "Feedback Anfrage generieren"
+      const cancel = await translate(76); // "Abbrechen"
+      const submitting = await translate(77); // "Absenden..."
+
+      setTranslations({
+        feedbackRequestTitle,
+        fillFields,
+        customerCompanyLabel,
+        contactPersonLabel,
+        emailLabel,
+        generateFeedbackRequest,
+        cancel,
+        submitting
+      });
+    };
+
+    loadTranslations();
+  }, []);
 
   // Function to generate the feedback URL
   const handleGenerateLink = () => {
-    const randomString = LinkGenerator.randomString(10); // Generate random string for the link
-    const host = process.env.REACT_APP_URL_HOST; // Assuming REACT_APP_URL_HOST is defined in the environment variables
+    const randomString = LinkGenerator.randomString(10); 
+    const host = process.env.REACT_APP_URL_HOST; 
     const link = `${host}/feedback?id=${randomString}`;
     return { link, randomString };
   };
@@ -27,15 +67,15 @@ const CustomerFeedback = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const submitButton = e.target.querySelector('button[type="submit"]'); // Get the submit button
+    const submitButton = e.target.querySelector('button[type="submit"]'); 
 
-    setIsSubmitting(true); // Disable the button while submitting
-    setHideCancel(true); // Hide the "Abbrechen" button
+    setIsSubmitting(true); 
+    setHideCancel(true); 
 
-    const { link, randomString } = handleGenerateLink(); // Generate the link and get the randomString
+    const { link, randomString } = handleGenerateLink(); 
 
     const token = localStorage.getItem('token');
-    const currentDate = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
+    const currentDate = new Date().toISOString().split('T')[0]; 
 
     try {
       const response = await axios.post('/api/customerFeedback', {
@@ -43,12 +83,12 @@ const CustomerFeedback = () => {
         customerName: contactPerson,
         customerMailaddr: email,
         customerFdbckSend: currentDate,
-        customerFdbckText: null, // Set to NULL as per your requirement
-        customerFdbckReceived: null, // Set to NULL
-        customerFdbckUrl: link, // Store the full generated feedback URL
-        customerFdbckUrlID: randomString, // Store only the randomString in customerFdbckUrlID
-        customerFdbckAnswered: 0, // Default to 0 (false)
-        usersFK: user.id, // Assuming the user's ID is stored in the AuthContext
+        customerFdbckText: null,
+        customerFdbckReceived: null,
+        customerFdbckUrl: link, 
+        customerFdbckUrlID: randomString, 
+        customerFdbckAnswered: 0,
+        usersFK: user.id,
       }, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -57,21 +97,17 @@ const CustomerFeedback = () => {
       });
 
       if (response.status === 201) {
-        // Trigger the success animation only for the submit button
         animateButton(submitButton, 'success');
 
-        // Redirect to /user after 3 seconds
         setTimeout(() => {
           navigate('/user');
         }, 3000);
       }
     } catch (error) {
       console.error('Ein Fehler ist aufgetreten:', error);
-
-      // Trigger the error animation only for the submit button
       animateButton(submitButton, 'error');
     } finally {
-      setIsSubmitting(false); // Re-enable the button after the submission
+      setIsSubmitting(false);
     }
   };
 
@@ -83,8 +119,8 @@ const CustomerFeedback = () => {
             <img className="page-icon" src="/Content/themes/base/images/Speak.png" alt="Speak icon" />
           </div>
           <hgroup className="title">
-            <h1>Feedback Anfrage generieren</h1>
-            <p>Folgende Felder ausfüllen, um den Feedback-Link zu generieren. </p>
+            <h1>{translations.feedbackRequestTitle}</h1>
+            <p>{translations.fillFields}</p>
           </hgroup>
         </div>
       </section>
@@ -92,48 +128,48 @@ const CustomerFeedback = () => {
       <div className="container mt-5">
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Kunden Firma</label>
+            <label>{translations.customerCompanyLabel}</label>
             <input
               type="text"
               className="form-control"
               value={company}
               onChange={(e) => setCompany(e.target.value)}
-              placeholder="Firma des Kunden"
+              placeholder={translations.customerCompanyLabel}
               required
             />
           </div>
           <div className="form-group">
-            <label>Ansprechperson</label>
+            <label>{translations.contactPersonLabel}</label>
             <input
               type="text"
               className="form-control"
               value={contactPerson}
               onChange={(e) => setContactPerson(e.target.value)}
-              placeholder="Ansprechperson"
+              placeholder={translations.contactPersonLabel}
               required
             />
           </div>
           <div className="form-group">
-            <label>E-Mail</label>
+            <label>{translations.emailLabel}</label>
             <input
               type="email"
               className="form-control"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="E-Mail-Adresse"
+              placeholder={translations.emailLabel}
               required
             />
           </div>
           <button
             type="submit"
-            className="btn btn-primary button" // Original styling with animation class
-            disabled={isSubmitting} // Disable the button while submitting
+            className="btn btn-primary button"
+            disabled={isSubmitting}
           >
-            {isSubmitting ? 'Absenden...' : 'Feedback Anfrage generieren'}
+            {isSubmitting ? translations.submitting : translations.generateFeedbackRequest}
           </button>
           {!hideCancel && (
             <button type="button" className="button-min btn btn-default" onClick={() => navigate('/user')}>
-              Abbrechen
+              {translations.cancel}
             </button>
           )}
         </form>

@@ -1,17 +1,78 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from './AuthContext';
+import { translate } from './translateFunction'; // Import the translate function
 
 const UserRequest = () => {
   const { user } = useContext(AuthContext);
   const [requests, setRequests] = useState([]);
   const [editingRequest, setEditingRequest] = useState(null);
-  const [activeRow, setActiveRow] = useState(null); // Neuer Zustand für aktive Zeile
+  const [activeRow, setActiveRow] = useState(null); 
   const [company, setCompany] = useState('');
   const [contactPerson, setContactPerson] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [deletingRequestId, setDeletingRequestId] = useState(null);
+
+  // State for translations
+  const [translations, setTranslations] = useState({
+    openFeedbackRequests: '',
+    sentOn: '',
+    customerCompany: '',
+    contactPerson: '',
+    emailAddress: '',
+    feedbackUrl: '',
+    actions: '',
+    noRequestsFound: '',
+    editButton: '',
+    deleteButton: '',
+    confirmDeleteButton: '',
+    remindButton: '',
+    saveButton: '',
+    cancelButton: '',
+    editRequestTitle: ''
+  });
+
+  // Load translations when the component mounts
+  useEffect(() => {
+    const loadTranslations = async () => {
+      const openFeedbackRequests = await translate(190); // "Offene Feedback-Anfragen"
+      const sentOn = await translate(191); // "Gesendet am"
+      const customerCompany = await translate(192); // "Kunden Firma"
+      const contactPerson = await translate(193); // "Ansprechperson"
+      const emailAddress = await translate(194); // "E-Mail"
+      const feedbackUrl = await translate(195); // "Feedback URL"
+      const actions = await translate(196); // "Aktionen"
+      const noRequestsFound = await translate(197); // "Keine Feedback-Anfragen gefunden."
+      const editButton = await translate(198); // "Bearbeiten"
+      const deleteButton = await translate(199); // "Löschen"
+      const confirmDeleteButton = await translate(200); // "Wirklich löschen?"
+      const remindButton = await translate(201); // "Erinnern"
+      const saveButton = await translate(202); // "Speichern"
+      const cancelButton = await translate(203); // "Abbrechen"
+      const editRequestTitle = await translate(204); // "Feedback-Anfrage bearbeiten"
+
+      setTranslations({
+        openFeedbackRequests,
+        sentOn,
+        customerCompany,
+        contactPerson,
+        emailAddress,
+        feedbackUrl,
+        actions,
+        noRequestsFound,
+        editButton,
+        deleteButton,
+        confirmDeleteButton,
+        remindButton,
+        saveButton,
+        cancelButton,
+        editRequestTitle
+      });
+    };
+
+    loadTranslations();
+  }, []);
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -34,7 +95,7 @@ const UserRequest = () => {
 
   const handleEdit = (request) => {
     setEditingRequest(request);
-    setActiveRow(request.customerFdbckID); // Setzt die aktive Zeile
+    setActiveRow(request.customerFdbckID); 
     setCompany(request.customerCompany);
     setContactPerson(request.customerName);
     setEmail(request.customerMailaddr);
@@ -55,8 +116,8 @@ const UserRequest = () => {
         req.customerFdbckID === editingRequest.customerFdbckID ? { ...req, customerCompany: company, customerName: contactPerson, customerMailaddr: email } : req
       ));
       setEditingRequest(null);
-      setActiveRow(null); // Entfernt die aktive Zeile nach dem Speichern
-      setMessage('Feedback-Anfrage erfolgreich aktualisiert!');
+      setActiveRow(null); 
+      setMessage(translations.successMessage);
     } catch (error) {
       console.error('Fehler beim Speichern der Feedback-Anfrage:', error);
     }
@@ -64,9 +125,8 @@ const UserRequest = () => {
 
   const handleCancelEdit = () => {
     setEditingRequest(null);
-    setActiveRow(null); // Entfernt die aktive Zeile nach dem Abbrechen
+    setActiveRow(null); 
   };
-
 
   const handleDeleteRequest = async (requestID) => {
     const token = localStorage.getItem('token');
@@ -97,17 +157,17 @@ const UserRequest = () => {
 
   return (
     <div className="mb-5">
-      <h3>Offene Feedback-Anfragen</h3>
+      <h3>{translations.openFeedbackRequests}</h3>
       {message && <p>{message}</p>}
       <table className="table">
         <thead>
           <tr>
-            <th>Gesendet am</th>
-            <th>Kunden Firma</th>
-            <th>Ansprechperson</th>
-            <th>E-Mail</th>
-            <th>Feedback URL</th>
-            <th>Aktionen</th>
+            <th>{translations.sentOn}</th>
+            <th>{translations.customerCompany}</th>
+            <th>{translations.contactPerson}</th>
+            <th>{translations.emailAddress}</th>
+            <th>{translations.feedbackUrl}</th>
+            <th>{translations.actions}</th>
           </tr>
         </thead>
         <tbody>
@@ -122,9 +182,7 @@ const UserRequest = () => {
               return (
                 <React.Fragment key={request.customerFdbckID}>
                   {isNewYear && <tr className="year-separator"></tr>}
-                  <tr
-                    className={activeRow === request.customerFdbckID ? 'active' : ''}
-                  >
+                  <tr className={activeRow === request.customerFdbckID ? 'active' : ''}>
                     <td>{new Date(request.customerFdbckSend).toLocaleDateString()}</td>
                     <td>{request.customerCompany}</td>
                     <td>{request.customerName}</td>
@@ -138,19 +196,19 @@ const UserRequest = () => {
                       {deletingRequestId === request.customerFdbckID ? (
                         <>
                           <button className="btn btn-danger mr-2" onClick={() => handleDeleteRequest(request.customerFdbckID)}>
-                            Wirklich löschen?
+                            {translations.confirmDeleteButton}
                           </button>
                           <button className="btn btn-secondary" onClick={cancelDelete}>
-                            Abbrechen
+                            {translations.cancelButton}
                           </button>
                         </>
                       ) : (
                         <>
-                          <button className="btn btn-primary mr-2" onClick={() => handleEdit(request)}>Bearbeiten</button>
+                          <button className="btn btn-primary mr-2" onClick={() => handleEdit(request)}>{translations.editButton}</button>
                           <button className="btn btn-danger mr-2" onClick={() => confirmDelete(request.customerFdbckID)}>
-                            Löschen
+                            {translations.deleteButton}
                           </button>
-                          <button className="btn btn-warning" onClick={() => handleRemind(request)}>Erinnern</button>
+                          <button className="btn btn-warning" onClick={() => handleRemind(request)}>{translations.remindButton}</button>
                         </>
                       )}
                     </td>
@@ -160,7 +218,7 @@ const UserRequest = () => {
             })
           ) : (
             <tr>
-              <td colSpan="6">Keine Feedback-Anfragen gefunden.</td>
+              <td colSpan="6">{translations.noRequestsFound}</td>
             </tr>
           )}
         </tbody>
@@ -168,9 +226,9 @@ const UserRequest = () => {
 
       {editingRequest && (
         <div className="mt-5">
-          <h3>Feedback-Anfrage bearbeiten</h3>
+          <h3>{translations.editRequestTitle}</h3>
           <div className="form-group">
-            <label>Kunden Firma</label>
+            <label>{translations.customerCompany}</label>
             <input
               type="text"
               className="form-control"
@@ -179,7 +237,7 @@ const UserRequest = () => {
             />
           </div>
           <div className="form-group">
-            <label>Ansprechperson</label>
+            <label>{translations.contactPerson}</label>
             <input
               type="text"
               className="form-control"
@@ -188,7 +246,7 @@ const UserRequest = () => {
             />
           </div>
           <div className="form-group">
-            <label>E-Mail</label>
+            <label>{translations.emailAddress}</label>
             <input
               type="email"
               className="form-control"
@@ -196,8 +254,8 @@ const UserRequest = () => {
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
-          <button className="btn btn-primary" onClick={handleSaveRequest}>Speichern</button>
-          <button className="btn btn-secondary ml-2" onClick={handleCancelEdit}>Abbrechen</button>
+          <button className="btn btn-primary" onClick={handleSaveRequest}>{translations.saveButton}</button>
+          <button className="btn btn-secondary ml-2" onClick={handleCancelEdit}>{translations.cancelButton}</button>
         </div>
       )}
     </div>

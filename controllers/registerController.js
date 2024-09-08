@@ -34,7 +34,7 @@ exports.registerUser = async (req, res) => {
             console.log("Inserting user with email:", email);
 
             db.query(
-                "INSERT INTO t_users (usersVorname, usersNachname, usersEmail, password, rolesFK) VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO t_users (usersVorname, usersNachname, usersEmail, password, rolesFK, teamFK) VALUES (?, ?, ?, ?, ?, 0)",
                 [vorname, nachname, email, hashedPassword, roleId],
                 (error) => {
                     if (error) {

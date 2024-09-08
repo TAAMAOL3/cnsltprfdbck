@@ -1,13 +1,64 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from './AuthContext';
+import { translate } from './translateFunction'; // Import the translate function
 
 const TeamReceived = ({ selectedTeam, selectedUser }) => {
-  // eslint-disable-next-line no-unused-vars
-  const { user } = useContext(AuthContext);// eslint-disable-line no-use-before-define
+  const { user } = useContext(AuthContext);
   const [feedbacks, setFeedbacks] = useState([]);
   const [viewingFeedback, setViewingFeedback] = useState(null);
-  const [activeRow, setActiveRow] = useState(null); // Neuer Zustand für die aktive Zeile
+  const [activeRow, setActiveRow] = useState(null);
+
+  // State for translations
+  const [translations, setTranslations] = useState({
+    teamReceivedTitle: '',
+    receivedOn: '',
+    recipient: '',
+    customer: '',
+    contactPerson: '',
+    rating: '',
+    actions: '',
+    noFeedbacksFound: '',
+    view: '',
+    close: '',
+    email: '',
+    feedbackText: ''
+  });
+
+  // Load translations when the component mounts
+  useEffect(() => {
+    const loadTranslations = async () => {
+      const teamReceivedTitle = await translate(50); // "Erhaltene Team-Feedbacks"
+      const receivedOn = await translate(51); // "Empfangen am"
+      const recipient = await translate(52); // "Empfänger"
+      const customer = await translate(53); // "Kunde"
+      const contactPerson = await translate(54); // "Kontaktperson"
+      const rating = await translate(55); // "Bewertung"
+      const actions = await translate(56); // "Aktionen"
+      const noFeedbacksFound = await translate(57); // "Keine Feedbacks gefunden."
+      const view = await translate(58); // "Anzeigen"
+      const close = await translate(59); // "Schließen"
+      const email = await translate(60); // "E-Mail"
+      const feedbackText = await translate(61); // "Feedback"
+
+      setTranslations({
+        teamReceivedTitle,
+        receivedOn,
+        recipient,
+        customer,
+        contactPerson,
+        rating,
+        actions,
+        noFeedbacksFound,
+        view,
+        close,
+        email,
+        feedbackText
+      });
+    };
+
+    loadTranslations();
+  }, []);
 
   useEffect(() => {
     const fetchFilteredFeedbacks = async () => {
@@ -24,7 +75,7 @@ const TeamReceived = ({ selectedTeam, selectedUser }) => {
             headers: { Authorization: `Bearer ${token}` }
           });
 
-          setFeedbacks(response.data || []); // Setze die erhaltenen Feedbacks
+          setFeedbacks(response.data || []);
         } catch (error) {
           console.error('Fehler beim Abrufen der erhaltenen Team-Feedbacks:', error);
           setFeedbacks([]);
@@ -37,12 +88,12 @@ const TeamReceived = ({ selectedTeam, selectedUser }) => {
 
   const handleViewFeedback = (feedback) => {
     setViewingFeedback(feedback);
-    setActiveRow(feedback.customerFdbckID); // Setzt die aktive Zeile
+    setActiveRow(feedback.customerFdbckID);
   };
 
   const handleCloseFeedback = () => {
     setViewingFeedback(null);
-    setActiveRow(null); // Entfernt die aktive Zeile
+    setActiveRow(null);
   };
 
   const getRatingIcon = (rating) => {
@@ -61,16 +112,16 @@ const TeamReceived = ({ selectedTeam, selectedUser }) => {
 
   return (
     <div className="mb-5">
-      <h3>Erhaltene Team-Feedbacks</h3>
+      <h3>{translations.teamReceivedTitle}</h3>
       <table className="table">
         <thead>
           <tr>
-            <th>Empfangen am</th>
-            <th>Empfänger</th>
-            <th>Kunde</th>
-            <th>Kontaktperson</th>
-            <th>Bewertung</th>
-            <th>Aktionen</th>
+            <th>{translations.receivedOn}</th>
+            <th>{translations.recipient}</th>
+            <th>{translations.customer}</th>
+            <th>{translations.contactPerson}</th>
+            <th>{translations.rating}</th>
+            <th>{translations.actions}</th>
           </tr>
         </thead>
         <tbody>
@@ -85,9 +136,7 @@ const TeamReceived = ({ selectedTeam, selectedUser }) => {
               return (
                 <React.Fragment key={feedback.customerFdbckID}>
                   {isNewYear && <tr className="year-separator"></tr>}
-                  <tr
-                    className={activeRow === feedback.customerFdbckID ? 'active' : ''}
-                  >
+                  <tr className={activeRow === feedback.customerFdbckID ? 'active' : ''}>
                     <td>{new Date(feedback.customerFdbckReceived).toLocaleDateString()}</td>
                     <td>{feedback.usersName}</td>
                     <td>{feedback.customerCompany}</td>
@@ -95,7 +144,7 @@ const TeamReceived = ({ selectedTeam, selectedUser }) => {
                     <td>{getRatingIcon(feedback.rating)}</td>
                     <td>
                       <button className="btn btn-primary" onClick={() => handleViewFeedback(feedback)}>
-                        Anzeigen
+                        {translations.view}
                       </button>
                     </td>
                   </tr>
@@ -104,7 +153,7 @@ const TeamReceived = ({ selectedTeam, selectedUser }) => {
             })
           ) : (
             <tr>
-              <td colSpan="6">Keine Feedbacks gefunden.</td>
+              <td colSpan="6">{translations.noFeedbacksFound}</td>
             </tr>
           )}
         </tbody>
@@ -112,11 +161,11 @@ const TeamReceived = ({ selectedTeam, selectedUser }) => {
 
       {viewingFeedback && (
         <div className="mt-5">
-          <h3>Feedback anzeigen</h3>
-          <p><strong>E-Mail:</strong> {viewingFeedback.customerMailaddr}</p>
-          <p><strong>Bewertung:</strong> {getRatingIcon(viewingFeedback.rating)}</p>
-          <p style={{ fontSize: '1.5rem' }}><strong>Feedback:</strong> {viewingFeedback.customerFdbckText}</p>
-          <button className="btn btn-secondary" onClick={handleCloseFeedback}>Schließen</button>
+          <h3>{translations.view}</h3>
+          <p><strong>{translations.email}:</strong> {viewingFeedback.customerMailaddr}</p>
+          <p><strong>{translations.rating}:</strong> {getRatingIcon(viewingFeedback.rating)}</p>
+          <p style={{ fontSize: '1.5rem' }}><strong>{translations.feedbackText}:</strong> {viewingFeedback.customerFdbckText}</p>
+          <button className="btn btn-secondary" onClick={handleCloseFeedback}>{translations.close}</button>
         </div>
       )}
     </div>

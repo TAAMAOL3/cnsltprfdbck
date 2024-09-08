@@ -165,3 +165,25 @@ ul {
   height: 24px;
   margin-right: 8px;
 } */
+
+.form-links {
+  text-align: left;
+  margin-top: 10px; /* Adjust as needed */
+}
+
+.form-links a {
+  display: block;
+  margin-bottom: 0; /* Removes extra space between the links */
+}
+
+.footer-custom {
+  display: flex;
+  height: 50px;
+  justify-content: space-between;
+  padding-left: 20px;
+  padding-right: 20px;
+  margin-right: auto;
+  margin-left: auto;
+  position: fixed;
+  padding-bottom: 10px;
+}

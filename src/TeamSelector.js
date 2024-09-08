@@ -1,37 +1,59 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from './AuthContext';
+import { translate } from './translateFunction'; // Import the translate function
 
 const TeamSelector = ({ onFilterChange }) => {
-  const { user } = useContext(AuthContext); // Zugriff auf den aktuellen Benutzer
-  const [teams, setTeams] = useState([]); // Liste der Teams
-  const [selectedTeam, setSelectedTeam] = useState(user.role === 3 ? 'all' : user.teamId); // Ausgewähltes Team, standardmäßig 'all' bei Rolle 3
-  const [users, setUsers] = useState([]); // Liste der Benutzer
-  const [selectedUser, setSelectedUser] = useState('all'); // Ausgewählter Benutzer
+  const { user } = useContext(AuthContext);
+  const [teams, setTeams] = useState([]);
+  const [selectedTeam, setSelectedTeam] = useState(user.role === 3 ? 'all' : user.teamId);
+  const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState('all');
 
-  // Effekt zum Abrufen der Teams basierend auf der Benutzerrolle
+  // State for translations
+  const [translations, setTranslations] = useState({
+    selectTeamLabel: '',
+    selectUserLabel: ''
+  });
+
+  // Load translations when the component mounts
+  useEffect(() => {
+    const loadTranslations = async () => {
+      const selectTeamLabel = await translate(408); // "Alle Teams"
+      const selectUserLabel = await translate(409); // "Alle Benutzer"
+
+      setTranslations({
+        selectTeamLabel,
+        selectUserLabel
+      });
+    };
+
+    loadTranslations();
+  }, []);
+
+  // Fetch teams based on the user role
   useEffect(() => {
     const fetchTeams = async () => {
-      const token = localStorage.getItem('token'); // Token aus dem localStorage
+      const token = localStorage.getItem('token');
       try {
         const response = await axios.get('/api/teams', {
-          headers: { Authorization: `Bearer ${token}` } // Autorisierung für die Abfrage
+          headers: { Authorization: `Bearer ${token}` }
         });
         if (user.role === 2) {
-          const userTeam = response.data.filter((team) => team.teamID === user.teamId); // Nur Team des Teamleiters
+          const userTeam = response.data.filter((team) => team.teamID === user.teamId);
           setTeams(userTeam);
         } else if (user.role === 3) {
-          setTeams([{ teamID: 'all', teamName: 'Alle Teams' }, ...response.data]); // Admin: Alle Teams
+          setTeams([{ teamID: 'all', teamName: translations.selectTeamLabel }, ...response.data]);
         }
       } catch (error) {
         console.error('Fehler beim Abrufen der Teams:', error);
       }
     };
 
-    fetchTeams(); // Teams abrufen
-  }, [user]);
+    fetchTeams();
+  }, [user, translations]);
 
-  // Effekt zum Abrufen der Benutzer basierend auf dem ausgewählten Team
+  // Fetch users based on the selected team
   useEffect(() => {
     const fetchUsers = async () => {
       const token = localStorage.getItem('token');
@@ -40,42 +62,42 @@ const TeamSelector = ({ onFilterChange }) => {
           const response = await axios.get(`/api/users/team/${selectedTeam}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
-          setUsers([{ usersID: 'all', fullName: 'Alle Benutzer' }, ...response.data]); // Liste der Benutzer
+          setUsers([{ usersID: 'all', fullName: translations.selectUserLabel }, ...response.data]);
         } catch (error) {
           console.error('Fehler beim Abrufen der Benutzer:', error);
         }
       } else {
-        setUsers([{ usersID: 'all', fullName: 'Alle Benutzer' }]); // Alle Benutzer
+        setUsers([{ usersID: 'all', fullName: translations.selectUserLabel }]);
       }
     };
 
-    fetchUsers(); // Benutzer abrufen, wenn Team geändert wird
-  }, [selectedTeam]);
+    fetchUsers();
+  }, [selectedTeam, translations]);
 
-  // Handler, wenn das Team geändert wird
+  // Handle team change
   const handleTeamChange = (event) => {
     const selectedTeamValue = event.target.value;
-    setSelectedTeam(selectedTeamValue); // Team setzen
-    setSelectedUser('all'); // Benutzer zurücksetzen
-    onFilterChange(selectedTeamValue, 'all'); // Filter-Callback auslösen
+    setSelectedTeam(selectedTeamValue);
+    setSelectedUser('all');
+    onFilterChange(selectedTeamValue, 'all');
   };
 
-  // Handler, wenn der Benutzer geändert wird
+  // Handle user change
   const handleUserChange = (event) => {
     const selectedUserValue = event.target.value;
-    setSelectedUser(selectedUserValue); // Benutzer setzen
-    onFilterChange(selectedTeam, selectedUserValue); // Filter-Callback auslösen
+    setSelectedUser(selectedUserValue);
+    onFilterChange(selectedTeam, selectedUserValue);
   };
 
   return (
     <div className="team-selector mb-3">
-      <label htmlFor="teamSelect">Team auswählen:</label>
+      <label htmlFor="teamSelect">{translations.selectTeamLabel}:</label>
       <select
         id="teamSelect"
         className="form-control"
         value={selectedTeam}
         onChange={handleTeamChange}
-        disabled={user.role === 2} // Disable the dropdown if the user role is 2
+        disabled={user.role === 2}
       >
         {teams.map((team) => (
           <option key={team.teamID} value={team.teamID}>
@@ -84,7 +106,7 @@ const TeamSelector = ({ onFilterChange }) => {
         ))}
       </select>
 
-      <label htmlFor="userSelect" className="mt-3">Benutzer auswählen:</label>
+      <label htmlFor="userSelect" className="mt-3">{translations.selectUserLabel}:</label>
       <select
         id="userSelect"
         className="form-control"

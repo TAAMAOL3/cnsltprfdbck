@@ -1,9 +1,7 @@
-// controllers/passwordResetController.js
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const db = require('../config/db');
 const { sendMail } = require('../src/mailService');
-
 
 exports.requestPasswordReset = (req, res) => {
     const { email } = req.body;
@@ -62,4 +60,31 @@ exports.sendPasswordResetEmail = (req, res) => {
     sendMail(email, 'Passwort-Zurücksetzung', 'Dies ist eine generische E-Mail zur Bestätigung Ihrer Passwort-Zurücksetzungsanforderung.')
         .then(() => res.status(200).json({ message: 'E-Mail gesendet' }))
         .catch(error => res.status(500).json({ error: 'Fehler beim E-Mail-Versand', details: error.message }));
+};
+
+// Neue Funktion zum Ändern des Passworts
+exports.changePassword = async (req, res) => {
+    const { userId, password } = req.body;
+
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Passwort ändern und hastochange auf 0 setzen
+        db.query(
+            "UPDATE t_users SET password = ?, hastochange = 0 WHERE usersID = ?",
+            [hashedPassword, userId],
+            (err, result) => {
+                if (err) {
+                    return res.status(500).json({ error: "Fehler beim Aktualisieren des Passworts" });
+                }
+                if (result.affectedRows === 0) {
+                    return res.status(400).json({ error: "Benutzer nicht gefunden" });
+                }
+
+                res.json({ message: "Passwort erfolgreich geändert, 'hastochange' zurückgesetzt" });
+            }
+        );
+    } catch (error) {
+        res.status(500).json({ error: "Fehler beim Hashen des Passworts" });
+    }
 };
