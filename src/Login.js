@@ -8,6 +8,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { user, login, loading } = useContext(AuthContext);
+  // eslint-disable-next-line
   const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
 

@@ -198,7 +198,7 @@ const UserFeedback = () => {
                     <td>{feedback.variousFdbckDescription}</td>
 
                     <td>
-                      <a href={feedback.uploadUrl} target="_blank" className="btn btn-link">
+                      <a href={feedback.uploadUrl} target="_blank" rel="noopener noreferrer" className="btn btn-link">
                         {translations.view}
                       </a>
                     </td>

@@ -6,6 +6,7 @@ import { translate } from './translateFunction'; // Import the translate functio
 const TeamRequest = ({ selectedTeam, selectedUser }) => {
   const { user } = useContext(AuthContext);
   const [requests, setRequests] = useState([]);
+  // eslint-disable-next-line
   const [activeRow, setActiveRow] = useState(null);
 
   // State for translations

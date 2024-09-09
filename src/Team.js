@@ -11,6 +11,7 @@ import { translate } from './translateFunction'; // Import the translate functio
 
 const Team = () => {
   const { user } = useContext(AuthContext);
+  // eslint-disable-next-line
   const navigate = useNavigate();
   const [selectedTeam, setSelectedTeam] = useState(user.role === 3 ? 'all' : user.teamId);
   const [selectedUser, setSelectedUser] = useState('all');

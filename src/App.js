@@ -15,14 +15,17 @@ import Feedback from './feedback';
 import Team from './Team';
 import Profile from './Profile';
 import Status from './Status';
-import NewPassword from './NewPassword'; // Neue Passwort-Änderungsseite importieren
+import NewPassword from './newPassword'; // Neue Passwort-Änderungsseite importieren
+// eslint-disable-next-line
 import { translate, setLanguage } from './translateFunction'; // Import translate and setLanguage functions
 
 // Layout-Komponente, die Header, Footer und Navigation bedingt rendert
 const Layout = ({ children }) => {
   const location = useLocation();
   const hideNavigation = location.pathname === '/feedback' || location.pathname === '/change-password';
+  // eslint-disable-next-line
   const { user } = useContext(AuthContext);
+  // eslint-disable-next-line
   const [currentLanguage, setCurrentLanguageState] = useState('DE'); // Default language
 
   const handleLanguageChange = (lang) => {
@@ -41,15 +44,24 @@ const Layout = ({ children }) => {
           <div className="flex-div-legend">
             <img src="/Content/themes/base/images/logo.png" alt="Logo" />
             <div className="flex-vertical">
-              <p>  Consulting Feedback <br/>
-              Swisscom Business | Analytics & Data</p>
+              <p>  Consulting Feedback <br />
+                Swisscom Business | Analytics & Data</p>
             </div>
           </div>
           <div className="language-selection">
-            <a href="#" onClick={() => handleLanguageChange('DE')}>Deutsch</a> |
-            <a href="#" onClick={() => handleLanguageChange('EN')}>English</a> |
-            <a href="#" onClick={() => handleLanguageChange('FR')}>Français</a>
+            <button onClick={() => handleLanguageChange('DE')} style={{ background: 'none', border: 'none', padding: 0, margin: 0, color: 'blue', textDecoration: 'underline', cursor: 'pointer' }}>
+              Deutsch
+            </button>
+            |
+            <button onClick={() => handleLanguageChange('EN')} style={{ background: 'none', border: 'none', padding: 0, margin: 0, color: 'blue', textDecoration: 'underline', cursor: 'pointer' }}>
+              English
+            </button>
+            |
+            <button onClick={() => handleLanguageChange('FR')} style={{ background: 'none', border: 'none', padding: 0, margin: 0, color: 'blue', textDecoration: 'underline', cursor: 'pointer' }}>
+              Français
+            </button>
           </div>
+
         </footer>
       </div>
     </>

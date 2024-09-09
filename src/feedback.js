@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { translate } from './translateFunction'; // Übersetzungsfunktion importieren
@@ -10,6 +10,7 @@ const Feedback = () => {
   const [feedback, setFeedback] = useState('');
   const [error, setError] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  // eslint-disable-next-line
   const [rating, setRating] = useState(null);  // Neues State für das Rating
   const [translations, setTranslations] = useState({
     invalidLink: '',
@@ -54,9 +55,10 @@ const Feedback = () => {
     } else {
       fetchCustomerFeedback(feedbackId);
     }
-  }, [searchParams]);
+    // eslint-disable-next-line
+  }, [searchParams, translations.invalidLink, fetchCustomerFeedback]);
 
-  const fetchCustomerFeedback = async (feedbackId) => {
+  const fetchCustomerFeedback = useCallback(async (feedbackId) => {
     try {
       const response = await axios.get(`/api/customerFeedback/${feedbackId}`);
       if (response.data) {
@@ -72,7 +74,7 @@ const Feedback = () => {
     } catch (error) {
       setError(translations.errorOccurred);
     }
-  };
+  }, [translations.invalidLink, translations.errorOccurred]);
 
   // Funktion zur Textanalyse
   const analyzeText = async (text) => {

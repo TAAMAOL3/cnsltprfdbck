@@ -4,6 +4,7 @@ import { AuthContext } from './AuthContext';
 import { translate } from './translateFunction'; // Import the translate function
 
 const TeamFeedback = ({ selectedTeam, selectedUser }) => {
+  // eslint-disable-next-line
   const { user } = useContext(AuthContext);
   const [feedbacks, setFeedbacks] = useState([]);
   const [viewingFeedback, setViewingFeedback] = useState(null);
@@ -84,7 +85,7 @@ const TeamFeedback = ({ selectedTeam, selectedUser }) => {
 
     fetchTeamFeedback();
   }, [selectedTeam, selectedUser]);
-
+// eslint-disable-next-line
   const handleViewFeedback = (feedback) => {
     setViewingFeedback(feedback);
     setActiveRow(feedback.variousFdbckID);

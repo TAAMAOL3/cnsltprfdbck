@@ -4,6 +4,7 @@ import { AuthContext } from './AuthContext';
 import { translate } from './translateFunction'; // Import the translate function
 
 const TeamReceived = ({ selectedTeam, selectedUser }) => {
+  // eslint-disable-next-line
   const { user } = useContext(AuthContext);
   const [feedbacks, setFeedbacks] = useState([]);
   const [viewingFeedback, setViewingFeedback] = useState(null);

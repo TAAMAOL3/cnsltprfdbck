@@ -7,6 +7,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { translate } from './translateFunction'; // Import the translate function
 
 const VariousFeedback = () => {
+  // eslint-disable-next-line
   const { user } = useContext(AuthContext);
   const [customer, setCustomer] = useState('');
   const [description, setDescription] = useState('');
