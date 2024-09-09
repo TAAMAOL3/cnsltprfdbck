@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-
+import { translate } from './translateFunction'; // Übersetzungsfunktion importieren
 
 const Feedback = () => {
   const [searchParams] = useSearchParams();
@@ -10,13 +10,47 @@ const Feedback = () => {
   const [feedback, setFeedback] = useState('');
   const [error, setError] = useState('');
   const [submitted, setSubmitted] = useState(false);
-  // eslint-disable-next-line no-unused-vars
   const [rating, setRating] = useState(null);  // Neues State für das Rating
+  const [translations, setTranslations] = useState({
+    invalidLink: '',
+    feedbackFormTitle: '',
+    customerCompanyLabel: '',
+    contactPersonLabel: '',
+    feedbackPlaceholder: '',
+    submitButton: '',
+    successMessage: '',
+    errorOccurred: ''
+  });
 
+  // Laden der Übersetzungen analog zu Login.js
   useEffect(() => {
+    const loadTranslations = async () => {
+      const invalidLink = await translate(410); // "Dieser Feedback Link ist leider ungültig."
+      const feedbackFormTitle = await translate(411); // "Feedback Formular"
+      const customerCompanyLabel = await translate(412); // "Kunden Firma"
+      const contactPersonLabel = await translate(413); // "Ansprechperson"
+      const feedbackPlaceholder = await translate(414); // "Ihr Feedback"
+      const submitButton = await translate(415); // "Absenden"
+      const successMessage = await translate(416); // "Vielen Dank für Ihr Feedback! Sie können das Fenster nun schließen."
+      const errorOccurred = await translate(417); // "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
+
+      setTranslations({
+        invalidLink,
+        feedbackFormTitle,
+        customerCompanyLabel,
+        contactPersonLabel,
+        feedbackPlaceholder,
+        submitButton,
+        successMessage,
+        errorOccurred
+      });
+    };
+
+    loadTranslations();
+
     const feedbackId = searchParams.get('id');
     if (!feedbackId) {
-      setError('Dieser Feedback Link ist leider ungültig.');
+      setError(translations.invalidLink);
     } else {
       fetchCustomerFeedback(feedbackId);
     }
@@ -33,10 +67,10 @@ const Feedback = () => {
           setContactPerson(response.data.customerName);
         }
       } else {
-        setError('Dieser Feedback Link ist leider ungültig.');
+        setError(translations.invalidLink);
       }
     } catch (error) {
-      setError('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+      setError(translations.errorOccurred);
     }
   };
 
@@ -72,7 +106,7 @@ const Feedback = () => {
         customerFdbckText: feedback,
         customerFdbckReceived: new Date(),
         customerFdbckAnswered: 1,
-        rating: analyzedRating,  // Neues Rating-Feld
+        rating: analyzedRating  // Neues Rating-Feld
       }, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -87,7 +121,7 @@ const Feedback = () => {
         }
       }, 1000);
     } catch (error) {
-      setError('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+      setError(translations.errorOccurred);
     }
   };
 
@@ -99,36 +133,34 @@ const Feedback = () => {
     <div className="container">
       {!submitted ? (
         <div className="feedback-form-container">
-          <h2>Feedback Formular</h2>
+          <h2>{translations.feedbackFormTitle}</h2>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Kunden Firma</label>
+              <label>{translations.customerCompanyLabel}</label>
               <input type="text" className="form-control" value={company} readOnly />
             </div>
             <div className="form-group">
-              <label>Ansprechperson</label>
+              <label>{translations.contactPersonLabel}</label>
               <input type="text" className="form-control" value={contactPerson} readOnly />
             </div>
             <div className="form-group">
-              <label>Feedback</label>
+              <label>{translations.feedbackPlaceholder}</label>
               <textarea
                 className="form-control"
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
-                placeholder="Ihr Feedback"
+                placeholder={translations.feedbackPlaceholder}
                 required
               />
             </div>
-            <button type="submit" className="btn btn-primary btn">Absenden</button>
+            <button type="submit" className="btn btn-primary btn">{translations.submitButton}</button>
           </form>
         </div>
       ) : (
-
         <div className="feedback-success-message" style={{ textAlign: 'center' }}>
           <div className="checkmark">&#10003;</div>
-          <h3>Vielen Dank für Ihr Feedback! Sie können das Fenster nun schließen.</h3>
+          <h3>{translations.successMessage}</h3>
         </div>
-
       )}
     </div>
   );

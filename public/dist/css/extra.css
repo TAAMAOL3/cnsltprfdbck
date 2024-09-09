@@ -168,12 +168,14 @@ ul {
 
 .form-links {
   text-align: left;
-  margin-top: 10px; /* Adjust as needed */
+  margin-top: 10px;
+  /* Adjust as needed */
 }
 
 .form-links a {
   display: block;
-  margin-bottom: 0; /* Removes extra space between the links */
+  margin-bottom: 0;
+  /* Removes extra space between the links */
 }
 
 .footer-custom {
@@ -186,4 +188,11 @@ ul {
   margin-left: auto;
   position: fixed;
   padding-bottom: 10px;
+}
+
+.feedback-form-container > h2 {
+  background-color: #015;
+  color: #FFFFFF;
+  padding: 20px;
+  border-radius: 20px;
 }
